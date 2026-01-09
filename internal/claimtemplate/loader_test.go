@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"yourmodule/claimtemplate"
+	"github.com/stuttgart-things/claim-machinery-api/internal/claimtemplate"
 )
 
 func TestLoadClaimTemplate(t *testing.T) {

@@ -1,0 +1,102 @@
+---
+apiVersion: sthings.io/v1alpha1
+kind: ClaimTemplate
+metadata:
+  name: postgresql
+  title: PostgreSQL Database Claim
+  description: Creates a PostgreSQL database via Crossplane
+  tags:
+    - database
+    - crossplane
+    - postgresql
+  labels:
+    category: database
+    managed-by: claim-machinery
+spec:
+  type: database
+  source: oci://ghcr.io/stuttgart-things/claim-xplane-postgresql
+  tag: 0.2.0
+  parameters:
+    - name: instanceClass
+      title: Instance Class
+      type: string
+      required: true
+      default: db.t3.micro
+      enum:
+        - db.t3.micro
+        - db.t3.small
+        - db.t3.medium
+        - db.m5.large
+      ui:options:
+        widget: select
+
+    - name: namespace
+      title: Kubernetes Namespace
+      type: string
+      required: true
+      default: databases
+      pattern: "^[a-z0-9]([-a-z0-9]*[a-z0-9])?$"
+      minLength: 1
+      maxLength: 63
+      ui:options:
+        widget: text
+        placeholder: "databases"
+
+    - name: databaseName
+      title: Database Name
+      type: string
+      required: true
+      default: mydb
+      pattern: "^[a-zA-Z_][a-zA-Z0-9_]*$"
+      minLength: 1
+      maxLength: 63
+      ui:options:
+        widget: text
+        placeholder: "mydb"
+
+    - name: username
+      title: Database Username
+      type: string
+      required: true
+      pattern: "^[a-zA-Z_][a-zA-Z0-9_]*$"
+      minLength: 3
+      maxLength: 63
+      ui:options:
+        widget: text
+        placeholder: "admin"
+
+    - name: storageSize
+      title: Storage Size (GB)
+      type: string
+      required: true
+      default: "20"
+      pattern: "^[0-9]+$"
+      ui:options:
+        widget: text
+        placeholder: "20"
+
+    - name: backupRetention
+      title: Backup Retention Days
+      type: string
+      required: false
+      default: "7"
+      pattern: "^[0-9]+$"
+      ui:options:
+        widget: text
+        placeholder: "7"
+
+    - name: enableEncryption
+      title: Enable Encryption
+      type: boolean
+      required: false
+      default: true
+      ui:options:
+        widget: checkbox
+
+    - name: tags
+      title: Resource Tags
+      type: array
+      required: false
+      ui:options:
+        widget: textarea
+        placeholder: "environment=prod,team=data"
