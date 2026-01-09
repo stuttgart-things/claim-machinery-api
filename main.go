@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
 	"path/filepath"
 
 	"github.com/stuttgart-things/claim-machinery-api/internal/claimtemplate"
@@ -11,20 +12,65 @@ import (
 func main() {
 	fmt.Println("🚀 Claim Machinery API starting")
 
-	// Path to template (later: directory scan, FS, DB, etc.)
-	templatePath := filepath.Join(
+	// Load all templates from testdata directory
+	templatesDir := filepath.Join(
 		"internal",
 		"claimtemplate",
 		"testdata",
-		"volumeclaim.yaml",
 	)
 
-	tmpl, err := claimtemplate.LoadClaimTemplate(templatePath)
+	templates, err := loadAllTemplates(templatesDir)
 	if err != nil {
-		log.Fatalf("failed to load claim template: %v", err)
+		log.Fatalf("failed to load claim templates: %v", err)
 	}
 
-	printTemplateSummary(tmpl)
+	if len(templates) == 0 {
+		log.Fatal("no templates found in testdata directory")
+	}
+
+	fmt.Printf("\n✓ Loaded %d claim template(s)\n\n", len(templates))
+	for _, tmpl := range templates {
+		printTemplateSummary(tmpl)
+		fmt.Println()
+	}
+}
+
+// loadAllTemplates scans the templates directory and loads all YAML files
+func loadAllTemplates(dir string) ([]*claimtemplate.ClaimTemplate, error) {
+	var templates []*claimtemplate.ClaimTemplate
+
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read directory: %w", err)
+	}
+
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+
+		// Only load YAML files
+		if !isYAMLFile(entry.Name()) {
+			continue
+		}
+
+		templatePath := filepath.Join(dir, entry.Name())
+		tmpl, err := claimtemplate.LoadClaimTemplate(templatePath)
+		if err != nil {
+			log.Printf("⚠️  failed to load template %s: %v", entry.Name(), err)
+			continue
+		}
+
+		templates = append(templates, tmpl)
+	}
+
+	return templates, nil
+}
+
+// isYAMLFile checks if a file is a YAML file
+func isYAMLFile(filename string) bool {
+	ext := filepath.Ext(filename)
+	return ext == ".yaml" || ext == ".yml"
 }
 
 func printTemplateSummary(t *claimtemplate.ClaimTemplate) {
