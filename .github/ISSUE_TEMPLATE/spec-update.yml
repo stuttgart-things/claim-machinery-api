@@ -1,0 +1,64 @@
+name: Spec Update
+description: Update or clarification of SPEC.md
+title: "[SPEC] "
+labels: ["spec", "documentation"]
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        # Spec Update / Clarification
+        Help us improve or clarify the specification
+
+  - type: dropdown
+    id: type
+    attributes:
+      label: Type of Change
+      options:
+        - "Add new requirement"
+        - "Clarify requirement"
+        - "Remove requirement"
+        - "Fix error in spec"
+        - "Add examples"
+    validations:
+      required: true
+
+  - type: textarea
+    id: section
+    attributes:
+      label: Affected Spec Section
+      description: Which section of SPEC.md is affected?
+      placeholder: "e.g., 3.3 Endpoints or 4 Data Models"
+    validations:
+      required: true
+
+  - type: textarea
+    id: current-spec
+    attributes:
+      label: Current Spec Wording
+      description: Copy the current text from SPEC.md
+
+  - type: textarea
+    id: proposed-change
+    attributes:
+      label: Proposed Change
+      description: What should be changed?
+    validations:
+      required: true
+
+  - type: textarea
+    id: rationale
+    attributes:
+      label: Rationale
+      description: Why is this change needed?
+    validations:
+      required: true
+
+  - type: textarea
+    id: impact
+    attributes:
+      label: Impact
+      description: |
+        - Affected areas...
+        - Breaking changes?
+        - Other affected components?
