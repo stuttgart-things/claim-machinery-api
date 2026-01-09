@@ -1,0 +1,42 @@
+---
+apiVersion: sthings.io/v1alpha1
+kind: ClaimTemplate
+metadata:
+  name: volumeclaim
+  title: Crossplane Volume Claim
+  description: Creates a persistent volume claim via Crossplane
+  tags:
+    - storage
+    - crossplane
+spec:
+  type: volumeclaim
+  source: oci://ghcr.io/stuttgart-things/claim-xplane-volumeclaim
+  tag: 0.1.1
+  parameters:
+    - name: templateName
+      title: Template
+      type: string
+      default: demo
+      enum:
+        - demo
+        - database
+        - simple
+
+    - name: namespace
+      title: Namespace
+      type: string
+      required: true
+      default: default
+      pattern: "^[a-z0-9]([-a-z0-9]*[a-z0-9])?$"
+
+    - name: storage
+      title: Storage Size
+      type: string
+      required: true
+      default: 20Gi
+      pattern: "^[0-9]+(Gi|Mi|Ti)$"
+
+    - name: storageClassName
+      title: Storage Class
+      type: string
+      default: standard
