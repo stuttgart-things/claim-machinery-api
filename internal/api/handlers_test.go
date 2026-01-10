@@ -139,7 +139,8 @@ func TestOrderClaim(t *testing.T) {
 	server.router.ServeHTTP(w, req)
 
 	// Should get 200 OK if KCL is available, or 500 if KCL CLI is not found
-	assert.True(t, w.Code == http.StatusOK || w.Code == http.StatusInternalServerError)
+	assert.True(t, w.Code == http.StatusOK || w.Code == http.StatusInternalServerError,
+		"Expected 200 or 500, got %d with body: %s", w.Code, w.Body.String())
 }
 
 func TestOrderClaim_NotFound(t *testing.T) {
