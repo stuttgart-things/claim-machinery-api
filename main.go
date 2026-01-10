@@ -1,50 +1,64 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
+	"os"
+	"os/signal"
 	"path/filepath"
+	"syscall"
+	"time"
 
-	"github.com/stuttgart-things/claim-machinery-api/internal/app"
+	"github.com/stuttgart-things/claim-machinery-api/internal/api"
 )
 
 func main() {
 	fmt.Println("🚀 Claim Machinery API starting")
 
-	// Load all templates from testdata directory
+	// Load templates directory
 	templatesDir := filepath.Join(
 		"internal",
 		"claimtemplate",
 		"testdata",
 	)
 
-	templates, err := app.LoadAllTemplates(templatesDir)
+	// Create and start HTTP server
+	server, err := api.NewServer(templatesDir)
 	if err != nil {
-		log.Fatalf("failed to load claim templates: %v", err)
+		log.Fatalf("failed to create server: %v", err)
 	}
 
-	if len(templates) == 0 {
-		log.Fatal("no templates found in testdata directory")
-	}
-
-	fmt.Printf("\n✓ Loaded %d claim template(s)\n\n", len(templates))
-
-	// Process each template: load, display summary, and render
-	for _, tmpl := range templates {
-		app.PrintTemplateSummary(tmpl)
-
-		// Render the template
-		fmt.Println("\n🔄 Rendering template...")
-		rendered, err := app.RenderTemplate(tmpl)
-		if err != nil {
-			log.Printf("⚠️  failed to render template %s: %v\n", tmpl.Metadata.Name, err)
-			continue
+	// Start server in goroutine
+	go func() {
+		if err := server.Start(); err != nil {
+			if err.Error() != "http: Server closed" {
+				log.Printf("❌ Server error: %v", err)
+			}
 		}
+	}()
 
-		// Display rendered output
-		app.PrintRenderedOutput(tmpl.Metadata.Name, rendered)
-		fmt.Println()
+	fmt.Println("✓ API server listening on http://localhost:8080")
+	fmt.Println("\n📋 Available endpoints:")
+	fmt.Println("  GET  /health                                    - Health check")
+	fmt.Println("  GET  /api/v1/claim-templates                    - List templates")
+	fmt.Println("  GET  /api/v1/claim-templates/{name}             - Get template details")
+	fmt.Println("  POST /api/v1/claim-templates/{name}/order       - Render template")
+
+	// Wait for interrupt signal
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+
+	sig := <-sigChan
+	fmt.Printf("\n📮 Received signal: %v\n", sig)
+
+	// Graceful shutdown with timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	if err := server.Stop(ctx); err != nil {
+		log.Printf("error during shutdown: %v", err)
 	}
 
-	fmt.Println("✓ All templates processed")
+	fmt.Println("✓ Server stopped gracefully")
 }
