@@ -12,11 +12,11 @@ Claim Machinery API is a Go-based microservice that enables discovering, managin
 
 ### 1.1 Goals
 
-- [x] Provide REST API for claim template discovery
-- [x] Enable schema-based parameter validation
-- [x] Support KCL rendering with OCI module loading
-- [x] Backstage Software Catalog integration
-- [x] Dry-run capability for claim validation
+- [ ] Provide REST API for claim template discovery
+- [ ] Enable schema-based parameter validation
+- [ ] Support KCL rendering with OCI module loading
+- [ ] Backstage Software Catalog integration
+- [ ] Dry-run capability for claim validation
 
 ### 1.2 Out of Scope
 

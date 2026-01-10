@@ -14,8 +14,8 @@ metadata:
     managed-by: claim-machinery
 spec:
   type: database
-  source: oci://ghcr.io/stuttgart-things/claim-xplane-postgresql
-  tag: 0.2.0
+  source: oci://ghcr.io/stuttgart-things/claim-xplane-volumeclaim
+  tag: 0.1.1
   parameters:
     - name: instanceClass
       title: Instance Class
