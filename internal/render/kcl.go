@@ -72,7 +72,7 @@ func RenderKCLFromOCI(
 	allAnswers map[string]interface{}) string {
 
 	// Build command: kcl run <oci-source> -D key=value ...
-	args := []string{"run"}
+	args := []string{"run", "--quiet"}
 
 	// Add OCI source and tag
 	if tag != "" {

@@ -71,9 +71,17 @@ curl -X POST http://localhost:8080/api/v1/claim-templates/volumeclaim/order \
   -d '{"parameters": {"namespace": "production", "storage": "100Gi"}}'
 ```
 
+**Extract YAML from response:**
+
+```bash
+curl -s -X POST http://localhost:8080/api/v1/claim-templates/volumeclaim/order \
+  -H "Content-Type: application/json" \
+  -d '{"parameters": {"namespace": "production", "storage": "100Gi"}}' | jq -r '.rendered'
+```
+
 </details>
 
-## DEV 
+## DEV
 
 ```bash
 git clone https://github.com/stuttgart-things/claim-machinery-api.git
