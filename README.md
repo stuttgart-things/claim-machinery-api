@@ -14,6 +14,22 @@ A Backstage-compatible API for discovering, managing, and rendering KCL-based Cr
 ## API
 
 <details open>
+<summary>API Endpoints</summary>
+
+```bash
+# List all available claim templates
+GET /api/v1/claim-templates
+
+# Get template details with schema
+GET /api/v1/claim-templates/{name}
+
+# Render a claim with parameters
+POST /api/v1/claim-templates/{name}/order
+```
+
+</details>
+
+<details open>
 <summary>1️⃣ Health Check</summary>
 
 ```bash
@@ -57,7 +73,7 @@ curl -X POST http://localhost:8080/api/v1/claim-templates/volumeclaim/order \
 
 </details>
 
-### Installation
+## DEV 
 
 ```bash
 git clone https://github.com/stuttgart-things/claim-machinery-api.git
@@ -66,18 +82,7 @@ go mod download
 go run main.go
 ```
 
-### API Endpoints
 
-```bash
-# List all available claim templates
-GET /api/v1/claim-templates
-
-# Get template details with schema
-GET /api/v1/claim-templates/{name}
-
-# Render a claim with parameters
-POST /api/v1/claim-templates/{name}/order
-```
 
 ## Documentation
 

@@ -5,48 +5,15 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-	"os"
-	"path/filepath"
-	"runtime"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-// getTestDataPath returns the correct path to testdata directory
-func getTestDataPath() string {
-	// Try multiple possible locations
-	paths := []string{
-		"internal/claimtemplate/testdata",
-		"./internal/claimtemplate/testdata",
-		"../claimtemplate/testdata",
-	}
-
-	for _, p := range paths {
-		if info, err := os.Stat(p); err == nil && info.IsDir() {
-			return p
-		}
-	}
-
-	// Fallback - try to find it relative to source file
-	_, file, _, ok := runtime.Caller(0)
-	if ok {
-		dir := filepath.Dir(file)
-		testdataPath := filepath.Join(filepath.Dir(dir), "claimtemplate", "testdata")
-		if info, err := os.Stat(testdataPath); err == nil && info.IsDir() {
-			return testdataPath
-		}
-	}
-
-	// Last resort - return a relative path that works from repo root
-	return "internal/claimtemplate/testdata"
-}
-
 func TestHealthCheck(t *testing.T) {
 	// Create server
-	testdata := getTestDataPath()
-	server, err := NewServer(testdata)
+	server, err := NewServer("internal/claimtemplate/testdata")
 	require.NoError(t, err)
 
 	// Create request
@@ -63,8 +30,7 @@ func TestHealthCheck(t *testing.T) {
 
 func TestListTemplates(t *testing.T) {
 	// Create server
-	testdata := getTestDataPath()
-	server, err := NewServer(testdata)
+	server, err := NewServer("internal/claimtemplate/testdata")
 	require.NoError(t, err)
 
 	// Create request
@@ -81,13 +47,15 @@ func TestListTemplates(t *testing.T) {
 	var resp ClaimTemplateListResponse
 	err = json.NewDecoder(w.Body).Decode(&resp)
 	require.NoError(t, err)
-	assert.Greater(t, len(resp.Items), 0)
+
+	assert.Equal(t, "api.claim-machinery.io/v1alpha1", resp.APIVersion)
+	assert.Equal(t, "ClaimTemplateList", resp.Kind)
+	assert.NotEmpty(t, resp.Items)
 }
 
 func TestGetTemplate(t *testing.T) {
 	// Create server
-	testdata := getTestDataPath()
-	server, err := NewServer(testdata)
+	server, err := NewServer("internal/claimtemplate/testdata")
 	require.NoError(t, err)
 
 	// Create request
@@ -101,18 +69,20 @@ func TestGetTemplate(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code)
 
 	// Parse response
-	var resp interface{}
+	var resp map[string]interface{}
 	err = json.NewDecoder(w.Body).Decode(&resp)
 	require.NoError(t, err)
+
+	assert.Contains(t, resp, "metadata")
+	assert.Contains(t, resp, "spec")
 }
 
 func TestGetTemplate_NotFound(t *testing.T) {
 	// Create server
-	testdata := getTestDataPath()
-	server, err := NewServer(testdata)
+	server, err := NewServer("internal/claimtemplate/testdata")
 	require.NoError(t, err)
 
-	// Create request
+	// Create request for non-existent template
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/claim-templates/nonexistent", nil)
 	w := httptest.NewRecorder()
 
@@ -125,33 +95,59 @@ func TestGetTemplate_NotFound(t *testing.T) {
 
 func TestOrderClaim(t *testing.T) {
 	// Create server
-	testdata := getTestDataPath()
-	server, err := NewServer(testdata)
+	server, err := NewServer("internal/claimtemplate/testdata")
 	require.NoError(t, err)
 
 	// Create request body
-	body := bytes.NewBufferString(`{"parameters": {"namespace": "test", "storage": "10Gi"}}`)
-	req := httptest.NewRequest(http.MethodPost, "/api/v1/claim-templates/volumeclaim/order", body)
+	reqBody := OrderRequest{
+		Parameters: map[string]interface{}{
+			"namespace": "test-namespace",
+		},
+	}
+	body, err := json.Marshal(reqBody)
+	require.NoError(t, err)
+
+	// Create request
+	req := httptest.NewRequest(
+		http.MethodPost,
+		"/api/v1/claim-templates/volumeclaim/order",
+		bytes.NewReader(body),
+	)
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 
 	// Handle request
 	server.router.ServeHTTP(w, req)
 
-	// Should get 200 OK if KCL is available, or 500 if KCL CLI is not found
-	assert.True(t, w.Code == http.StatusOK || w.Code == http.StatusInternalServerError,
-		"Expected 200 or 500, got %d with body: %s", w.Code, w.Body.String())
+	// Assertions
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	// Parse response
+	var resp OrderResponse
+	err = json.NewDecoder(w.Body).Decode(&resp)
+	require.NoError(t, err)
+
+	assert.Equal(t, "api.claim-machinery.io/v1alpha1", resp.APIVersion)
+	assert.Equal(t, "OrderResponse", resp.Kind)
+	assert.NotEmpty(t, resp.Rendered)
 }
 
 func TestOrderClaim_NotFound(t *testing.T) {
 	// Create server
-	testdata := getTestDataPath()
-	server, err := NewServer(testdata)
+	server, err := NewServer("internal/claimtemplate/testdata")
 	require.NoError(t, err)
 
-	// Create request
-	body := bytes.NewBufferString(`{"parameters": {"namespace": "test"}}`)
-	req := httptest.NewRequest(http.MethodPost, "/api/v1/claim-templates/nonexistent/order", body)
+	// Create request body
+	reqBody := OrderRequest{Parameters: map[string]interface{}{}}
+	body, err := json.Marshal(reqBody)
+	require.NoError(t, err)
+
+	// Create request for non-existent template
+	req := httptest.NewRequest(
+		http.MethodPost,
+		"/api/v1/claim-templates/nonexistent/order",
+		bytes.NewReader(body),
+	)
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 
@@ -164,13 +160,15 @@ func TestOrderClaim_NotFound(t *testing.T) {
 
 func TestOrderClaim_InvalidBody(t *testing.T) {
 	// Create server
-	testdata := getTestDataPath()
-	server, err := NewServer(testdata)
+	server, err := NewServer("internal/claimtemplate/testdata")
 	require.NoError(t, err)
 
 	// Create request with invalid JSON
-	body := bytes.NewBufferString(`{invalid json`)
-	req := httptest.NewRequest(http.MethodPost, "/api/v1/claim-templates/volumeclaim/order", body)
+	req := httptest.NewRequest(
+		http.MethodPost,
+		"/api/v1/claim-templates/volumeclaim/order",
+		bytes.NewReader([]byte("invalid json")),
+	)
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 
