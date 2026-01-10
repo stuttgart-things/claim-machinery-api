@@ -8,21 +8,22 @@ Project status and progress tracking for Claim Machinery API based on [SPEC.md](
 
 ### Phase 1: MVP (Sprint 1-2)
 **Goal:** Basic REST API with template discovery and KCL rendering
+**Status:** 60% Complete - KCL rendering done, API endpoints next
 
-- [ ] **Project Setup**
-  - [ ] Go project initialization
-  - [ ] Dependency management (go.mod)
-  - [ ] GitHub repository configuration
-  - [ ] HTTP server boilerplate (gorilla/mux)
-  - [ ] Middleware setup (logging, CORS, error handling)
-  - Issue: TBD
+- [ ] **Project Setup** ✅ DONE
+  - [x] Go project initialization
+  - [x] Dependency management (go.mod)
+  - [x] GitHub repository configuration
+  - [ ] HTTP server boilerplate (gorilla/mux) - NEXT
+  - [ ] Middleware setup (logging, CORS, error handling) - NEXT
+  - Issue: Completed
 
 - [ ] **Template Handling (Struct, Read, Validate)**
-  - [ ] ClaimTemplate struct definition (Spec 4)
-  - [ ] Parameter struct definition
-  - [ ] OrderRequest/OrderResponse structs
-  - [ ] Template loading from filesystem
-  - [ ] YAML/JSON parsing
+  - [x] ClaimTemplate struct definition (Spec 4)
+  - [x] Parameter struct definition
+  - [x] OrderRequest/OrderResponse structs
+  - [x] Template loading from filesystem
+  - [x] YAML/JSON parsing
   - [ ] GET /api/v1/claim-templates (list) (Spec 3.3.1)
   - [ ] GET /api/v1/claim-templates/{name} (detail) (Spec 3.3.2)
   - [ ] Basic parameter validation (required, type, enum)
@@ -30,11 +31,14 @@ Project status and progress tracking for Claim Machinery API based on [SPEC.md](
     - #1 - Implement template discovery and serving
     - #2 - Implement parameter validation
 
-- [ ] **KCL Integration (Spec 5)**
-  - [ ] KCL CLI execution wrapper
-  - [ ] Parameter injection (-D flags)
-  - [ ] Output parsing
-  - Issue: TBD
+- [x] **KCL Integration (Spec 5)** ✅ COMPLETED
+  - [x] KCL CLI execution wrapper (RenderKCLFromOCI)
+  - [x] KCL SDK execution wrapper (RenderKCL)
+  - [x] Parameter injection (-D flags)
+  - [x] Output parsing & quote normalization
+  - [x] File output support
+  - [x] Comprehensive testing (16 tests passing)
+  - Issue: Completed - All rendering functions working
 
 ---
 
@@ -117,7 +121,27 @@ Project status and progress tracking for Claim Machinery API based on [SPEC.md](
 
 ---
 
-## 📊 Sprint Planning
+## 🎯 Current Focus
+
+**✅ COMPLETED:**
+- Template discovery from filesystem
+- ClaimTemplate struct and types
+- KCL rendering (local files + OCI sources)
+- Parameter extraction and injection
+- Output parsing and normalization
+- File output support
+- Comprehensive testing (16 tests)
+- Clean architecture (internal/app, internal/render, internal/claimtemplate)
+
+**🚀 NEXT PRIORITY: REST API Implementation**
+1. HTTP server setup (gorilla/mux)
+2. GET /api/v1/claim-templates (list templates)
+3. GET /api/v1/claim-templates/{name} (get template details)
+4. POST /api/v1/claim-templates/{name}/order (render template)
+5. Middleware (logging, CORS, error handling)
+6. Request/response validation
+
+---
 
 ### Sprint 1 (Week 1-2)
 **Focus:** Foundation & Basic API
