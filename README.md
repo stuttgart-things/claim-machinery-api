@@ -11,25 +11,10 @@ A Backstage-compatible API for discovering, managing, and rendering KCL-based Cr
 - 🐳 **OCI Support**: Load templates from OCI registries
 - ✅ **Parameter Validation**: Built-in parameter validation with custom rules
 
-## Quick Start
+## API
 
-### Prerequisites
-
-- Go 1.21+
-- PostgreSQL 14+
-- `kcl` CLI installed
-- Docker (optional)
-
-### Installation
-
-```bash
-git clone https://github.com/stuttgart-things/claim-machinery-api.git
-cd claim-machinery-api
-go mod download
-go run main.go
-```
-
-### API Endpoints
+<details open>
+<summary>API Endpoints</summary>
 
 ```bash
 # List all available claim templates
@@ -41,6 +26,63 @@ GET /api/v1/claim-templates/{name}
 # Render a claim with parameters
 POST /api/v1/claim-templates/{name}/order
 ```
+
+</details>
+
+<details open>
+<summary>1️⃣ Health Check</summary>
+
+```bash
+curl http://localhost:8080/health
+```
+
+</details>
+
+<details open>
+<summary>2️⃣ List All Templates</summary>
+
+```bash
+curl http://localhost:8080/api/v1/claim-templates
+```
+
+</details>
+
+<details open>
+<summary>3️⃣ Get Single Template Details</summary>
+
+```bash
+curl http://localhost:8080/api/v1/claim-templates/volumeclaim
+```
+
+</details>
+
+<details open>
+<summary>4️⃣ Render Template </summary>
+
+```bash
+curl -X POST http://localhost:8080/api/v1/claim-templates/volumeclaim/order \
+  -H "Content-Type: application/json" \
+  -d '{}'
+```
+
+```bash
+curl -X POST http://localhost:8080/api/v1/claim-templates/volumeclaim/order \
+  -H "Content-Type: application/json" \
+  -d '{"parameters": {"namespace": "production", "storage": "100Gi"}}'
+```
+
+</details>
+
+## DEV 
+
+```bash
+git clone https://github.com/stuttgart-things/claim-machinery-api.git
+cd claim-machinery-api
+go mod download
+go run main.go
+```
+
+
 
 ## Documentation
 
