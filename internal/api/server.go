@@ -1,7 +1,6 @@
 package api
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"net/http"
@@ -15,81 +14,88 @@ import (
 // Server represents the HTTP API server
 type Server struct {
 	router    *mux.Router
-	http      *http.Server
+	server    *http.Server
 	templates map[string]*claimtemplate.ClaimTemplate
 }
 
-// NewServer creates and initializes a new HTTP server
-func NewServer(templatesDir string) (*Server, error) {
-	// Load templates on server startup
-	templates, err := app.LoadAllTemplates(templatesDir)
-	if err != nil {
-		return nil, fmt.Errorf("failed to load templates: %w", err)
-	}
-
-	// Build template map for quick lookup
-	templateMap := make(map[string]*claimtemplate.ClaimTemplate)
-	for i, t := range templates {
-		templateMap[t.Metadata.Name] = templates[i]
-	}
-
+// NewServer creates a new API server with templates loaded from directory
+func NewServer(templateDir string) (*Server, error) {
 	s := &Server{
 		router:    mux.NewRouter(),
-		templates: templateMap,
+		templates: make(map[string]*claimtemplate.ClaimTemplate),
 	}
 
-	// Register routes
+	// Load templates from directory
+	templates, err := app.LoadAllTemplates(templateDir)
+	if err != nil {
+		return nil, err
+	}
+
+	// Index templates by name
+	for _, tmpl := range templates {
+		s.templates[tmpl.Metadata.Name] = tmpl
+	}
+
+	log.Printf("✅ Loaded %d templates from %s", len(s.templates), templateDir)
+	for name := range s.templates {
+		log.Printf("  - %s", name)
+	}
+
+	// Register routes and middleware
 	s.registerRoutes()
-
-	// Apply middleware
 	s.applyMiddleware()
-
-	// Setup HTTP server
-	s.http = &http.Server{
-		Addr:         ":8080",
-		Handler:      s.router,
-		ReadTimeout:  15 * time.Second,
-		WriteTimeout: 15 * time.Second,
-		IdleTimeout:  60 * time.Second,
-	}
 
 	return s, nil
 }
 
-// registerRoutes sets up all API routes
+// registerRoutes registers all API routes
 func (s *Server) registerRoutes() {
-	// Health check endpoint
+	// Health check
 	s.router.HandleFunc("/health", s.healthCheck).Methods(http.MethodGet)
 
-	// API endpoints
-	s.router.HandleFunc("/api/v1/claim-templates", s.listTemplates).Methods(http.MethodGet)
-	s.router.HandleFunc("/api/v1/claim-templates/{name}", s.getTemplate).Methods(http.MethodGet)
-	s.router.HandleFunc("/api/v1/claim-templates/{name}/order", s.orderClaim).Methods(http.MethodPost)
+	// API v1
+	api := s.router.PathPrefix("/api/v1").Subrouter()
+	api.HandleFunc("/claim-templates", s.listTemplates).Methods(http.MethodGet)
+	api.HandleFunc("/claim-templates/{name}", s.getTemplate).Methods(http.MethodGet)
+	api.HandleFunc("/claim-templates/{name}/order", s.orderClaim).Methods(http.MethodPost)
 }
 
 // applyMiddleware applies middleware to all routes
 func (s *Server) applyMiddleware() {
-	// Apply middleware in reverse order (last applied = first executed)
 	s.router.Use(loggingMiddleware)
 	s.router.Use(corsMiddleware)
 	s.router.Use(errorHandlerMiddleware)
 }
 
 // Start starts the HTTP server
-func (s *Server) Start() error {
-	log.Printf("🚀 HTTP API server starting on %s", s.http.Addr)
-	return s.http.ListenAndServe()
+func (s *Server) Start(addr string) error {
+	s.server = &http.Server{
+		Addr:    addr,
+		Handler: s.router,
+	}
+
+	log.Printf("🚀 Starting API server on http://%s", addr)
+	log.Printf("  📌 GET  /health")
+	log.Printf("  📌 GET  /api/v1/claim-templates")
+	log.Printf("  📌 GET  /api/v1/claim-templates/{name}")
+	log.Printf("  📌 POST /api/v1/claim-templates/{name}/order")
+
+	return s.server.ListenAndServe()
 }
 
-// Stop gracefully stops the HTTP server
-func (s *Server) Stop(ctx context.Context) error {
-	log.Println("⏹️  Shutting down HTTP server...")
-	return s.http.Shutdown(ctx)
+// Stop stops the HTTP server
+func (s *Server) Stop() error {
+	if s.server == nil {
+		return nil
+	}
+	return s.server.Close()
 }
 
 // healthCheck returns server health status
 func (s *Server) healthCheck(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	fmt.Fprintf(w, `{"status":"healthy","timestamp":"%s"}`, time.Now().Format(time.RFC3339))
+	if _, err := fmt.Fprintf(w, `{"status":"healthy","timestamp":"%s"}`, time.Now().Format(time.RFC3339)); err != nil {
+		log.Printf("error writing health response: %v", err)
+	}
 }

@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"time"
 
@@ -47,7 +48,9 @@ func (s *Server) listTemplates(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(response)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		log.Printf("error encoding response: %v", err)
+	}
 }
 
 // getTemplate returns a specific claim template by name
@@ -62,14 +65,18 @@ func (s *Server) getTemplate(w http.ResponseWriter, r *http.Request) {
 	tmpl, exists := s.templates[name]
 	if !exists {
 		w.WriteHeader(http.StatusNotFound)
-		json.NewEncoder(w).Encode(map[string]string{
+		if err := json.NewEncoder(w).Encode(map[string]string{
 			"error": "template not found",
-		})
+		}); err != nil {
+			log.Printf("error encoding error response: %v", err)
+		}
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(tmpl)
+	if err := json.NewEncoder(w).Encode(tmpl); err != nil {
+		log.Printf("error encoding template: %v", err)
+	}
 }
 
 // orderClaim renders a claim template with provided parameters
@@ -84,9 +91,11 @@ func (s *Server) orderClaim(w http.ResponseWriter, r *http.Request) {
 	tmpl, exists := s.templates[name]
 	if !exists {
 		w.WriteHeader(http.StatusNotFound)
-		json.NewEncoder(w).Encode(map[string]string{
+		if err := json.NewEncoder(w).Encode(map[string]string{
 			"error": "template not found",
-		})
+		}); err != nil {
+			log.Printf("error encoding error response: %v", err)
+		}
 		return
 	}
 
@@ -94,9 +103,11 @@ func (s *Server) orderClaim(w http.ResponseWriter, r *http.Request) {
 	var req OrderRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(map[string]string{
+		if err := json.NewEncoder(w).Encode(map[string]string{
 			"error": "invalid request body",
-		})
+		}); err != nil {
+			log.Printf("error encoding error response: %v", err)
+		}
 		return
 	}
 
@@ -110,9 +121,11 @@ func (s *Server) orderClaim(w http.ResponseWriter, r *http.Request) {
 	rendered, err := app.RenderTemplate(tmpl)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{
+		if err := json.NewEncoder(w).Encode(map[string]string{
 			"error": err.Error(),
-		})
+		}); err != nil {
+			log.Printf("error encoding error response: %v", err)
+		}
 		return
 	}
 
@@ -128,5 +141,7 @@ func (s *Server) orderClaim(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(response)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		log.Printf("error encoding response: %v", err)
+	}
 }

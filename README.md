@@ -11,14 +11,51 @@ A Backstage-compatible API for discovering, managing, and rendering KCL-based Cr
 - 🐳 **OCI Support**: Load templates from OCI registries
 - ✅ **Parameter Validation**: Built-in parameter validation with custom rules
 
-## Quick Start
+## API
 
-### Prerequisites
+<details open>
+<summary>1️⃣ Health Check</summary>
 
-- Go 1.21+
-- PostgreSQL 14+
-- `kcl` CLI installed
-- Docker (optional)
+```bash
+curl http://localhost:8080/health
+```
+
+</details>
+
+<details open>
+<summary>2️⃣ List All Templates</summary>
+
+```bash
+curl http://localhost:8080/api/v1/claim-templates
+```
+
+</details>
+
+<details open>
+<summary>3️⃣ Get Single Template Details</summary>
+
+```bash
+curl http://localhost:8080/api/v1/claim-templates/volumeclaim
+```
+
+</details>
+
+<details open>
+<summary>4️⃣ Render Template </summary>
+
+```bash
+curl -X POST http://localhost:8080/api/v1/claim-templates/volumeclaim/order \
+  -H "Content-Type: application/json" \
+  -d '{}'
+```
+
+```bash
+curl -X POST http://localhost:8080/api/v1/claim-templates/volumeclaim/order \
+  -H "Content-Type: application/json" \
+  -d '{"parameters": {"namespace": "production", "storage": "100Gi"}}'
+```
+
+</details>
 
 ### Installation
 
