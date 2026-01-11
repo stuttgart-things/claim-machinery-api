@@ -7,13 +7,26 @@ includes:
     taskfile: https://raw.githubusercontent.com/stuttgart-things/tasks/refs/heads/main/git/linting.yaml
   go:
     taskfile: https://raw.githubusercontent.com/stuttgart-things/tasks/refs/heads/main/go/lint.yaml
+  dagger:
+    taskfile: https://raw.githubusercontent.com/stuttgart-things/tasks/refs/heads/main/dagger/modules.yaml
 
 vars:
   PROJECT:
     sh: echo ${PROJECT}
-
+  DAGGER_MOUDLE_DIR: ./.dagger
+  SOURCE_CODE_DIR: "."
+  BIN_EXPORT_PATH: /tmp/go/build/{{ .PROJECT }}/
 
 tasks:
+  build-binary:
+    desc: Build project binary
+    cmds:
+      - |
+        dagger call -m {{ .DAGGER_MOUDLE_DIR }} build \
+        --src "{{ .SOURCE_CODE_DIR }}" \
+        --progress plain -vv \
+        export --path={{ .BIN_EXPORT_PATH }}
+
   do:
     desc: Select a task to run
     cmds:

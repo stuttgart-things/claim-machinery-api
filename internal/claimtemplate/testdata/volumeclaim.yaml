@@ -1,5 +1,5 @@
 ---
-apiVersion: sthings.io/v1alpha1
+apiVersion: resources.stuttgart-things.com/v1alpha1
 kind: ClaimTemplate
 metadata:
   name: volumeclaim
@@ -13,20 +13,35 @@ spec:
   source: oci://ghcr.io/stuttgart-things/claim-xplane-volumeclaim
   tag: 0.1.1
   parameters:
+    # Template selector
     - name: templateName
       title: Template
       type: string
-      default: demo
+      default: simple
       enum:
         - demo
         - database
         - simple
+
+    # Metadata
+    - name: name
+      title: Resource Name
+      type: string
+      default: simple-storage
+      pattern: "^[a-z0-9]([-a-z0-9]*[a-z0-9])?$"
 
     - name: namespace
       title: Namespace
       type: string
       required: true
       default: default
+      pattern: "^[a-z0-9]([-a-z0-9]*[a-z0-9])?$"
+
+    # PVC specific
+    - name: pvcName
+      title: PVC Name
+      type: string
+      default: app-data
       pattern: "^[a-z0-9]([-a-z0-9]*[a-z0-9])?$"
 
     - name: storage
@@ -40,3 +55,29 @@ spec:
       title: Storage Class
       type: string
       default: standard
+
+    - name: accessModes
+      title: Access Modes
+      type: array
+      items:
+        type: string
+      default:
+        - ReadWriteOnce
+
+    - name: volumeMode
+      title: Volume Mode
+      type: string
+      default: Filesystem
+      enum:
+        - Filesystem
+        - Block
+
+    - name: providerConfigRef
+      title: Provider Config
+      type: string
+      default: default-k8s
+
+    - name: description
+      title: Description
+      type: string
+      default: A simple persistent volume claim for application data
