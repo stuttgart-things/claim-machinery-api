@@ -1,0 +1,20 @@
+{
+  "name": "dagger",
+  "engineVersion": "v0.19.8",
+  "sdk": {
+    "source": "go"
+  },
+  "dependencies": [
+    {
+      "name": "go",
+      "source": "github.com/stuttgart-things/dagger/go@v0.70.0",
+      "pin": "65455222342fd3546dbe4971859a967d48bed70d"
+    },
+    {
+      "name": "kubernetes-deployment",
+      "source": "github.com/stuttgart-things/blueprints/kubernetes-deployment@v1.44.0",
+      "pin": "0a4e0169449a8ca818f36402e8d15d2ec445d9f8"
+    }
+  ],
+  "source": ".dagger"
+}
