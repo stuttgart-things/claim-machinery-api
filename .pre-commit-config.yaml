@@ -46,3 +46,5 @@ repos:
         args:
           - "--exclude-files"
           - "dev/ansible-run/README.md"
+          - "--exclude-files"
+          - "dagger.json"
