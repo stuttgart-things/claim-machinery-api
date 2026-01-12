@@ -91,6 +91,45 @@ go run main.go
 ```
 
 
+## Configuration
+
+- Templates directory (defaults to `internal/claimtemplate/testdata`):
+
+```bash
+export TEMPLATES_DIR=/path/to/your/templates
+go run main.go
+```
+
+- Equivalent via CLI flag (overrides env):
+
+```bash
+go run main.go --templates-dir /path/to/your/templates
+```
+
+- Additional templates via profile file (merge with directory):
+
+```yaml
+---
+templates:
+  - https://raw.githubusercontent.com/stuttgart-things/kcl/refs/heads/main/crossplane/claim-xplane-volumeclaim/templates/volumeclaim-simple.yaml
+  - /tmp/template123.yaml
+```
+
+```bash
+export TEMPLATE_PROFILE_PATH=/absolute/path/to/profile.yaml
+go run main.go
+```
+
+Or via CLI flag (overrides env):
+
+```bash
+go run main.go --template-profile-path /absolute/path/to/profile.yaml
+```
+
+Behavior:
+* Profile entries (URLs/paths) are validated; if they are unreachable, a warning is issued and the entry is skipped.
+* Templates from the profile and the directory are merged; duplicates are deduplicated based on metadata.name (the profile takes precedence).
+* On startup, the API displays the loaded sources and the final template names being used.
 
 ## Documentation
 

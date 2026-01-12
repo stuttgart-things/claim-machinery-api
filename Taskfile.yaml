@@ -17,6 +17,8 @@ vars:
   DAGGER_MOUDLE_DIR: ./.dagger
   SOURCE_CODE_DIR: "."
   BIN_EXPORT_PATH: /tmp/go/build/{{ .PROJECT }}
+  TEMPLATES_DIR: internal/claimtemplate/testdata
+  TEMPLATE_PROFILE_PATH: tests/profile.yaml
 
 tasks:
   build-test-api:
@@ -51,25 +53,36 @@ tasks:
         NC='\033[0m'
 
         echo -e "${BLUE}==============================================${NC}"
-        echo -e "${BLUE}  Build Complete: {{ .PROJECT }}${NC}"
-        echo -e "${BLUE}==============================================${NC}"
-        echo -e "${GREEN}• Binary:${NC}        $BIN_FILE"
-        echo -e "${GREEN}• Size:${NC}          $SIZE"
-        echo -e "${GREEN}• SHA256:${NC}        $SHASUM"
-        echo
-        echo -e "${YELLOW}Run locally:${NC}"
-        echo "PORT=8080 $BIN_FILE"
-        echo
-        echo -e "${YELLOW}Quick health check:${NC}"
-        echo "curl -sSf http://localhost:8080/health"
-        echo
-        echo -e "${YELLOW}Key endpoints:${NC}"
-        echo "- GET  /health"
-        echo "- GET  /api/v1/claim-templates"
-        echo "- GET  /api/v1/claim-templates/{name}"
-        echo "- POST /api/v1/claim-templates/{name}/order"
-        echo -e "${BLUE}==============================================${NC}"
 
+  run-local-go:
+    desc: Run API locally with go run (flags supported)
+    cmds:
+      - |
+        set -e
+        FLAGS="--templates-dir {{ .TEMPLATES_DIR }}"
+        if [ -n "{{ .TEMPLATE_PROFILE_PATH }}" ]; then
+          FLAGS="$FLAGS --template-profile-path {{ .TEMPLATE_PROFILE_PATH }}"
+        fi
+        echo "Running: go run main.go $FLAGS"
+        go run main.go $FLAGS
+
+  run-local-bin:
+    desc: Run exported binary locally (flags supported)
+    deps: [build-output-binary]
+    cmds:
+      - |
+        set -e
+        BIN_FILE="{{ .BIN_EXPORT_PATH }}/{{ .PROJECT }}"
+        if [ ! -x "$BIN_FILE" ]; then
+          echo "Binary not found at $BIN_FILE. Run 'task build-output-binary' first." >&2
+          exit 1
+        fi
+        FLAGS="--templates-dir {{ .TEMPLATES_DIR }}"
+        if [ -n "{{ .TEMPLATE_PROFILE_PATH }}" ]; then
+          FLAGS="$FLAGS --template-profile-path {{ .TEMPLATE_PROFILE_PATH }}"
+        fi
+        echo "Running: PORT=8080 $BIN_FILE $FLAGS"
+        PORT=8080 "$BIN_FILE" $FLAGS
   do:
     desc: Select a task to run
     cmds:
