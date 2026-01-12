@@ -1,0 +1,42 @@
+name: CI - Dagger Build & Test
+
+on:
+  push:
+    branches:
+      - main
+      - feature/*
+      - fix/*
+  pull_request:
+    branches:
+      - main
+      - feature/*
+      - fix/*
+
+jobs:
+  dagger-build-test:
+    name: Dagger build-and-test
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Dagger build-and-test
+        uses: dagger/dagger-for-github@v8.2.0
+        with:
+          module: ./.dagger
+          call: build-and-test --src . --progress plain
+          # Optional: enable Dagger Cloud traces for richer logs
+          cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
+
+      - name: Upload API logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dagger-logs
+          path: |
+            ~/.cache/dagger
+            /tmp/dagger-*.log

@@ -21,8 +21,11 @@ func (m *Dagger) Build(
 	// +default="main.go"
 	goMainFile string,
 	// +optional
-	// +default="main"
+	// +default="claim-machinery-api"
 	binName string,
+	// +optional
+	// +default="bookworm"
+	variant string,
 	// +optional
 	ldflags string,
 	// +optional
@@ -40,6 +43,7 @@ func (m *Dagger) Build(
 			BinName:     binName,
 			Ldflags:     ldflags,
 			PackageName: packageName,
+			Variant:     variant,
 		})
 	return binDir
 }

@@ -7,8 +7,8 @@
   "dependencies": [
     {
       "name": "go",
-      "source": "github.com/stuttgart-things/dagger/go@v0.70.0",
-      "pin": "65455222342fd3546dbe4971859a967d48bed70d"
+      "source": "github.com/stuttgart-things/dagger/go@v0.71.0",
+      "pin": "7c8aed11ba08645e6cba3513a3aae5f2945aadd1"
     },
     {
       "name": "kubernetes-deployment",
