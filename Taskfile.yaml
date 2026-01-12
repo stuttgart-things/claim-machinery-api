@@ -12,20 +12,63 @@ includes:
 
 vars:
   PROJECT:
-    sh: echo ${PROJECT}
+    sh: |
+      basename $(pwd)
   DAGGER_MOUDLE_DIR: ./.dagger
   SOURCE_CODE_DIR: "."
-  BIN_EXPORT_PATH: /tmp/go/build/{{ .PROJECT }}/
+  BIN_EXPORT_PATH: /tmp/go/build/{{ .PROJECT }}
 
 tasks:
-  build-binary:
+  build-test-api:
+    desc: Build and test api
+    cmds:
+      - |
+        dagger call -m {{ .DAGGER_MOUDLE_DIR }} build-and-test \
+        --src "{{ .SOURCE_CODE_DIR }}" \
+        --progress plain -vv
+
+  build-output-binary:
     desc: Build project binary
     cmds:
       - |
         dagger call -m {{ .DAGGER_MOUDLE_DIR }} build \
         --src "{{ .SOURCE_CODE_DIR }}" \
+        --bin-name="{{ .PROJECT }}" \
         --progress plain -vv \
         export --path={{ .BIN_EXPORT_PATH }}
+
+        ls -lta {{ .BIN_EXPORT_PATH }}
+        du -sh {{ .BIN_EXPORT_PATH }}/{{ .PROJECT }}
+
+        # Pretty summary for the user
+        BIN_FILE="{{ .BIN_EXPORT_PATH }}/{{ .PROJECT }}"
+        SIZE=$(du -sh "$BIN_FILE" | awk '{print $1}')
+        SHASUM=$(sha256sum "$BIN_FILE" | awk '{print $1}')
+
+        BLUE='\033[1;34m'
+        GREEN='\033[0;32m'
+        YELLOW='\033[1;33m'
+        NC='\033[0m'
+
+        echo -e "${BLUE}==============================================${NC}"
+        echo -e "${BLUE}  Build Complete: {{ .PROJECT }}${NC}"
+        echo -e "${BLUE}==============================================${NC}"
+        echo -e "${GREEN}• Binary:${NC}        $BIN_FILE"
+        echo -e "${GREEN}• Size:${NC}          $SIZE"
+        echo -e "${GREEN}• SHA256:${NC}        $SHASUM"
+        echo
+        echo -e "${YELLOW}Run locally:${NC}"
+        echo "PORT=8080 $BIN_FILE"
+        echo
+        echo -e "${YELLOW}Quick health check:${NC}"
+        echo "curl -sSf http://localhost:8080/health"
+        echo
+        echo -e "${YELLOW}Key endpoints:${NC}"
+        echo "- GET  /health"
+        echo "- GET  /api/v1/claim-templates"
+        echo "- GET  /api/v1/claim-templates/{name}"
+        echo "- POST /api/v1/claim-templates/{name}/order"
+        echo -e "${BLUE}==============================================${NC}"
 
   do:
     desc: Select a task to run
