@@ -1,0 +1,296 @@
+version: v1
+name: claim-machinery-api
+description: Backstage-Integrationsspezifikation für die Claim Machinery API
+
+runtime:
+  env:
+    - name: PORT
+      default: "8080"
+      desc: HTTP-Port der API
+    - name: TEMPLATES_DIR
+      default: internal/claimtemplate/testdata
+      desc: Verzeichnis mit Claim-Templates
+    - name: TEMPLATE_PROFILE_PATH
+      default: ""
+      desc: YAML-Profil mit zusätzlichen Template-Sources (Datei/URL)
+    - name: LOG_FORMAT
+      default: text
+      allowed: [text, json]
+      desc: Log-Ausgabeformat
+    - name: ENABLE_TEST_ROUTES
+      default: "0"
+      desc: Aktiviert Testroute /__test/panic für e2e-Tests (nicht in Prod nutzen)
+  headers:
+    requestId:
+      name: X-Request-ID
+      behavior: "eingehend übernommen oder serverseitig erzeugt; wird immer im Response-Header gesetzt"
+      cors:
+        allowHeaders: [Content-Type, Authorization, X-Request-ID]
+        exposeHeaders: [X-Request-ID]
+
+api:
+  basePath: /
+  endpoints:
+    - id: health
+      method: GET
+      path: /health
+      desc: Healthcheck
+      responses:
+        - code: 200
+          contentType: application/json
+          example:
+            status: healthy
+            timestamp: 2026-01-12T00:00:00Z
+      status:
+        implemented: true
+        tested: dagger
+
+    - id: version
+      method: GET
+      path: /version
+      desc: Build-/Version-Metadaten
+      responses:
+        - code: 200
+          contentType: application/json
+          example:
+            version: dev
+            commit: none
+            buildDate: unknown
+      status:
+        implemented: true
+        tested: dagger
+
+    - id: listTemplates
+      method: GET
+      path: /api/v1/claim-templates
+      desc: Liste aller verfügbaren Claim-Templates
+      responses:
+        - code: 200
+          contentType: application/json
+          schema:
+            apiVersion: string
+            kind: string
+            items:
+              type: array
+              items: ClaimTemplate
+          example:
+            apiVersion: api.claim-machinery.io/v1alpha1
+            kind: ClaimTemplateList
+            items:
+              - metadata:
+                  name: volumeclaim
+                spec: {}
+      status:
+        implemented: true
+        tested: dagger
+
+    - id: getTemplate
+      method: GET
+      path: /api/v1/claim-templates/{name}
+      params:
+        - in: path
+          name: name
+          required: true
+      desc: Details eines Claim-Templates abrufen
+      responses:
+        - code: 200
+          contentType: application/json
+          schema: ClaimTemplate
+        - code: 404
+          contentType: application/json
+          example: { error: "template not found" }
+      status:
+        implemented: true
+        tested: manual
+
+    - id: orderClaim
+      method: POST
+      path: /api/v1/claim-templates/{name}/order
+      params:
+        - in: path
+          name: name
+          required: true
+      requestBody:
+        contentType: application/json
+        schema:
+          parameters: object
+        example:
+          parameters:
+            namespace: default
+            storage: 10Gi
+      responses:
+        - code: 200
+          contentType: application/json
+          schema:
+            apiVersion: string
+            kind: string
+            metadata: object
+            rendered: string # YAML (als String)
+          example:
+            apiVersion: api.claim-machinery.io/v1alpha1
+            kind: OrderResponse
+            metadata:
+              name: volumeclaim-order-20260112
+              timestamp: 2026-01-12T19:00:00Z
+            rendered: |
+              apiVersion: stuttgart.things/v1
+              kind: VolumeClaim
+              metadata:
+                name: example
+        - code: 400
+          contentType: application/json
+          example: { error: "invalid request body" }
+        - code: 404
+          contentType: application/json
+          example: { error: "template not found" }
+        - code: 500
+          contentType: application/json
+          example: { error: "internal server error", requestId: "abc123" }
+      status:
+        implemented: true
+        tested: manual
+
+  errors:
+    panicRecovery:
+      enabledBy: ENABLE_TEST_ROUTES=1
+      path: /__test/panic
+      method: GET
+      response:
+        code: 500
+        contentType: application/json
+        body:
+          error: internal server error
+          requestId: string
+      status:
+        implemented: true
+        tested: dagger
+
+schemas:
+  ClaimTemplate:
+    type: object
+    properties:
+      metadata:
+        type: object
+        properties:
+          name: { type: string }
+      spec:
+        type: object
+
+backstage:
+  proxy:
+    recommended: true
+    desc: Optional über Backstage-Backend proxien (auth später einfacher erweiterbar)
+    configExample: |
+      proxy:
+        '/claim-api':
+          target: 'http://claim-machinery-api.default.svc.cluster.local:8080'
+  action:
+    id: stthings:order-claim
+    input:
+      templateName: { type: string }
+      parameters: { type: object, additionalProperties: true }
+    call:
+      method: POST
+      path: /api/v1/claim-templates/{templateName}/order
+      bodyFrom: parameters
+    outputs:
+      - type: file
+        path: claim.yaml
+        from: $.rendered
+    backendExample: |
+      // packages/backend/src/plugins/scaffolder/actions/orderClaim.ts
+      createTemplateAction({
+        id: 'stthings:order-claim',
+        schema: {
+          input: {
+            type: 'object',
+            properties: {
+              templateName: { type: 'string' },
+              parameters: { type: 'object' },
+            },
+            required: ['templateName'],
+          },
+        },
+        async handler(ctx) {
+          const baseUrl = process.env.CLAIM_API_URL;
+          const res = await fetch(`${baseUrl}/api/v1/claim-templates/${ctx.input.templateName}/order`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-Request-ID': ctx.taskId },
+            body: JSON.stringify({ parameters: ctx.input.parameters ?? {} }),
+          });
+          if (!res.ok) throw new Error(`order failed: ${res.status}`);
+          const data = await res.json();
+          await ctx.createTemporaryFile('claim.yaml', data.rendered);
+          ctx.output('renderedPath', 'claim.yaml');
+        },
+      });
+    scaffolderExample: |
+      apiVersion: scaffolder.backstage.io/v1beta3
+      kind: Template
+      metadata:
+        name: order-claim
+        title: Order Claim
+      spec:
+        owner: team-a
+        type: service
+        parameters:
+          - title: Claim
+            properties:
+              templateName:
+                title: Template
+                type: string
+                enum:
+                  - volumeclaim
+              parameters:
+                title: Parameters
+                type: object
+        steps:
+          - id: order
+            name: Order Claim
+            action: stthings:order-claim
+            input:
+              templateName: ${{ parameters.templateName }}
+              parameters: ${{ parameters.parameters }}
+        output:
+          renderedPath: ${{ steps.order.output.renderedPath }}
+  frontend:
+    picker:
+      name: ClaimTemplatePicker
+      desc: UI-Feld zur Auswahl eines Templates über /api/v1/claim-templates
+      implementationHint: Custom Field Extension, die den Namen aus der Liste lädt
+      example: |
+        // Pseudocode für eine React-Field-Extension
+        const ClaimTemplatePicker = () => {
+          const [items, setItems] = useState([]);
+          useEffect(() => {
+            fetch('/claim-api/api/v1/claim-templates')
+              .then(r => r.json())
+              .then(d => setItems(d.items.map(i => i.metadata.name)));
+          }, []);
+          return <Select options={items} />;
+        };
+
+status:
+  alignment:
+    - item: GET /health
+      implemented: true
+      tested: dagger
+    - item: GET /version
+      implemented: true
+      tested: dagger
+    - item: GET /api/v1/claim-templates
+      implemented: true
+      tested: dagger
+    - item: GET /api/v1/claim-templates/{name}
+      implemented: true
+      tested: manual
+    - item: POST /api/v1/claim-templates/{name}/order
+      implemented: true
+      tested: manual
+    - item: GET /__test/panic (nur Test)
+      implemented: true
+      tested: dagger
+  notes:
+    - "Order-Endpoint liefert YAML im Feld 'rendered' (String)."
+    - "X-Request-ID wird für alle Antworten gesetzt und in Logs/Fehlern korreliert."
+    - "OpenAPI ist unter /openapi.yaml abrufbar; Redoc unter /docs."
