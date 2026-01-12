@@ -29,6 +29,29 @@ POST /api/v1/claim-templates/{name}/order
 
 </details>
 
+<details>
+<summary>🔢 Version</summary>
+
+```bash
+curl http://localhost:8080/version
+# {"version":"dev","commit":"none","buildDate":"unknown"}
+```
+
+</details>
+
+<details open>
+<summary>📜 OpenAPI & Docs</summary>
+
+```bash
+# OpenAPI spec (served from docs/openapi.yaml if present)
+curl http://localhost:8080/openapi.yaml
+
+# Redoc UI
+open http://localhost:8080/docs
+```
+
+</details>
+
 <details open>
 <summary>1️⃣ Health Check</summary>
 
@@ -130,6 +153,30 @@ Behavior:
 * Profile entries (URLs/paths) are validated; if they are unreachable, a warning is issued and the entry is skipped.
 * Templates from the profile and the directory are merged; duplicates are deduplicated based on metadata.name (the profile takes precedence).
 * On startup, the API displays the loaded sources and the final template names being used.
+
+### Server Port
+
+Set a custom port with the `PORT` environment variable (default `8080`):
+
+```bash
+PORT=9090 go run main.go
+```
+
+### Logging
+
+- Standard: Text-Logs mit Methode, Pfad, Status, Dauer, Remote-IP und User-Agent
+- JSON-Logs aktivieren:
+
+```bash
+LOG_FORMAT=json go run main.go
+```
+
+### Request-ID & Korrelation
+
+- Eingehende `X-Request-ID` wird übernommen; sonst generiert der Server eine ID.
+- Antwort enthält immer Header `X-Request-ID` (CORS: exposed).
+- Logs (Text/JSON) enthalten `requestId` zur Korrelation.
+- Bei Panics liefert der Server JSON mit `{"error":"internal server error","requestId":"..."}` und loggt strukturiert.
 
 ## Documentation
 

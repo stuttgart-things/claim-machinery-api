@@ -1,0 +1,69 @@
+openapi: 3.0.3
+info:
+  title: Claim Machinery API
+  version: "0.1.0"
+servers:
+  - url: http://localhost:8080
+paths:
+  /health:
+    get:
+      summary: Health check
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json: {}
+  /api/v1/claim-templates:
+    get:
+      summary: List claim templates
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json: {}
+  /api/v1/claim-templates/{name}:
+    get:
+      summary: Get template by name
+      parameters:
+        - in: path
+          name: name
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json: {}
+        '404':
+          description: Not Found
+          content:
+            application/json: {}
+  /api/v1/claim-templates/{name}/order:
+    post:
+      summary: Render template with parameters
+      parameters:
+        - in: path
+          name: name
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json: {}
+        '400':
+          description: Bad Request
+          content:
+            application/json: {}
+        '404':
+          description: Not Found
+          content:
+            application/json: {}

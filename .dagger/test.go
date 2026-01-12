@@ -4,6 +4,7 @@ import (
 	"context"
 	"dagger/dagger/internal/dagger"
 	"fmt"
+	"strconv"
 )
 
 func (m *Dagger) BuildAndTest(
@@ -36,6 +37,11 @@ func (m *Dagger) BuildAndTest(
 	// +default="8080"
 	port string,
 ) (string, error) {
+	// normalize port for container exposure
+	expPort, errConv := strconv.Atoi(port)
+	if errConv != nil || expPort <= 0 {
+		expPort = 8080
+	}
 	// Build the binary
 	binDir := m.Build(
 		ctx,
@@ -56,8 +62,11 @@ func (m *Dagger) BuildAndTest(
 		From("debian:bookworm-slim").
 		WithDirectory("/app", src).
 		WithDirectory("/app/bin", binDir).
-		WithExposedPort(8080).
+		WithExposedPort(expPort).
 		WithEnvVariable("PORT", port).
+		WithEnvVariable("ENABLE_TEST_ROUTES", "1").
+		// Uncomment to see JSON logs from API during tests
+		// WithEnvVariable("LOG_FORMAT", "json").
 		WithWorkdir("/app").
 		WithEntrypoint([]string{"./bin/" + binName}).
 		AsService()
@@ -96,7 +105,7 @@ func (m *Dagger) BuildAndTest(
 			echo ""
 
 			# Run health check
-			echo "${BLUE}[1/2] Testing /health endpoint${NC}"
+			echo "${BLUE}[1/3] Testing /health endpoint${NC}"
 			HEALTH_RESPONSE=$(curl -s http://api:%s/health)
 			if echo "$HEALTH_RESPONSE" | grep -q "healthy"; then
 				echo "${GREEN}✓ Health check passed${NC}"
@@ -108,17 +117,68 @@ func (m *Dagger) BuildAndTest(
 			echo ""
 
 			# Run list templates endpoint
-			echo "${BLUE}[2/2] Testing /api/v1/claim-templates endpoint${NC}"
+			echo "${BLUE}[2/3] Testing /api/v1/claim-templates endpoint${NC}"
 			TEMPLATES_RESPONSE=$(curl -s http://api:%s/api/v1/claim-templates)
 			TEMPLATE_COUNT=$(echo "$TEMPLATES_RESPONSE" | grep -o '"name"' | wc -l)
 			echo "${GREEN}✓ Templates endpoint passed${NC}"
 			echo "  Found $TEMPLATE_COUNT templates"
 			echo ""
 
+			# Version endpoint + Request-ID propagation
+			echo "${BLUE}[3/4] Testing /version endpoint and X-Request-ID${NC}"
+			REQ_ID="dagger-test-reqid-1"
+			VERSION_RESPONSE=$(curl -s -H "X-Request-ID: $REQ_ID" http://api:%s/version)
+			if echo "$VERSION_RESPONSE" | grep -q '"version"'; then
+				echo "${GREEN}✓ Version endpoint responded${NC}"
+				echo "  Response: $VERSION_RESPONSE"
+			else
+				echo "${RED}✗ Version endpoint failed${NC}"
+				exit 1
+			fi
+			# Check header echo
+			RESP_HEADERS=$(curl -s -D - -o /dev/null -H "X-Request-ID: $REQ_ID" http://api:%s/health)
+			if echo "$RESP_HEADERS" | grep -i '^X-Request-ID:' | grep -q "$REQ_ID"; then
+				echo "${GREEN}✓ X-Request-ID propagated in response headers${NC}"
+			else
+				echo "${RED}✗ X-Request-ID not found in response headers${NC}"
+				echo "$RESP_HEADERS" | sed -n '1,20p'
+				exit 1
+			fi
+			echo ""
+
+			# Panic simulation to verify JSON error body with requestId
+			echo "${BLUE}[4/4] Testing panic recovery JSON and requestId${NC}"
+			REQ_ID2="dagger-test-reqid-2"
+			# Capture headers and body without failing on 500
+			HFILE=$(mktemp)
+			BFILE=$(mktemp)
+			curl -s -D "$HFILE" -o "$BFILE" -H "X-Request-ID: $REQ_ID2" "http://api:%s/__test/panic?msg=boom"
+			STATUS=$(head -1 "$HFILE" | awk '{print $2}')
+			if [ "$STATUS" != "500" ]; then
+				echo "${RED}✗ Expected HTTP 500, got $STATUS${NC}"
+				echo "--- Headers ---"
+				sed -n '1,20p' "$HFILE"
+				echo "--- Body ---"
+				sed -n '1,40p' "$BFILE"
+				exit 1
+			fi
+			if ! grep -qi '^X-Request-ID: ' "$HFILE"; then
+				echo "${RED}✗ X-Request-ID header missing on panic response${NC}"
+				sed -n '1,20p' "$HFILE"
+				exit 1
+			fi
+			if ! grep -q "$REQ_ID2" "$BFILE"; then
+				echo "${RED}✗ requestId not present in JSON error body${NC}"
+				sed -n '1,40p' "$BFILE"
+				exit 1
+			fi
+			echo "${GREEN}✓ Panic recovery returned JSON with requestId and 500${NC}"
+			echo ""
+
 			echo "${BLUE}========================================${NC}"
 			echo "${GREEN}  All tests passed! 🎉${NC}"
 			echo "${BLUE}========================================${NC}"
-			`, port, port, port),
+			`, port, port, port, port, port, port),
 		}).
 		Stdout(ctx)
 
