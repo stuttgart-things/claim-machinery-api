@@ -2,7 +2,7 @@
 apiVersion: resources.stuttgart-things.com/v1alpha1
 kind: ClaimTemplate
 metadata:
-  name: volumeclaim
+  name: volumeclaim-simple
   title: Crossplane Volume Claim
   description: Creates a persistent volume claim via Crossplane
   tags:

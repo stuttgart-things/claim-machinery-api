@@ -56,6 +56,38 @@ func NewServer(templatesDir string) (*Server, error) {
 	return s, nil
 }
 
+// NewServerWithTemplates creates a server from an explicit list of templates.
+// This is useful when combining multiple sources (e.g., directory + profile file).
+func NewServerWithTemplates(templates []*claimtemplate.ClaimTemplate) (*Server, error) {
+	// Build template map for quick lookup
+	templateMap := make(map[string]*claimtemplate.ClaimTemplate)
+	for i, t := range templates {
+		templateMap[t.Metadata.Name] = templates[i]
+	}
+
+	s := &Server{
+		router:    mux.NewRouter(),
+		templates: templateMap,
+	}
+
+	// Register routes
+	s.registerRoutes()
+
+	// Apply middleware
+	s.applyMiddleware()
+
+	// Setup HTTP server
+	s.http = &http.Server{
+		Addr:         ":8080",
+		Handler:      s.router,
+		ReadTimeout:  15 * time.Second,
+		WriteTimeout: 15 * time.Second,
+		IdleTimeout:  60 * time.Second,
+	}
+
+	return s, nil
+}
+
 // registerRoutes sets up all API routes
 func (s *Server) registerRoutes() {
 	// Health check endpoint
