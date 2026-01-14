@@ -21,6 +21,16 @@ vars:
   TEMPLATE_PROFILE_PATH: tests/profile.yaml
 
 tasks:
+  lint:
+    desc: Run Go lint via Dagger module
+    cmds:
+      - |
+        dagger call -m {{ .DAGGER_MOUDLE_DIR }} lint \
+          --src "{{ .SOURCE_CODE_DIR }}" \
+          --progress plain
+
+
+
   build-test-api:
     desc: Build and test api
     cmds:
