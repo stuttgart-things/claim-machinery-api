@@ -5,6 +5,7 @@ import (
 	"dagger/dagger/internal/dagger"
 )
 
+// Build builds the Go application binary with specified parameters
 func (m *Dagger) Build(
 	ctx context.Context,
 	src *dagger.Directory,
@@ -32,7 +33,6 @@ func (m *Dagger) Build(
 	// +default=""
 	packageName string,
 ) *dagger.Directory {
-
 	binDir := dag.Go().BuildBinary(
 		src,
 		dagger.GoBuildBinaryOpts{

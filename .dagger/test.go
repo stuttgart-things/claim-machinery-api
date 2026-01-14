@@ -5,6 +5,7 @@ import (
 	"dagger/dagger/internal/dagger"
 	"fmt"
 	"strconv"
+	"strings"
 )
 
 func (m *Dagger) BuildAndTest(
@@ -187,4 +188,48 @@ func (m *Dagger) BuildAndTest(
 	}
 
 	return testResults, nil
+}
+
+// Test runs `go test` for the provided source directory
+func (m *Dagger) Test(
+	ctx context.Context,
+	src *dagger.Directory,
+	// Go version to use for testing
+	// +optional
+	// +default="1.25.5"
+	goVersion string,
+	// Test arguments to pass to `go test`
+	// +optional
+	// +default="./..."
+	testArg string,
+) (string, error) {
+	return dag.Go().Test(
+		ctx,
+		src,
+		dagger.GoTestOpts{GoVersion: goVersion, TestArg: testArg},
+	)
+}
+
+// TestReport runs `go test` and returns the output as a file for export
+func (m *Dagger) TestReport(
+	ctx context.Context,
+	src *dagger.Directory,
+	// +optional
+	// +default="1.25.5"
+	goVersion string,
+	// +optional
+	// +default="./..."
+	testArg string,
+) (*dagger.File, error) {
+	out, err := dag.Go().Test(ctx, src, dagger.GoTestOpts{GoVersion: goVersion, TestArg: testArg})
+	// Normalize output to ensure non-empty content on error
+	if err != nil && out == "" {
+		out = err.Error()
+	}
+	// Guard: ensure trailing newline
+	if !strings.HasSuffix(out, "\n") {
+		out += "\n"
+	}
+	dir := dag.Directory().WithNewFile("/test-output.txt", out)
+	return dir.File("/test-output.txt"), nil
 }

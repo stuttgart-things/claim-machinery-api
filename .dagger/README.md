@@ -60,6 +60,46 @@ dagger call -m .dagger build \
 
 ---
 
+### `lint`
+Run static Go lint and export the report.
+
+**Usage:**
+```bash
+dagger call -m .dagger lint \
+  --src . \
+  export --path=/tmp/lint-report.txt \
+  --progress plain
+```
+
+---
+
+### `test`
+Run `go test` with configurable `goVersion` and `testArg`. Returns the raw output as a string.
+
+**Usage:**
+```bash
+dagger call -m .dagger test \
+  --src . \
+  --go-version 1.24.4 \
+  --test-arg "./..." \
+  --progress plain
+```
+
+### `test-report`
+Run `go test` and export the output as a file (useful for CI artifacts).
+
+**Usage:**
+```bash
+dagger call -m .dagger test-report \
+  --src . \
+  --go-version 1.24.4 \
+  --test-arg "./..." \
+  export --path=/tmp/test-output.txt \
+  --progress plain
+```
+
+---
+
 ## 🚀 Quick Start
 
 ### Run Tests (Recommended for CI/CD)
@@ -124,6 +164,7 @@ The `build-and-test` function provides colored, formatted output:
 ├── main.go          # Module definition
 ├── build.go         # Build function implementation
 ├── test.go          # BuildAndTest function implementation
+├── lint.go          # Lint function implementation (optional split)
 ├── dagger.gen.go    # Generated code (auto-generated)
 ├── go.mod           # Go module definition
 └── README.md        # This file
