@@ -71,16 +71,20 @@ curl http://localhost:8080/api/v1/claim-templates
 </details>
 
 <details open>
-<summary>3️⃣ Get Single Template Details</summary>
+<parameter name="summary">3️⃣ Get Single Template Details</summary>
 
 ```bash
 curl http://localhost:8080/api/v1/claim-templates/volumeclaim
 ```
 
+```bash
+curl http://localhost:8080/api/v1/claim-templates/harborproject
+```
+
 </details>
 
 <details open>
-<summary>4️⃣ Render Template </summary>
+<parameter name="summary">4️⃣ Render Template - VolumeClass Example</summary>
 
 ```bash
 curl -X POST http://localhost:8080/api/v1/claim-templates/volumeclaim/order \
@@ -100,6 +104,49 @@ curl -X POST http://localhost:8080/api/v1/claim-templates/volumeclaim/order \
 curl -s -X POST http://localhost:8080/api/v1/claim-templates/volumeclaim/order \
   -H "Content-Type: application/json" \
   -d '{"parameters": {"namespace": "production", "storage": "100Gi"}}' | jq -r '.rendered'
+```
+
+</details>
+
+<details open>
+<parameter name="summary">5️⃣ Render Template - HarborProject Example</summary>
+
+**With default parameters:**
+
+```bash
+curl -X POST http://localhost:8080/api/v1/claim-templates/harborproject/order \
+  -H "Content-Type: application/json" \
+  -d '{}'
+```
+
+**With custom parameters:**
+
+```bash
+curl -X POST http://localhost:8080/api/v1/claim-templates/harborproject/order \
+  -H "Content-Type: application/json" \
+  -d '{
+    "parameters": {
+      "projectName": "my-app-project",
+      "harborURL": "https://harbor.idp.kubermatic.sva.dev",
+      "storageQuota": 10737418240,
+      "harborInsecure": false,
+      "providerConfigRef": "default"
+    }
+  }'
+```
+
+**Extract YAML from response:**
+
+```bash
+curl -s -X POST http://localhost:8080/api/v1/claim-templates/harborproject/order \
+  -H "Content-Type: application/json" \
+  -d '{
+    "parameters": {
+      "projectName": "my-app-project",
+      "harborURL": "https://harbor.idp.kubermatic.sva.dev",
+      "storageQuota": 10737418240
+    }
+  }' | jq -r '.rendered'
 ```
 
 </details>

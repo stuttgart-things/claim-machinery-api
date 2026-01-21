@@ -37,10 +37,17 @@ func BuildParameterValues(t *claimtemplate.ClaimTemplate) map[string]interface{}
 	return params
 }
 
-// RenderTemplate renders a claim template using KCL
-func RenderTemplate(t *claimtemplate.ClaimTemplate) (string, error) {
+// RenderTemplate renders a claim template using KCL with optional custom parameters
+func RenderTemplate(t *claimtemplate.ClaimTemplate, customParams ...map[string]interface{}) (string, error) {
 	// Build parameter values from template defaults
 	params := BuildParameterValues(t)
+
+	// Merge custom parameters if provided
+	if len(customParams) > 0 && customParams[0] != nil {
+		for key, value := range customParams[0] {
+			params[key] = value
+		}
+	}
 
 	// Render using KCL from OCI source
 	result := render.RenderKCLFromOCI(t.Spec.Source, t.Spec.Tag, params)
