@@ -106,8 +106,8 @@ func (s *Server) orderClaim(w http.ResponseWriter, r *http.Request) {
 		params[key] = value
 	}
 
-	// Render template
-	rendered, err := app.RenderTemplate(tmpl)
+	// Render template with custom parameters
+	rendered, err := app.RenderTemplate(tmpl, params)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(map[string]string{
