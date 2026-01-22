@@ -6,7 +6,7 @@ metadata:
   description: Backstage-compatible API for discovering, managing, and rendering KCL-based Crossplane claim templates
   annotations:
     github.com/project-slug: stuttgart-things/claim-machinery-api
-    backstage.io/techdocs-ref: dir:.
+    backstage.io/techdocs-ref: url:https://github.com/stuttgart-things/claim-machinery-api/tree/main
     backstage.io/source-location: url:https://github.com/stuttgart-things/claim-machinery-api
   tags:
     - api
