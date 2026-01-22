@@ -1,0 +1,58 @@
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: claim-machinery-api
+  description: Backstage-compatible API for discovering, managing, and rendering KCL-based Crossplane claim templates
+  annotations:
+    github.com/project-slug: stuttgart-things/claim-machinery-api
+    backstage.io/techdocs-ref: dir:.
+    backstage.io/source-location: url:https://github.com/stuttgart-things/claim-machinery-api
+  tags:
+    - api
+    - crossplane
+    - kcl
+    - claims
+    - backstage
+    - golang
+  links:
+    - url: https://github.com/stuttgart-things/claim-machinery-api
+      title: GitHub Repository
+      icon: github
+    - url: http://localhost:8080/docs
+      title: API Documentation (Redoc)
+      icon: docs
+spec:
+  type: service
+  lifecycle: production
+  owner: guests
+  system: platform-engineering
+  providesApis:
+    - claim-machinery-api
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: claim-machinery-api
+  description: REST API for Crossplane claim template management
+  annotations:
+    github.com/project-slug: stuttgart-things/claim-machinery-api
+  tags:
+    - rest
+    - openapi
+    - crossplane
+spec:
+  type: openapi
+  lifecycle: production
+  owner: guests
+  system: platform-engineering
+  definition:
+    $text: https://github.com/stuttgart-things/claim-machinery-api/blob/main/docs/openapi.yaml
+---
+apiVersion: backstage.io/v1alpha1
+kind: System
+metadata:
+  name: platform-engineering
+  description: Platform Engineering tooling and infrastructure
+spec:
+  owner: guests
