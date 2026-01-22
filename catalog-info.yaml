@@ -25,7 +25,7 @@ metadata:
 spec:
   type: service
   lifecycle: production
-  owner: guests
+  owner: user:patrick-hermann-sva
   system: platform-engineering
   providesApis:
     - claim-machinery-api
@@ -44,7 +44,7 @@ metadata:
 spec:
   type: openapi
   lifecycle: production
-  owner: guests
+  owner: user:patrick-hermann-sva
   system: platform-engineering
   definition:
     $text: https://github.com/stuttgart-things/claim-machinery-api/blob/main/docs/openapi.yaml
@@ -55,4 +55,4 @@ metadata:
   name: platform-engineering
   description: Platform Engineering tooling and infrastructure
 spec:
-  owner: guests
+  owner: user:patrick-hermann-sva
