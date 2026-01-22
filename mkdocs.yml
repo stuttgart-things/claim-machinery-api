@@ -6,7 +6,5 @@ nav:
   - API Examples: api-examples.md
   - Testing Guide: TESTING_GUIDE.md
 
-theme:
-  name: material
-  palette:
-    primary: indigo
+plugins:
+  - techdocs-core
