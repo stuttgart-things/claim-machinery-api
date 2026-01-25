@@ -8,8 +8,13 @@
 *.so
 *.dylib
 *.task*
+
 # Test binary, built with `go test -c`
 *.test
+
+# CLI binaries in tests
+tests/cli/claim-cli
+tests/cli-api/claim-cli-api
 
 # Code coverage profiles and other test artifacts
 *.out

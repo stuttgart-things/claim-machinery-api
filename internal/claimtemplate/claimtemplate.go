@@ -38,6 +38,14 @@ type Parameter struct {
 	Required    bool        `yaml:"required,omitempty" json:"required,omitempty"`
 	Enum        []string    `yaml:"enum,omitempty" json:"enum,omitempty"`
 
+	// Hidden parameters are not shown in forms but use their default value
+	// Useful for platform-defined values that users shouldn't change
+	Hidden bool `yaml:"hidden,omitempty" json:"hidden,omitempty"`
+
+	// AllowRandom adds a "Random" option to enum fields that picks a random value
+	// Only applies to parameters with enum values
+	AllowRandom bool `yaml:"allowRandom,omitempty" json:"allowRandom,omitempty"`
+
 	// Validation
 	Pattern   string `yaml:"pattern,omitempty" json:"pattern,omitempty"`
 	MinLength *int   `yaml:"minLength,omitempty" json:"minLength,omitempty"`

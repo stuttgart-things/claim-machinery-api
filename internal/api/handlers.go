@@ -100,11 +100,17 @@ func (s *Server) orderClaim(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Debug: log received parameters
+	debugParams("Received from request", req.Parameters)
+
 	// Build parameter values (merge request params with defaults)
 	params := app.BuildParameterValues(tmpl)
 	for key, value := range req.Parameters {
 		params[key] = value
 	}
+
+	// Debug: log merged parameters
+	debugParams("After merge", params)
 
 	// Render template with custom parameters
 	rendered, err := app.RenderTemplate(tmpl, params)

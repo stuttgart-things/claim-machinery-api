@@ -2,3 +2,6 @@
 templates:
   - https://raw.githubusercontent.com/stuttgart-things/kcl/refs/heads/main/crossplane/claim-xplane-volumeclaim/templates/volumeclaim-simple.yaml
   - https://raw.githubusercontent.com/stuttgart-things/kcl/refs/heads/main/crossplane/claim-xplane-harborproject/templates/harborproject-simple.yaml
+  #- https://raw.githubusercontent.com/stuttgart-things/kcl/refs/heads/main/crossplane/claim-xplane-vspherevm/templates/vspherevm-simple.yaml
+  - /home/sthings/projects/kcl/crossplane/claim-xplane-vspherevm/templates/vspherevm-simple.yaml
+  - /home/sthings/projects/kcl/crossplane/claim-xplane-vspherevm/templates/vspherevm-labul.yaml
