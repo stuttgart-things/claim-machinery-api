@@ -3,6 +3,7 @@ site_description: Backstage-compatible API for Crossplane claim templates
 
 nav:
   - Home: index.md
+  - Template Specification: template-spec.md
   - API Examples: api-examples.md
   - Testing Guide: TESTING_GUIDE.md
 
