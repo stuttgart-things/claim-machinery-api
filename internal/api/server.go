@@ -130,6 +130,9 @@ func (s *Server) applyMiddleware() {
 
 // Start starts the HTTP server
 func (s *Server) Start() error {
+	if IsDebugEnabled() {
+		log.Println("🐛 Debug mode enabled (DEBUG=1)")
+	}
 	log.Printf("🚀 HTTP API server starting on %s", s.http.Addr)
 	return s.http.ListenAndServe()
 }

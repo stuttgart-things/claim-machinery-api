@@ -25,7 +25,8 @@ metadata:
 spec:
   type: service
   lifecycle: production
-  owner: user:patrick-hermann-sva
+  owner: platform-team
+  #owner: user:patrick-hermann-sva
   system: platform-engineering
   providesApis:
     - claim-machinery-api

@@ -160,6 +160,81 @@ go mod download
 go run main.go
 ```
 
+### Debug Mode
+
+Enable debug logging to see parameter processing:
+
+```bash
+DEBUG=1 go run main.go
+```
+
+### CLI Tools (MVP)
+
+Two interactive CLI tools are available in `/tests` for testing and development:
+
+<details>
+<summary>🖥️ Local KCL CLI (tests/cli)</summary>
+
+Renders templates directly using KCL (requires `kcl` CLI installed locally).
+
+**Build:**
+
+```bash
+go build -o tests/cli/claim-cli ./tests/cli/
+```
+
+**Usage:**
+
+```bash
+# Default profile (tests/profile.yaml)
+./tests/cli/claim-cli
+
+# Custom profile
+TEMPLATE_PROFILE_PATH=/path/to/profile.yaml ./tests/cli/claim-cli
+```
+
+**Features:**
+- Interactive template selection
+- Dynamic form based on template parameters
+- Enum fields as dropdowns
+- Default values pre-filled
+- Saves rendered YAML to `/tmp/{template}-{name}.yaml`
+
+</details>
+
+<details>
+<summary>🌐 API-Connected CLI (tests/cli-api)</summary>
+
+Connects to the running API server - no local KCL required.
+
+**Build:**
+
+```bash
+go build -o tests/cli-api/claim-cli-api ./tests/cli-api/
+```
+
+**Usage:**
+
+```bash
+# Start the API first
+go run main.go
+
+# Then run CLI (default: localhost:8080)
+./tests/cli-api/claim-cli-api
+
+# Custom API URL
+CLAIM_API_URL=http://api.example.com:8080 ./tests/cli-api/claim-cli-api
+```
+
+**Features:**
+- Same interactive UX as local CLI
+- Lightweight client (no KCL dependency)
+- Works with remote API servers
+- Good for testing API changes
+
+</details>
+
+Both CLIs support an "Enter-Enter" workflow - defaults are pre-selected so you can quickly render with minimal input.
 
 ## Configuration
 
