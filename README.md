@@ -236,6 +236,63 @@ CLAIM_API_URL=http://api.example.com:8080 ./tests/cli-api/claim-cli-api
 
 Both CLIs support an "Enter-Enter" workflow - defaults are pre-selected so you can quickly render with minimal input.
 
+## Development & CI/CD
+
+### Dagger Build Pipeline
+
+This project uses [Dagger](https://dagger.io) for reproducible builds, tests, and container image creation.
+
+**Available functions:**
+- `build-and-test` - Compile binary and run integration tests
+- `build` - Build Go binary only
+- `build-image` - Build container image with ko (with optional Trivy scanning)
+- `scan-image` - Scan container images for vulnerabilities
+- `lint` - Run Go linting
+- `test` - Run Go tests
+
+**Quick start:**
+
+```bash
+# Run tests
+dagger call -m .dagger build-and-test --src . --progress plain
+
+# Build container image and push to ttl.sh
+dagger call -m .dagger build-image \
+  --src . \
+  --repo ttl.sh/claim-machinery-api-test \
+  --push true \
+  --scan true \
+  --progress plain
+
+# Scan existing image
+dagger call -m .dagger scan-image \
+  --image-ref ttl.sh/my-app:latest \
+  --severity "HIGH,CRITICAL" \
+  export --path /tmp/scan-report.json
+```
+
+📚 **Full documentation:** [.dagger/README.md](.dagger/README.md)
+
+### Task Automation
+
+Common tasks are available via [Taskfile](https://taskfile.dev):
+
+```bash
+# Interactive task selector
+task do
+
+# Build and push image
+task build-push-image
+
+# Scan an image
+task scan-image
+
+# Run API locally
+task run-local-go
+```
+
+See [Taskfile.yaml](Taskfile.yaml) for all available tasks.
+
 ## Configuration
 
 - Templates directory (defaults to `internal/claimtemplate/testdata`):

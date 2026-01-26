@@ -1,0 +1,100 @@
+---
+name: Build, Push & Scan Container Image
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build-scan-push:
+    name: Build, Scan & Push Image
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set image repository
+        id: image-repo
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            TAG="${GITHUB_REF#refs/tags/}"
+            echo "repo=ghcr.io/${{ github.repository }}" >> $GITHUB_OUTPUT
+            echo "tag=${TAG}" >> $GITHUB_OUTPUT
+          else
+            # For non-tag pushes, use ttl.sh for testing
+            RANDOM_TAG=$(openssl rand -hex 6)
+            echo "repo=ttl.sh/claim-machinery-api-${RANDOM_TAG}" >> $GITHUB_OUTPUT
+            echo "tag=latest" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build and push image with scan
+        uses: dagger/dagger-for-github@v8.2.0
+        with:
+          module: ./.dagger
+          call: |
+            build-image --src . \
+              --repo "${{ steps.image-repo.outputs.repo }}" \
+              --push "true" \
+              --scan "true" \
+              --scan-severity "HIGH,CRITICAL" \
+              --progress plain
+          cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Export scan report
+        uses: dagger/dagger-for-github@v8.2.0
+        with:
+          module: ./.dagger
+          call: |
+            scan-image --image-ref "${{ steps.image-repo.outputs.repo }}:${{ steps.image-repo.outputs.tag }}" \
+              --severity "HIGH,CRITICAL" \
+              --progress plain \
+              export --path /tmp/trivy-scan-report.json
+          cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
+
+      - name: Upload scan report
+        uses: actions/upload-artifact@v6
+        with:
+          name: trivy-scan-report
+          path: /tmp/trivy-scan-report.json
+          retention-days: 30
+
+      - name: Check for vulnerabilities
+        run: |
+          if command -v jq &> /dev/null; then
+            VULN_COUNT=$(jq '[.Results[]?.Vulnerabilities[]?] | length' /tmp/trivy-scan-report.json 2>/dev/null || echo "0")
+            echo "Found $VULN_COUNT HIGH/CRITICAL vulnerabilities"
+
+            if [ "$VULN_COUNT" -gt 0 ]; then
+              echo "::warning::Image contains $VULN_COUNT HIGH/CRITICAL vulnerabilities"
+              jq -r '.Results[]? | select(.Vulnerabilities) | "\(.Target): \(.Vulnerabilities | length) vulnerabilities"' \
+                /tmp/trivy-scan-report.json
+            else
+              echo "✅ No HIGH/CRITICAL vulnerabilities found!"
+            fi
+          fi
+
+      - name: Image Summary
+        run: |
+          echo "## 🎉 Container Image Build Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Image:** \`${{ steps.image-repo.outputs.repo }}:${{ steps.image-repo.outputs.tag }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Pull command:**" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+          echo "docker pull ${{ steps.image-repo.outputs.repo }}:${{ steps.image-repo.outputs.tag }}" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [[ "${{ github.ref }}" != refs/tags/* ]]; then
+            echo "⏰ **Note:** ttl.sh images expire after 1 hour" >> $GITHUB_STEP_SUMMARY
+          fi

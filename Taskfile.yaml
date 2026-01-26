@@ -29,8 +29,6 @@ tasks:
           --src "{{ .SOURCE_CODE_DIR }}" \
           --progress plain
 
-
-
   build-test-api:
     desc: Build and test api
     cmds:
@@ -63,6 +61,90 @@ tasks:
         NC='\033[0m'
 
         echo -e "${BLUE}==============================================${NC}"
+
+  build-scan-image:
+    desc: Build, push and scan container image
+    cmds:
+      - |
+        RANDOM_TAG=$(openssl rand -hex 6)
+        REPO_NAME="ttl.sh/{{ .PROJECT }}-${RANDOM_TAG}"
+
+        echo "🔨 Building and pushing to: ${REPO_NAME}"
+        echo ""
+
+        # Build and push directly to ttl.sh (no auth needed)
+        IMAGE_REF=$(dagger call -m {{ .DAGGER_MOUDLE_DIR }} build-image \
+          --src "{{ .SOURCE_CODE_DIR }}" \
+          --repo "$REPO_NAME" \
+          --push="true" \
+          --scan="true" \
+          --scan-severity="HIGH,CRITICAL" \
+          --progress plain)
+
+        echo ""
+        echo "✅ Image pushed: $IMAGE_REF"
+        echo ""
+        echo "🔍 Generating scan report..."
+        echo ""
+
+        # Export scan report
+        dagger call -m {{ .DAGGER_MOUDLE_DIR }} scan-image \
+          --image-ref "$IMAGE_REF" \
+          --severity "HIGH,CRITICAL" \
+          --progress plain \
+          export --path=/tmp/trivy-scan-{{ .PROJECT }}.json
+
+        echo ""
+        echo "✅ Build and scan complete!"
+        echo "📦 Image: $IMAGE_REF"
+        echo "📦 Pull: docker pull $IMAGE_REF"
+        echo "📄 Scan Report: /tmp/trivy-scan-{{ .PROJECT }}.json"
+        echo "⏰ Expires: 1 hour (default ttl.sh)"
+
+        # Show summary
+        if command -v jq &> /dev/null; then
+          echo ""
+          echo "📊 Vulnerability Summary:"
+          jq -r '.Results[]? | select(.Vulnerabilities) | "\(.Target): \(.Vulnerabilities | length) vulnerabilities"' \
+            /tmp/trivy-scan-{{ .PROJECT }}.json 2>/dev/null || echo "✅ No HIGH/CRITICAL vulnerabilities found!"
+        fi
+
+  scan-image:
+    desc: Scan container image for vulnerabilities with Trivy
+    cmds:
+      - |
+        # Prompt for image reference with gum
+        IMAGE_REF=$(gum input --placeholder "Enter image reference (e.g., ttl.sh/my-app:latest)" \
+          --prompt "📦 Image to scan: " \
+          --width 80)
+
+        if [ -z "$IMAGE_REF" ]; then
+          echo "❌ Error: No image reference provided"
+          exit 1
+        fi
+
+        echo ""
+        echo "🔍 Scanning image: $IMAGE_REF"
+        echo ""
+
+        # Scan the image with Trivy
+        dagger call -m {{ .DAGGER_MOUDLE_DIR }} scan-image \
+          --image-ref "$IMAGE_REF" \
+          --severity "HIGH,CRITICAL" \
+          --progress plain \
+          export --path=/tmp/trivy-scan-{{ .PROJECT }}.json
+
+        echo ""
+        echo "✅ Scan complete!"
+        echo "📄 Report: /tmp/trivy-scan-{{ .PROJECT }}.json"
+
+        # Show summary if jq is available
+        if command -v jq &> /dev/null; then
+          echo ""
+          echo "📊 Vulnerability Summary:"
+          jq -r '.Results[]? | select(.Vulnerabilities) | "\(.Target): \(.Vulnerabilities | length) vulnerabilities"' \
+            /tmp/trivy-scan-{{ .PROJECT }}.json 2>/dev/null || echo "No vulnerabilities found or report format changed"
+        fi
 
   run-local-go:
     desc: Run API locally with go run (flags supported)
