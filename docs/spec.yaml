@@ -1,29 +1,29 @@
 version: v1
 name: claim-machinery-api
-description: Backstage-Integrationsspezifikation für die Claim Machinery API
+description: Backstage integration specification for the Claim Machinery API
 
 runtime:
   env:
     - name: PORT
       default: "8080"
-      desc: HTTP-Port der API
+      desc: HTTP port of the API
     - name: TEMPLATES_DIR
       default: internal/claimtemplate/testdata
-      desc: Verzeichnis mit Claim-Templates
+      desc: Directory containing claim templates
     - name: TEMPLATE_PROFILE_PATH
       default: ""
-      desc: YAML-Profil mit zusätzlichen Template-Sources (Datei/URL)
+      desc: YAML profile with additional template sources (file/URL)
     - name: LOG_FORMAT
       default: text
       allowed: [text, json]
-      desc: Log-Ausgabeformat
+      desc: Log output format
     - name: ENABLE_TEST_ROUTES
       default: "0"
-      desc: Aktiviert Testroute /__test/panic für e2e-Tests (nicht in Prod nutzen)
+      desc: Enables test route /__test/panic for e2e tests (do not use in production)
   headers:
     requestId:
       name: X-Request-ID
-      behavior: "eingehend übernommen oder serverseitig erzeugt; wird immer im Response-Header gesetzt"
+      behavior: "inherited from incoming request or generated server-side; always set in response header"
       cors:
         allowHeaders: [Content-Type, Authorization, X-Request-ID]
         exposeHeaders: [X-Request-ID]
@@ -48,7 +48,7 @@ api:
     - id: version
       method: GET
       path: /version
-      desc: Build-/Version-Metadaten
+      desc: Build/version metadata
       responses:
         - code: 200
           contentType: application/json
@@ -63,7 +63,7 @@ api:
     - id: listTemplates
       method: GET
       path: /api/v1/claim-templates
-      desc: Liste aller verfügbaren Claim-Templates
+      desc: List of all available claim templates
       responses:
         - code: 200
           contentType: application/json
@@ -91,7 +91,7 @@ api:
         - in: path
           name: name
           required: true
-      desc: Details eines Claim-Templates abrufen
+      desc: Retrieve details of a claim template
       responses:
         - code: 200
           contentType: application/json
@@ -125,7 +125,7 @@ api:
             apiVersion: string
             kind: string
             metadata: object
-            rendered: string # YAML (als String)
+            rendered: string # YAML (as string)
           example:
             apiVersion: api.claim-machinery.io/v1alpha1
             kind: OrderResponse
@@ -179,7 +179,7 @@ schemas:
 backstage:
   proxy:
     recommended: true
-    desc: Optional über Backstage-Backend proxien (auth später einfacher erweiterbar)
+    desc: Optionally proxy through Backstage backend (easier to extend auth later)
     configExample: |
       proxy:
         '/claim-api':
@@ -256,8 +256,8 @@ backstage:
   frontend:
     picker:
       name: ClaimTemplatePicker
-      desc: UI-Feld zur Auswahl eines Templates über /api/v1/claim-templates
-      implementationHint: Custom Field Extension, die den Namen aus der Liste lädt
+      desc: UI field for selecting a template via /api/v1/claim-templates
+      implementationHint: Custom Field Extension that loads the name from the list
       example: |
         // Pseudocode für eine React-Field-Extension
         const ClaimTemplatePicker = () => {
@@ -287,10 +287,10 @@ status:
     - item: POST /api/v1/claim-templates/{name}/order
       implemented: true
       tested: manual
-    - item: GET /__test/panic (nur Test)
+    - item: GET /__test/panic (test only)
       implemented: true
       tested: dagger
   notes:
-    - "Order-Endpoint liefert YAML im Feld 'rendered' (String)."
-    - "X-Request-ID wird für alle Antworten gesetzt und in Logs/Fehlern korreliert."
-    - "OpenAPI ist unter /openapi.yaml abrufbar; Redoc unter /docs."
+    - "Order endpoint returns YAML in the 'rendered' field (string)."
+    - "X-Request-ID is set for all responses and correlated in logs/errors."
+    - "OpenAPI is available at /openapi.yaml; Redoc at /docs."

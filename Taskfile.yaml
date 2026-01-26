@@ -109,28 +109,23 @@ tasks:
             /tmp/trivy-scan-{{ .PROJECT }}.json 2>/dev/null || echo "✅ No HIGH/CRITICAL vulnerabilities found!"
         fi
 
-  scan-image:
-    desc: Scan container image for vulnerabilities with Trivy
+  scan-image-interactive:
+    desc: Scan container image for vulnerabilities with Trivy (interactive prompts)
+    vars:
+      IMAGE_REF:
+        sh: 'gum input --placeholder "Enter image reference (e.g., ttl.sh/my-app:latest)" --header "IMAGE TO SCAN"'
+      SEVERITY:
+        sh: 'gum input --placeholder "Severity levels" --value "HIGH,CRITICAL" --header "SEVERITY"'
     cmds:
       - |
-        # Prompt for image reference with gum
-        IMAGE_REF=$(gum input --placeholder "Enter image reference (e.g., ttl.sh/my-app:latest)" \
-          --prompt "📦 Image to scan: " \
-          --width 80)
-
-        if [ -z "$IMAGE_REF" ]; then
-          echo "❌ Error: No image reference provided"
-          exit 1
-        fi
-
         echo ""
-        echo "🔍 Scanning image: $IMAGE_REF"
+        echo "🔍 Scanning image: {{ .IMAGE_REF }}"
+        echo "⚠️  Severity: {{ .SEVERITY }}"
         echo ""
 
-        # Scan the image with Trivy
         dagger call -m {{ .DAGGER_MOUDLE_DIR }} scan-image \
-          --image-ref "$IMAGE_REF" \
-          --severity "HIGH,CRITICAL" \
+          --image-ref "{{ .IMAGE_REF }}" \
+          --severity "{{ .SEVERITY }}" \
           --progress plain \
           export --path=/tmp/trivy-scan-{{ .PROJECT }}.json
 
@@ -143,7 +138,37 @@ tasks:
           echo ""
           echo "📊 Vulnerability Summary:"
           jq -r '.Results[]? | select(.Vulnerabilities) | "\(.Target): \(.Vulnerabilities | length) vulnerabilities"' \
-            /tmp/trivy-scan-{{ .PROJECT }}.json 2>/dev/null || echo "No vulnerabilities found or report format changed"
+            /tmp/trivy-scan-{{ .PROJECT }}.json 2>/dev/null || echo "✅ No vulnerabilities found!"
+        fi
+
+  scan-image:
+    desc: Scan container image for vulnerabilities with Trivy (non-interactive, vars only)
+    vars:
+      IMAGE_REF: '{{ .IMAGE_REF | default "ttl.sh/example:latest" }}'
+      SEVERITY: '{{ .SEVERITY | default "HIGH,CRITICAL" }}'
+    cmds:
+      - |
+        echo ""
+        echo "🔍 Scanning image: {{ .IMAGE_REF }}"
+        echo "⚠️  Severity: {{ .SEVERITY }}"
+        echo ""
+
+        dagger call -m {{ .DAGGER_MOUDLE_DIR }} scan-image \
+          --image-ref "{{ .IMAGE_REF }}" \
+          --severity "{{ .SEVERITY }}" \
+          --progress plain \
+          export --path=/tmp/trivy-scan-{{ .PROJECT }}.json
+
+        echo ""
+        echo "✅ Scan complete!"
+        echo "📄 Report: /tmp/trivy-scan-{{ .PROJECT }}.json"
+
+        # Show summary if jq is available
+        if command -v jq &> /dev/null; then
+          echo ""
+          echo "📊 Vulnerability Summary:"
+          jq -r '.Results[]? | select(.Vulnerabilities) | "\(.Target): \(.Vulnerabilities | length) vulnerabilities"' \
+            /tmp/trivy-scan-{{ .PROJECT }}.json 2>/dev/null || echo "✅ No vulnerabilities found!"
         fi
 
   run-local-go:
