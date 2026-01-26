@@ -52,14 +52,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Export scan report
-        uses: dagger/dagger-for-github@v8.2.0
-        with:
-          module: ./.dagger
-          call: scan-image --image-ref "${{ steps.build-image.outputs.stdout }}" --severity "HIGH,CRITICAL" export --path /tmp/trivy-scan-report.json
-          cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
-
       - name: Upload scan report
+        if: false  # Scan report from BuildImage is not exported separately
         uses: actions/upload-artifact@v6
         with:
           name: trivy-scan-report
@@ -67,6 +61,7 @@ jobs:
           retention-days: 30
 
       - name: Check for vulnerabilities
+        if: false  # Vulnerability check requires scan report export
         run: |
           if command -v jq &> /dev/null; then
             VULN_COUNT=$(jq '[.Results[]?.Vulnerabilities[]?] | length' /tmp/trivy-scan-report.json 2>/dev/null || echo "0")
