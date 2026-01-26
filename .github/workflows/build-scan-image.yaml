@@ -44,8 +44,7 @@ jobs:
               --repo "${{ steps.image-repo.outputs.repo }}" \
               --push "true" \
               --scan "true" \
-              --scan-severity "HIGH,CRITICAL" \
-              --progress plain
+              --scan-severity "HIGH,CRITICAL"
           cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -57,7 +56,6 @@ jobs:
           call: |
             scan-image --image-ref "${{ steps.image-repo.outputs.repo }}:${{ steps.image-repo.outputs.tag }}" \
               --severity "HIGH,CRITICAL" \
-              --progress plain \
               export --path /tmp/trivy-scan-report.json
           cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
 
