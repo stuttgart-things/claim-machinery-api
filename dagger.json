@@ -1,19 +1,24 @@
 {
   "name": "dagger",
-  "engineVersion": "v0.19.8",
+  "engineVersion": "v0.19.10",
   "sdk": {
     "source": "go"
   },
   "dependencies": [
     {
       "name": "go",
-      "source": "github.com/stuttgart-things/dagger/go@v0.71.0",
-      "pin": "7c8aed11ba08645e6cba3513a3aae5f2945aadd1"
+      "source": "github.com/stuttgart-things/dagger/go@v0.72.0",
+      "pin": "488630cce28f59ee0bf3f1612a75e988012225f8"
     },
     {
       "name": "kubernetes-deployment",
       "source": "github.com/stuttgart-things/blueprints/kubernetes-deployment@v1.44.0",
       "pin": "0a4e0169449a8ca818f36402e8d15d2ec445d9f8"
+    },
+    {
+      "name": "trivy",
+      "source": "github.com/stuttgart-things/dagger/trivy@v0.72.0",
+      "pin": "488630cce28f59ee0bf3f1612a75e988012225f8"
     }
   ],
   "source": ".dagger"
