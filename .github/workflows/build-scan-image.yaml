@@ -39,12 +39,7 @@ jobs:
         uses: dagger/dagger-for-github@v8.2.0
         with:
           module: ./.dagger
-          call: |
-            build-image --src . \
-              --repo "${{ steps.image-repo.outputs.repo }}" \
-              --push "true" \
-              --scan "true" \
-              --scan-severity "HIGH,CRITICAL"
+          call: build-image --src . --repo "${{ steps.image-repo.outputs.repo }}" --push "true" --scan "true" --scan-severity "HIGH,CRITICAL" --progress plain
           cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -53,10 +48,7 @@ jobs:
         uses: dagger/dagger-for-github@v8.2.0
         with:
           module: ./.dagger
-          call: |
-            scan-image --image-ref "${{ steps.image-repo.outputs.repo }}:${{ steps.image-repo.outputs.tag }}" \
-              --severity "HIGH,CRITICAL" \
-              export --path /tmp/trivy-scan-report.json
+          call: scan-image --image-ref "${{ steps.image-repo.outputs.repo }}:${{ steps.image-repo.outputs.tag }}" --severity "HIGH,CRITICAL" export --path /tmp/trivy-scan-report.json
           cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
 
       - name: Upload scan report
