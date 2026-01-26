@@ -4,17 +4,24 @@ A Backstage-compatible API for discovering, managing, and rendering KCL-based Cr
 
 ## Features
 
-- 📋 **Template Discovery**: Browse and search KCL-based Crossplane claim templates
-- 🎯 **Template Details**: Get schema information including parameters, validation rules, and UI hints
-- 🔧 **Claim Rendering**: Render claims with custom parameters using KCL
-- 🏗️ **Backstage Integration**: Native support for Backstage Software Catalog
-- 🐳 **OCI Support**: Load templates from OCI registries
-- ✅ **Parameter Validation**: Built-in parameter validation with custom rules
+<details>
+<summary><strong>Feature Overview</strong></summary>
+
+| Feature | Description |
+|---------|-------------|
+| Template Discovery | Browse and search KCL-based Crossplane claim templates |
+| Template Details | Get schema information including parameters, validation rules, and UI hints |
+| Claim Rendering | Render claims with custom parameters using KCL |
+| Backstage Integration | Native support for Backstage Software Catalog |
+| OCI Support | Load templates from OCI registries |
+| Parameter Validation | Built-in parameter validation with custom rules |
+
+</details>
 
 ## API
 
-<details open>
-<summary>API Endpoints</summary>
+<details>
+<summary><strong>API Endpoints Overview</strong></summary>
 
 ```bash
 # List all available claim templates
@@ -30,7 +37,7 @@ POST /api/v1/claim-templates/{name}/order
 </details>
 
 <details>
-<summary>🔢 Version</summary>
+<summary><strong>Version Endpoint</strong></summary>
 
 ```bash
 curl http://localhost:8080/version
@@ -39,8 +46,8 @@ curl http://localhost:8080/version
 
 </details>
 
-<details open>
-<summary>📜 OpenAPI & Docs</summary>
+<details>
+<summary><strong>OpenAPI Specification and Documentation</strong></summary>
 
 ```bash
 # OpenAPI spec (served from docs/openapi.yaml if present)
@@ -52,8 +59,8 @@ open http://localhost:8080/docs
 
 </details>
 
-<details open>
-<summary>1️⃣ Health Check</summary>
+<details>
+<summary><strong>Health Check</strong></summary>
 
 ```bash
 curl http://localhost:8080/health
@@ -61,8 +68,8 @@ curl http://localhost:8080/health
 
 </details>
 
-<details open>
-<summary>2️⃣ List All Templates</summary>
+<details>
+<summary><strong>List All Templates</strong></summary>
 
 ```bash
 curl http://localhost:8080/api/v1/claim-templates
@@ -70,8 +77,8 @@ curl http://localhost:8080/api/v1/claim-templates
 
 </details>
 
-<details open>
-<parameter name="summary">3️⃣ Get Single Template Details</summary>
+<details>
+<summary><strong>Get Single Template Details</strong></summary>
 
 ```bash
 curl http://localhost:8080/api/v1/claim-templates/volumeclaim
@@ -83,8 +90,8 @@ curl http://localhost:8080/api/v1/claim-templates/harborproject
 
 </details>
 
-<details open>
-<parameter name="summary">4️⃣ Render Template - VolumeClass Example</summary>
+<details>
+<summary><strong>Render Template - VolumeClaim Example</strong></summary>
 
 ```bash
 curl -X POST http://localhost:8080/api/v1/claim-templates/volumeclaim/order \
@@ -108,8 +115,8 @@ curl -s -X POST http://localhost:8080/api/v1/claim-templates/volumeclaim/order \
 
 </details>
 
-<details open>
-<parameter name="summary">5️⃣ Render Template - HarborProject Example</summary>
+<details>
+<summary><strong>Render Template - HarborProject Example</strong></summary>
 
 **With default parameters:**
 
@@ -151,7 +158,10 @@ curl -s -X POST http://localhost:8080/api/v1/claim-templates/harborproject/order
 
 </details>
 
-## DEV
+## Development
+
+<details>
+<summary><strong>Getting Started</strong></summary>
 
 ```bash
 git clone https://github.com/stuttgart-things/claim-machinery-api.git
@@ -160,7 +170,10 @@ go mod download
 go run main.go
 ```
 
-### Debug Mode
+</details>
+
+<details>
+<summary><strong>Debug Mode</strong></summary>
 
 Enable debug logging to see parameter processing:
 
@@ -168,12 +181,14 @@ Enable debug logging to see parameter processing:
 DEBUG=1 go run main.go
 ```
 
+</details>
+
 ### CLI Tools (MVP)
 
-Two interactive CLI tools are available in `/tests` for testing and development:
+Two interactive CLI tools are available in `/tests` for testing and development.
 
 <details>
-<summary>🖥️ Local KCL CLI (tests/cli)</summary>
+<summary><strong>Local KCL CLI (tests/cli)</strong></summary>
 
 Renders templates directly using KCL (requires `kcl` CLI installed locally).
 
@@ -203,7 +218,7 @@ TEMPLATE_PROFILE_PATH=/path/to/profile.yaml ./tests/cli/claim-cli
 </details>
 
 <details>
-<summary>🌐 API-Connected CLI (tests/cli-api)</summary>
+<summary><strong>API-Connected CLI (tests/cli-api)</strong></summary>
 
 Connects to the running API server - no local KCL required.
 
@@ -236,19 +251,23 @@ CLAIM_API_URL=http://api.example.com:8080 ./tests/cli-api/claim-cli-api
 
 Both CLIs support an "Enter-Enter" workflow - defaults are pre-selected so you can quickly render with minimal input.
 
-## Development & CI/CD
+## CI/CD
 
-### Dagger Build Pipeline
+<details>
+<summary><strong>Dagger Build Pipeline</strong></summary>
 
 This project uses [Dagger](https://dagger.io) for reproducible builds, tests, and container image creation.
 
 **Available functions:**
-- `build-and-test` - Compile binary and run integration tests
-- `build` - Build Go binary only
-- `build-image` - Build container image with ko (with optional Trivy scanning)
-- `scan-image` - Scan container images for vulnerabilities
-- `lint` - Run Go linting
-- `test` - Run Go tests
+
+| Function | Description |
+|----------|-------------|
+| `build-and-test` | Compile binary and run integration tests |
+| `build` | Build Go binary only |
+| `build-image` | Build container image with ko (with optional Trivy scanning) |
+| `scan-image` | Scan container images for vulnerabilities |
+| `lint` | Run Go linting |
+| `test` | Run Go tests |
 
 **Quick start:**
 
@@ -271,9 +290,12 @@ dagger call -m .dagger scan-image \
   export --path /tmp/scan-report.json
 ```
 
-📚 **Full documentation:** [.dagger/README.md](.dagger/README.md)
+Full documentation: [.dagger/README.md](.dagger/README.md)
 
-### Task Automation
+</details>
+
+<details>
+<summary><strong>Task Automation</strong></summary>
 
 Common tasks are available via [Taskfile](https://taskfile.dev):
 
@@ -293,22 +315,32 @@ task run-local-go
 
 See [Taskfile.yaml](Taskfile.yaml) for all available tasks.
 
+</details>
+
 ## Configuration
 
-- Templates directory (defaults to `internal/claimtemplate/testdata`):
+<details>
+<summary><strong>Templates Directory</strong></summary>
+
+Configure the templates directory (defaults to `internal/claimtemplate/testdata`):
 
 ```bash
 export TEMPLATES_DIR=/path/to/your/templates
 go run main.go
 ```
 
-- Equivalent via CLI flag (overrides env):
+Equivalent via CLI flag (overrides env):
 
 ```bash
 go run main.go --templates-dir /path/to/your/templates
 ```
 
-- Additional templates via profile file (merge with directory):
+</details>
+
+<details>
+<summary><strong>Template Profile</strong></summary>
+
+Add additional templates via profile file (merged with directory):
 
 ```yaml
 ---
@@ -328,12 +360,15 @@ Or via CLI flag (overrides env):
 go run main.go --template-profile-path /absolute/path/to/profile.yaml
 ```
 
-Behavior:
-* Profile entries (URLs/paths) are validated; if they are unreachable, a warning is issued and the entry is skipped.
-* Templates from the profile and the directory are merged; duplicates are deduplicated based on metadata.name (the profile takes precedence).
-* On startup, the API displays the loaded sources and the final template names being used.
+**Behavior:**
+- Profile entries (URLs/paths) are validated; unreachable entries trigger a warning and are skipped
+- Templates from the profile and directory are merged; duplicates are deduplicated based on `metadata.name` (profile takes precedence)
+- On startup, the API displays loaded sources and final template names
 
-### Server Port
+</details>
+
+<details>
+<summary><strong>Server Port</strong></summary>
 
 Set a custom port with the `PORT` environment variable (default `8080`):
 
@@ -341,27 +376,42 @@ Set a custom port with the `PORT` environment variable (default `8080`):
 PORT=9090 go run main.go
 ```
 
-### Logging
+</details>
 
-- Standard: Text-Logs mit Methode, Pfad, Status, Dauer, Remote-IP und User-Agent
-- JSON-Logs aktivieren:
+<details>
+<summary><strong>Logging</strong></summary>
+
+- Standard: Text logs with method, path, status, duration, remote IP, and user agent
+- Enable JSON logs:
 
 ```bash
 LOG_FORMAT=json go run main.go
 ```
 
-### Request-ID & Korrelation
+</details>
 
-- Eingehende `X-Request-ID` wird übernommen; sonst generiert der Server eine ID.
-- Antwort enthält immer Header `X-Request-ID` (CORS: exposed).
-- Logs (Text/JSON) enthalten `requestId` zur Korrelation.
-- Bei Panics liefert der Server JSON mit `{"error":"internal server error","requestId":"..."}` und loggt strukturiert.
+<details>
+<summary><strong>Request ID and Correlation</strong></summary>
+
+- Incoming `X-Request-ID` header is preserved; otherwise the server generates an ID
+- Response always includes the `X-Request-ID` header (CORS: exposed)
+- Logs (text/JSON) include `requestId` for correlation
+- On panics, the server returns JSON with `{"error":"internal server error","requestId":"..."}` and logs structured output
+
+</details>
 
 ## Documentation
 
-- [SPEC.md](./SPEC.md) - Full technical specification
-- [ROADMAP.md](./ROADMAP.md) - Project roadmap and tracking
-- [API Examples](./docs/api-examples.md) - API usage examples
+<details>
+<summary><strong>Additional Resources</strong></summary>
+
+| Document | Description |
+|----------|-------------|
+| [SPEC.md](./SPEC.md) | Full technical specification |
+| [ROADMAP.md](./ROADMAP.md) | Project roadmap and tracking |
+| [API Examples](./docs/api-examples.md) | API usage examples |
+
+</details>
 
 ## License
 
