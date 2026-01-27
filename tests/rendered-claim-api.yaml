@@ -1,0 +1,180 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: claim-machinery-api
+  namespace: claim-machinery
+  labels:
+    app.kubernetes.io/name: claim-machinery-api
+    app.kubernetes.io/instance: claim-machinery-api
+    app.kubernetes.io/component: api
+    app.kubernetes.io/part-of: claim-machinery
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: claim-machinery-api
+  namespace: claim-machinery
+  labels:
+    app.kubernetes.io/name: claim-machinery-api
+    app.kubernetes.io/instance: claim-machinery-api
+    app.kubernetes.io/component: api
+    app.kubernetes.io/part-of: claim-machinery
+data:
+  TEMPLATES_DIR: /app/config/
+  PORT: '8080'
+  LOG_FORMAT: text
+  TEMPLATE_PROFILE_PATH: /app/config/profile.yaml
+  CUSTOM_VAR: value
+  ANOTHER_VAR: another-value
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: claim-machinery-api-profile
+  namespace: claim-machinery
+  labels:
+    app.kubernetes.io/name: claim-machinery-api
+    app.kubernetes.io/instance: claim-machinery-api
+    app.kubernetes.io/component: api
+    app.kubernetes.io/part-of: claim-machinery
+data:
+  profile.yaml: |
+    templates:
+      - https://raw.githubusercontent.com/stuttgart-things/kcl/refs/heads/main/crossplane/claim-xplane-volumeclaim/templates/volumeclaim-simple.yaml
+      - https://raw.githubusercontent.com/stuttgart-things/kcl/refs/heads/main/crossplane/claim-xplane-harborproject/templates/harborproject-simple.yaml
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: claim-machinery-api
+  namespace: claim-machinery
+  labels:
+    app.kubernetes.io/name: claim-machinery-api
+    app.kubernetes.io/instance: claim-machinery-api
+    app.kubernetes.io/component: api
+    app.kubernetes.io/part-of: claim-machinery
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: claim-machinery-api
+      app.kubernetes.io/instance: claim-machinery-api
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: claim-machinery-api
+        app.kubernetes.io/instance: claim-machinery-api
+        app.kubernetes.io/component: api
+        app.kubernetes.io/part-of: claim-machinery
+    spec:
+      serviceAccountName: claim-machinery-api
+      containers:
+      - name: claim-machinery-api
+        image: ttl.sh/claim-machinery-api-b09f9c45e692/claim-machinery-api-d723b84d4f8f9d8f84ed896d09e886a5@sha256:87cab21d7c459d320aeadd24b37aed7fcb2f1aee4e3bbfdc4aa9e99573c75bab
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: http
+          containerPort: 8080
+          protocol: TCP
+        envFrom:
+        - configMapRef:
+            name: claim-machinery-api
+        resources:
+          requests:
+            cpu: '100m'
+            memory: '128Mi'
+          limits:
+            cpu: '500m'
+            memory: '256Mi'
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 10
+          periodSeconds: 15
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          timeoutSeconds: 3
+          failureThreshold: 3
+        securityContext:
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        volumeMounts:
+        - name: profile-config
+          mountPath: /app/config
+          readOnly: true
+        - name: tmp
+          mountPath: /tmp
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      volumes:
+      - name: profile-config
+        configMap:
+          name: claim-machinery-api-profile
+      - name: tmp
+        emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: claim-machinery-api
+  namespace: claim-machinery
+  labels:
+    app.kubernetes.io/name: claim-machinery-api
+    app.kubernetes.io/instance: claim-machinery-api
+    app.kubernetes.io/component: api
+    app.kubernetes.io/part-of: claim-machinery
+spec:
+  type: ClusterIP
+  ports:
+  - name: http
+    port: 8080
+    targetPort: http
+    protocol: TCP
+  selector:
+    app.kubernetes.io/name: claim-machinery-api
+    app.kubernetes.io/instance: claim-machinery-api
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: claim-machinery-api
+  namespace: claim-machinery
+  labels:
+    app.kubernetes.io/name: claim-machinery-api
+    app.kubernetes.io/instance: claim-machinery-api
+    app.kubernetes.io/component: api
+    app.kubernetes.io/part-of: claim-machinery
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: 'false'
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - claim-api.idp.kubermatic.sva.dev
+    secretName: claim-machinery-api-tls
+  rules:
+  - host: claim-api.idp.kubermatic.sva.dev
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: claim-machinery-api
+            port:
+              number: 8080

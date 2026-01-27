@@ -19,6 +19,10 @@ vars:
   BIN_EXPORT_PATH: /tmp/go/build/{{ .PROJECT }}
   TEMPLATES_DIR: internal/claimtemplate/testdata
   TEMPLATE_PROFILE_PATH: tests/profile.yaml
+  DAGGER_KCL_MODULE: github.com/stuttgart-things/dagger/kcl@v0.74.0
+  DEPLOYMENT_SOURCE_DIR: deployment
+  KCL_PROFILE_FILE: tests/kcl-deploy-profile.yaml
+  RENDERED_OUTPUT_PATH: /tmp/rendered-{{ .PROJECT }}.yaml
 
 tasks:
   lint:
@@ -200,6 +204,67 @@ tasks:
         fi
         echo "Running: PORT=8080 $BIN_FILE $FLAGS"
         PORT=8080 "$BIN_FILE" $FLAGS
+
+  render-manifests:
+    desc: Render Kubernetes manifests using KCL via Dagger
+    vars:
+      SOURCE:
+        sh: 'gum input --placeholder "Source directory" --value "{{ .DEPLOYMENT_SOURCE_DIR }}" --header "KCL SOURCE DIRECTORY"'
+      PROFILE:
+        sh: 'gum input --placeholder "Profile file path" --value "{{ .KCL_PROFILE_FILE }}" --header "PARAMETERS FILE"'
+      DESTINATION:
+        sh: 'gum input --placeholder "Output path" --value "{{ .RENDERED_OUTPUT_PATH }}" --header "OUTPUT PATH"'
+    cmds:
+      - |
+        echo ""
+        echo "🔨 Rendering manifests with KCL..."
+        echo "📂 Source: {{ .SOURCE }}"
+        echo "📄 Profile: {{ .PROFILE }}"
+        echo "📦 Output: {{ .DESTINATION }}"
+        echo ""
+
+        dagger call -m {{ .DAGGER_KCL_MODULE }} run \
+          --source "{{ .SOURCE }}" \
+          --parameters-file="{{ .PROFILE }}" \
+          export --path="{{ .DESTINATION }}"
+
+        echo ""
+        echo "✅ Manifests rendered successfully!"
+        echo "📄 Output file: {{ .DESTINATION }}"
+        echo ""
+
+        # Show preview if file exists
+        if [ -f "{{ .DESTINATION }}" ]; then
+          echo "📋 Preview:"
+          head -n 20 "{{ .DESTINATION }}"
+          echo ""
+          echo "... (use 'cat {{ .DESTINATION }}' to view full file)"
+        fi
+
+  render-manifests-quick:
+    desc: Render Kubernetes manifests (non-interactive, uses defaults)
+    vars:
+      SOURCE: '{{ .SOURCE | default .DEPLOYMENT_SOURCE_DIR }}'
+      PROFILE: '{{ .PROFILE | default .KCL_PROFILE_FILE }}'
+      DESTINATION: '{{ .DESTINATION | default .RENDERED_OUTPUT_PATH }}'
+    cmds:
+      - |
+        echo ""
+        echo "🔨 Rendering manifests with KCL..."
+        echo "📂 Source: {{ .SOURCE }}"
+        echo "📄 Profile: {{ .PROFILE }}"
+        echo "📦 Output: {{ .DESTINATION }}"
+        echo ""
+
+        dagger call -m {{ .DAGGER_KCL_MODULE }} run \
+          --source "{{ .SOURCE }}" \
+          --parameters-file="{{ .PROFILE }}" \
+          export --path="{{ .DESTINATION }}"
+
+        echo ""
+        echo "✅ Manifests rendered successfully!"
+        echo "📄 Output file: {{ .DESTINATION }}"
+
   do:
     desc: Select a task to run
     cmds:

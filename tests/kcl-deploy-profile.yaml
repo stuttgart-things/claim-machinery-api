@@ -1,0 +1,15 @@
+---
+config.image: ttl.sh/claim-machinery-api-99166e7d53f1/claim-machinery-api-d723b84d4f8f9d8f84ed896d09e886a5@sha256:87cab21d7c459d320aeadd24b37aed7fcb2f1aee4e3bbfdc4aa9e99573c75bab
+config.namespace: claim-machinery
+config.ingressEnabled: true
+config.ingressHost: claim-api.idp.kubermatic.sva.dev
+config.ingressTlsEnabled: true
+config.ingressAnnotations:
+  cert-manager.io/cluster-issuer: letsencrypt-prod
+config.templateProfiles:
+  - https://raw.githubusercontent.com/stuttgart-things/kcl/refs/heads/main/crossplane/claim-xplane-volumeclaim/templates/volumeclaim-simple.yaml
+  - https://raw.githubusercontent.com/stuttgart-things/kcl/refs/heads/main/crossplane/claim-xplane-harborproject/templates/harborproject-simple.yaml
+
+
+config.extraEnvVars:
+  TEMPLATE_PROFILE_PATH: /app/config/profile.yaml
