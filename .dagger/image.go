@@ -3,7 +3,32 @@ package main
 import (
 	"context"
 	"dagger/dagger/internal/dagger"
+	"fmt"
+	"strings"
 )
+
+// koBuildWithConfig builds using ko respecting .ko.yaml configuration
+func (m *Dagger) koBuildWithConfig(
+	ctx context.Context,
+	src *dagger.Directory,
+	repo string,
+	buildArg string,
+	koVersion string,
+	push string,
+) (string, error) {
+	ctr := dag.Container().
+		From(fmt.Sprintf("ghcr.io/ko-build/ko:%s", koVersion)).
+		WithMountedDirectory("/src", src).
+		WithWorkdir("/src").
+		WithEnvVariable("KO_DOCKER_REPO", repo).
+		WithExec([]string{"ko", "build", fmt.Sprintf("--push=%s", push), buildArg})
+
+	stdout, err := ctr.Stdout(ctx)
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimSpace(stdout), nil
+}
 
 // BuildImage builds a container image using ko
 func (m *Dagger) BuildImage(
@@ -33,17 +58,14 @@ func (m *Dagger) BuildImage(
 	// +default="HIGH,CRITICAL"
 	scanSeverity string,
 ) (string, error) {
-	imageRef, err := dag.Go().KoBuild(
+	imageRef, err := m.koBuildWithConfig(
 		ctx,
 		src,
-		dagger.GoKoBuildOpts{
-			Repo:      repo,
-			BuildArg:  buildArg,
-			KoVersion: koVersion,
-			Push:      push,
-			TokenName: tokenName,
-			Token:     token,
-		})
+		repo,
+		buildArg,
+		koVersion,
+		push,
+	)
 
 	if err != nil {
 		return "", err

@@ -31,10 +31,12 @@ schema ClaimMachineryAPI:
     ingressHost: str = "claim-machinery-api.example.com"
     ingressTlsEnabled: bool = False
     ingressTlsSecretName: str = "claim-machinery-api-tls"
+    ingressAnnotations: {str:str} = {}  # Ingress-specific annotations (e.g. cert-manager.io/cluster-issuer)
 
     # Application config
-    templatesDir: str = "/app/templates"
-    templateProfilePath: str = ""
+    templatesDir: str = "/app/config/"
+    templateProfilePath: str = "/app/config/profile.yaml"
+    templateProfile: str = ""  # YAML content for template profile (mounted as file)
     port: str = "8080"
     logFormat: str = "text"
     debug: bool = False
@@ -44,6 +46,9 @@ schema ClaimMachineryAPI:
 
     # Secrets (will be base64 encoded)
     secrets: {str:str} = {}
+
+    # Application config
+    templateProfiles: [str] = []  # list of template URLs
 
     # ServiceAccount
     serviceAccountAnnotations: {str:str} = {}
@@ -56,3 +61,4 @@ schema ClaimMachineryAPI:
         replicas >= 0, "replicas must be >= 0"
         servicePort >= 1 and servicePort <= 65535, "servicePort must be valid"
         containerPort >= 1 and containerPort <= 65535, "containerPort must be valid"
+        len(templateProfiles) > 0, "templateProfiles must contain at least one entry"

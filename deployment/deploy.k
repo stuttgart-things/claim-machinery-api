@@ -93,6 +93,18 @@ deployment = {
                                 drop: ["ALL"]
                             }
                         }
+                        volumeMounts: [
+                            {
+                                name: "tmp"
+                                mountPath: "/tmp"
+                            }
+                        ] + ([
+                            {
+                                name: "profile-config"
+                                mountPath: "/app/config"
+                                readOnly: True
+                            }
+                        ] if len(config.templateProfiles) > 0 else [])
                     }
                 ]
                 securityContext: {
@@ -101,6 +113,19 @@ deployment = {
                         type: "RuntimeDefault"
                     }
                 }
+                volumes: [
+                    {
+                        name: "tmp"
+                        emptyDir: {}
+                    }
+                ] + ([
+                    {
+                        name: "profile-config"
+                        configMap: {
+                            name: "{}-profile".format(config.name)
+                        }
+                    }
+                ] if len(config.templateProfiles) > 0 else [])
             }
         }
     }

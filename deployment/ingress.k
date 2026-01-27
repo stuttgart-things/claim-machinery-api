@@ -17,6 +17,7 @@ ingress = {
         annotations: {
             "nginx.ingress.kubernetes.io/ssl-redirect": "true" if config.ingressTlsEnabled else "false"
             **config.annotations
+            **config.ingressAnnotations
         }
     }
     spec: {

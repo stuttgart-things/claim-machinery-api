@@ -1,0 +1,11 @@
+---
+defaultBaseImage: cgr.dev/chainguard/glibc-dynamic:latest
+
+builds:
+  - id: claim-machinery-api
+    main: .
+    flags:
+      - -trimpath
+    ldflags:
+      - -s
+      - -w
