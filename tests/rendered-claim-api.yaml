@@ -166,7 +166,7 @@ spec:
   tls:
   - hosts:
     - claim-api.idp.kubermatic.sva.dev
-    secretName: claim-machinery-api-tls
+    secretName: claim-machinery-api-tls # pragma: allowlist secret
   rules:
   - host: claim-api.idp.kubermatic.sva.dev
     http:

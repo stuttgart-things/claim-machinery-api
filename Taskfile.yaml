@@ -11,6 +11,8 @@ includes:
     taskfile: https://raw.githubusercontent.com/stuttgart-things/tasks/refs/heads/main/dagger/modules.yaml
 
 vars:
+  DATE:
+    sh: date +"%y.%m%d.%H%M"
   PROJECT:
     sh: |
       basename $(pwd)
@@ -41,6 +43,63 @@ tasks:
         --src "{{ .SOURCE_CODE_DIR }}" \
         --progress plain -vv
 
+  build-push-image-kcl:
+    desc: Build and push container image with KCL build module
+    vars:
+      DEV_IMAGE_DESTINATION: "ttl.sh/sthings/claim-machinery-api"
+    cmds:
+      - |
+        dagger call -m {{ .DAGGER_MOUDLE_DIR }} build-image-with-kcl \
+        --source "{{ .SOURCE_CODE_DIR }}" \
+        --repo "{{ .DEV_IMAGE_DESTINATION }}:{{ .DATE }}" \
+        --push=true \
+        --progress plain -vv
+
+  build-scan-image-kcl:
+    desc: Build, push and scan container image with KCL build module
+    cmds:
+      - |
+        RANDOM_TAG=$(openssl rand -hex 6)
+        IMAGE_REF="ttl.sh/{{ .PROJECT }}-${RANDOM_TAG}:latest"
+
+        echo "🔨 Building with KCL and pushing to: ${IMAGE_REF}"
+        echo ""
+
+        # Build and push with KCL build module
+        dagger call -m {{ .DAGGER_MOUDLE_DIR }} build-image-with-kcl \
+          --source "{{ .SOURCE_CODE_DIR }}" \
+          --repo "$IMAGE_REF" \
+          --push="true" \
+          --progress plain
+
+        echo ""
+        echo "✅ Image pushed: $IMAGE_REF"
+        echo ""
+        echo "🔍 Scanning with Trivy..."
+        echo ""
+
+        # Export scan report
+        dagger call -m {{ .DAGGER_MOUDLE_DIR }} scan-image \
+          --image-ref "$IMAGE_REF" \
+          --severity "HIGH,CRITICAL" \
+          --progress plain \
+          export --path=/tmp/trivy-scan-{{ .PROJECT }}.json
+
+        echo ""
+        echo "✅ Build and scan complete!"
+        echo "📦 Image: $IMAGE_REF"
+        echo "📦 Pull: docker pull $IMAGE_REF"
+        echo "📄 Scan Report: /tmp/trivy-scan-{{ .PROJECT }}.json"
+        echo "⏰ Expires: 1 hour (default ttl.sh)"
+
+        # Show summary
+        if command -v jq &> /dev/null; then
+          echo ""
+          echo "📊 Vulnerability Summary:"
+          jq -r '.Results[]? | select(.Vulnerabilities) | "\(.Target): \(.Vulnerabilities | length) vulnerabilities"' \
+            /tmp/trivy-scan-{{ .PROJECT }}.json 2>/dev/null || echo "✅ No HIGH/CRITICAL vulnerabilities found!"
+        fi
+
   build-output-binary:
     desc: Build project binary
     cmds:
@@ -66,7 +125,7 @@ tasks:
 
         echo -e "${BLUE}==============================================${NC}"
 
-  build-scan-image:
+  build-scan-image-ko:
     desc: Build, push and scan container image
     cmds:
       - |
