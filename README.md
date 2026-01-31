@@ -158,6 +158,69 @@ curl -s -X POST http://localhost:8080/api/v1/claim-templates/harborproject/order
 
 </details>
 
+## Usage
+
+### API Server (Default)
+
+Start the HTTP API server:
+
+```bash
+# Run directly (default mode)
+claim-machinery-api
+
+# Or explicitly
+claim-machinery-api server
+```
+
+The server will:
+- Load templates from `internal/claimtemplate/testdata` (default)
+- Additionally load from `tests/profile.yaml` (default profile)
+- Start HTTP server on port 8080
+
+### Interactive CLI
+
+Render claims interactively with a terminal UI:
+
+```bash
+claim-machinery-api render
+```
+
+**Features:**
+- Interactive template selection
+- Dynamic forms based on template parameters
+- Enum fields as dropdowns
+- Random value selection for enums
+- Default values pre-filled
+- Parameter validation (type, pattern, required)
+- Live YAML preview with syntax highlighting
+- Optional file save with suggested path
+
+**Workflow:**
+1. Select a template from the list
+2. Fill in parameters (or use defaults)
+3. Confirm rendering
+4. View rendered YAML
+5. Optionally save to file
+
+### Configuration
+
+Both modes support the same configuration options:
+
+```bash
+# Custom templates directory
+claim-machinery-api --templates-dir /path/to/templates
+
+# Custom profile (or disable with "")
+claim-machinery-api --template-profile-path /path/to/profile.yaml
+
+# Environment variables
+export TEMPLATES_DIR=/path/to/templates
+export TEMPLATE_PROFILE_PATH=/path/to/profile.yaml
+claim-machinery-api render
+```
+
+**Priority:** Flag > Environment Variable > Default
+
 ## Development
 
 <details>
@@ -167,7 +230,12 @@ curl -s -X POST http://localhost:8080/api/v1/claim-templates/harborproject/order
 git clone https://github.com/stuttgart-things/claim-machinery-api.git
 cd claim-machinery-api
 go mod download
+
+# Run API server
 go run main.go
+
+# Or interactive CLI
+go run main.go render
 ```
 
 </details>
@@ -183,73 +251,38 @@ DEBUG=1 go run main.go
 
 </details>
 
-### CLI Tools (MVP)
+### Testing CLIs
+
+<details>
+<summary><strong>Legacy Test CLIs (tests/cli & tests/cli-api)</strong></summary>
+
+> **Note:** These are legacy test tools. The new integrated CLI via `claim-machinery-api render` is recommended.
 
 Two interactive CLI tools are available in `/tests` for testing and development.
 
-<details>
-<summary><strong>Local KCL CLI (tests/cli)</strong></summary>
+**Local KCL CLI (tests/cli):**
 
 Renders templates directly using KCL (requires `kcl` CLI installed locally).
 
-**Build:**
-
 ```bash
 go build -o tests/cli/claim-cli ./tests/cli/
-```
-
-**Usage:**
-
-```bash
-# Default profile (tests/profile.yaml)
 ./tests/cli/claim-cli
-
-# Custom profile
-TEMPLATE_PROFILE_PATH=/path/to/profile.yaml ./tests/cli/claim-cli
 ```
 
-**Features:**
-- Interactive template selection
-- Dynamic form based on template parameters
-- Enum fields as dropdowns
-- Default values pre-filled
-- Saves rendered YAML to `/tmp/{template}-{name}.yaml`
-
-</details>
-
-<details>
-<summary><strong>API-Connected CLI (tests/cli-api)</strong></summary>
+**API-Connected CLI (tests/cli-api):**
 
 Connects to the running API server - no local KCL required.
 
-**Build:**
-
 ```bash
-go build -o tests/cli-api/claim-cli-api ./tests/cli-api/
-```
-
-**Usage:**
-
-```bash
-# Start the API first
+# Start API first
 go run main.go
 
-# Then run CLI (default: localhost:8080)
+# Then run CLI
+go build -o tests/cli-api/claim-cli-api ./tests/cli-api/
 ./tests/cli-api/claim-cli-api
-
-# Custom API URL
-CLAIM_API_URL=http://api.example.com:8080 ./tests/cli-api/claim-cli-api
 ```
 
-**Features:**
-- Same interactive UX as local CLI
-- Lightweight client (no KCL dependency)
-- Works with remote API servers
-- Good for testing API changes
-
 </details>
-
-Both CLIs support an "Enter-Enter" workflow - defaults are pre-selected so you can quickly render with minimal input.
 
 ## CI/CD
 
