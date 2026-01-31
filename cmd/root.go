@@ -8,6 +8,12 @@ import (
 )
 
 var (
+	// Version information (set via ldflags during build)
+	version = "dev"
+	commit  = "none"
+	date    = "unknown"
+
+	// Flags
 	templatesDir string
 	profilePath  string
 )

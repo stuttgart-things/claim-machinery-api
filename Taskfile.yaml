@@ -16,6 +16,7 @@ vars:
   PROJECT:
     sh: |
       basename $(pwd)
+  MODULE: github.com/stuttgart-things/claim-machinery-api
   DAGGER_MOUDLE_DIR: ./.dagger
   SOURCE_CODE_DIR: "."
   BIN_EXPORT_PATH: /tmp/go/build/{{ .PROJECT }}
@@ -27,6 +28,29 @@ vars:
   RENDERED_OUTPUT_PATH: /tmp/rendered-{{ .PROJECT }}.yaml
 
 tasks:
+  build:
+    desc: Build binary using Dagger with ldflags
+    vars:
+      VERSION: '{{.VERSION | default "0.0.1"}}'
+      OS: '{{.OS | default "linux"}}'
+      ARCH: '{{.ARCH | default "amd64"}}'
+      OUTPUT_PATH: '{{.OUTPUT_PATH | default "/tmp/go/build/"}}'
+      BIN_NAME: '{{.BIN_NAME | default .PROJECT}}'
+    cmds:
+      - |
+        dagger call -m github.com/stuttgart-things/dagger/go build-binary \
+          --src "." \
+          --go-version "1.25.6" \
+          --os {{ .OS }} \
+          --arch {{ .ARCH }} \
+          --package-name {{ .MODULE }} \
+          --ldflags "cmd.version={{ .VERSION }}; cmd.date=$(date -u +%Y-%m-%dT%H:%M:%SZ); cmd.commit=$(git rev-parse --short HEAD 2>/dev/null || echo 'none')" \
+          --go-main-file main.go \
+          --bin-name {{ .BIN_NAME }} \
+          --variant "" \
+          export --path={{ .OUTPUT_PATH }} \
+          --progress plain -vv
+
   lint:
     desc: Run Go lint via Dagger module
     cmds:
