@@ -43,7 +43,7 @@ tasks:
           --go-version "1.25.6" \
           --os {{ .OS }} \
           --arch {{ .ARCH }} \
-          --package-name {{ .MODULE }} \
+           --package-name github.com/stuttgart-things/claim-machinery-api \
           --ldflags "cmd.version={{ .VERSION }}; cmd.date=$(date -u +%Y-%m-%dT%H:%M:%SZ); cmd.commit=$(git rev-parse --short HEAD 2>/dev/null || echo 'none')" \
           --go-main-file main.go \
           --bin-name {{ .BIN_NAME }} \
