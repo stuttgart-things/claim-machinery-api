@@ -58,10 +58,5 @@ release:
     ### Binary
     Download the appropriate binary for your platform from the assets below.
 
-    ### Container Image
-    ```bash
-    docker pull ghcr.io/stuttgart-things/claim-machinery-api:{{ .Tag }}
-    ```
-
     ---
     Released by [GoReleaser](https://github.com/goreleaser/goreleaser).
