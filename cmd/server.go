@@ -28,7 +28,10 @@ func init() {
 }
 
 func runServer(cmd *cobra.Command, args []string) error {
-	fmt.Println("🚀 Claim Machinery API starting")
+	fmt.Println(logo)
+	fmt.Printf("Version:    %s\n", version)
+	fmt.Printf("Commit:     %s\n", commit)
+	fmt.Printf("Build Date: %s\n\n", date)
 
 	// Load templates directory (flag > env > default)
 	if templatesDir == "" {
