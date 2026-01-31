@@ -18,6 +18,7 @@ builds:
     ldflags:
       - -s
       - -w
+      - -extldflags=-static
       - -X github.com/stuttgart-things/claim-machinery-api/cmd.version={{.Version}}
       - -X github.com/stuttgart-things/claim-machinery-api/cmd.commit={{.Commit}}
       - -X github.com/stuttgart-things/claim-machinery-api/cmd.date={{.Date}}
@@ -28,8 +29,6 @@ builds:
     goarch:
       - amd64
       - arm64
-
-
 
 checksum:
   name_template: "checksums.txt"
