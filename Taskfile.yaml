@@ -69,7 +69,7 @@ tasks:
           SOURCE: "{{ .SOURCE_IMAGE }}"
           TARGET: ghcr.io/stuttgart-things/{{ .PROJECT }}:{{ .VERSION }}
           TARGET_USERNAME: $GITHUB_USER
-          TARGET_PASSWORD: env:GITHUB_TOKEN
+          TARGET_PASSWORD: env:GITHUB_TOKEN # pragma: allowlist secret
 
 
   lint:
@@ -197,30 +197,6 @@ tasks:
         vars:
           SOURCE_IMAGE:
             sh: cat /tmp/{{ .PROJECT }}-build-image-ref.txt
-      - |
-        echo ""
-        echo "🔖 Version: {{ .VERSION }}"
-        echo ""
-
-        # Git commit confirmation
-        if command -v gum &> /dev/null; then
-          if gum confirm "Create git commit for release {{ .VERSION }}?"; then
-            git add -A
-            git commit -m "Release {{ .VERSION }}: build and stage image to ghcr.io"
-            echo "✅ Git commit created"
-          else
-            echo "⏭️  Skipped git commit"
-          fi
-        else
-          read -p "Create git commit for release {{ .VERSION }}? [y/N] " confirm
-          if [[ "$confirm" =~ ^[Yy]$ ]]; then
-            git add -A
-            git commit -m "Release {{ .VERSION }}: build and stage image to ghcr.io"
-            echo "✅ Git commit created"
-          else
-            echo "⏭️  Skipped git commit"
-          fi
-        fi
 
   build-output-binary:
     desc: Build project binary
@@ -454,7 +430,7 @@ tasks:
           SOURCE: ttl.sh/claim-machinery-api-57cf04b1fb68:latest
           TARGET: ghcr.io/stuttgart-things/claim-machinery-api:latest
           TARGET_USERNAME: patrick-hermann-sva
-          TARGET_PASSWORD: env:GITHUB_TOKEN
+          TARGET_PASSWORD: env:GITHUB_TOKEN # pragma: allowlist secret
 
   do:
     desc: Select a task to run
