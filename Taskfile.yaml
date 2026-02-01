@@ -9,6 +9,8 @@ includes:
     taskfile: https://raw.githubusercontent.com/stuttgart-things/tasks/refs/heads/main/go/lint.yaml
   dagger:
     taskfile: https://raw.githubusercontent.com/stuttgart-things/tasks/refs/heads/main/dagger/modules.yaml
+  image:
+    taskfile: https://raw.githubusercontent.com/stuttgart-things/tasks/refs/heads/main/docker/copy.yaml
 
 vars:
   DATE:
@@ -50,6 +52,25 @@ tasks:
           --variant "" \
           export --path={{ .OUTPUT_PATH }} \
           --progress plain -vv
+
+  stage-image:
+    desc: Copy image from ttl.sh to ghcr.io with git tag version
+    vars:
+      VERSION:
+        sh: git describe --tags --abbrev=0 2>/dev/null || echo "0.0.0"
+      SOURCE_IMAGE: '{{ .SOURCE_IMAGE | default "ttl.sh/claim-machinery-api:latest" }}'
+    cmds:
+      - |
+        echo "📦 Staging image with version: {{ .VERSION }}"
+        echo "📥 Source: {{ .SOURCE_IMAGE }}"
+        echo "📤 Target: ghcr.io/stuttgart-things/{{ .PROJECT }}:{{ .VERSION }}"
+      - task: image:copy-image
+        vars:
+          SOURCE: "{{ .SOURCE_IMAGE }}"
+          TARGET: ghcr.io/stuttgart-things/{{ .PROJECT }}:{{ .VERSION }}
+          TARGET_USERNAME: $GITHUB_USER
+          TARGET_PASSWORD: env:GITHUB_TOKEN
+
 
   lint:
     desc: Run Go lint via Dagger module
@@ -122,6 +143,83 @@ tasks:
           echo "📊 Vulnerability Summary:"
           jq -r '.Results[]? | select(.Vulnerabilities) | "\(.Target): \(.Vulnerabilities | length) vulnerabilities"' \
             /tmp/trivy-scan-{{ .PROJECT }}.json 2>/dev/null || echo "✅ No HIGH/CRITICAL vulnerabilities found!"
+        fi
+
+  build-scan-stage-image:
+    desc: Build, scan, stage image to ghcr.io and git commit
+    vars:
+      VERSION:
+        sh: git describe --tags --abbrev=0 2>/dev/null || echo "0.0.0"
+    cmds:
+      - |
+        set -e
+        RANDOM_TAG=$(openssl rand -hex 6)
+        IMAGE_REF="ttl.sh/{{ .PROJECT }}-${RANDOM_TAG}:latest"
+
+        echo "🔨 Building with KCL and pushing to: ${IMAGE_REF}"
+        echo ""
+
+        # Build and push with KCL build module
+        dagger call -m {{ .DAGGER_MOUDLE_DIR }} build-image-with-kcl \
+          --source "{{ .SOURCE_CODE_DIR }}" \
+          --repo "$IMAGE_REF" \
+          --push="true" \
+          --progress plain
+
+        echo ""
+        echo "✅ Image pushed: $IMAGE_REF"
+        echo ""
+        echo "🔍 Scanning with Trivy..."
+        echo ""
+
+        # Export scan report
+        dagger call -m {{ .DAGGER_MOUDLE_DIR }} scan-image \
+          --image-ref "$IMAGE_REF" \
+          --severity "HIGH,CRITICAL" \
+          --progress plain \
+          export --path=/tmp/trivy-scan-{{ .PROJECT }}.json
+
+        echo ""
+        echo "✅ Build and scan complete!"
+        echo "📦 Image: $IMAGE_REF"
+
+        # Show summary
+        if command -v jq &> /dev/null; then
+          echo ""
+          echo "📊 Vulnerability Summary:"
+          jq -r '.Results[]? | select(.Vulnerabilities) | "\(.Target): \(.Vulnerabilities | length) vulnerabilities"' \
+            /tmp/trivy-scan-{{ .PROJECT }}.json 2>/dev/null || echo "✅ No HIGH/CRITICAL vulnerabilities found!"
+        fi
+
+        # Save image ref for stage task
+        echo "$IMAGE_REF" > /tmp/{{ .PROJECT }}-build-image-ref.txt
+      - task: stage-image
+        vars:
+          SOURCE_IMAGE:
+            sh: cat /tmp/{{ .PROJECT }}-build-image-ref.txt
+      - |
+        echo ""
+        echo "🔖 Version: {{ .VERSION }}"
+        echo ""
+
+        # Git commit confirmation
+        if command -v gum &> /dev/null; then
+          if gum confirm "Create git commit for release {{ .VERSION }}?"; then
+            git add -A
+            git commit -m "Release {{ .VERSION }}: build and stage image to ghcr.io"
+            echo "✅ Git commit created"
+          else
+            echo "⏭️  Skipped git commit"
+          fi
+        else
+          read -p "Create git commit for release {{ .VERSION }}? [y/N] " confirm
+          if [[ "$confirm" =~ ^[Yy]$ ]]; then
+            git add -A
+            git commit -m "Release {{ .VERSION }}: build and stage image to ghcr.io"
+            echo "✅ Git commit created"
+          else
+            echo "⏭️  Skipped git commit"
+          fi
         fi
 
   build-output-binary:
@@ -347,6 +445,16 @@ tasks:
         echo ""
         echo "✅ Manifests rendered successfully!"
         echo "📄 Output file: {{ .DESTINATION }}"
+
+  copy-image:
+    desc: Copy image from ttl.sh to ghcr.io
+    cmds:
+      - task: image:copy-image
+        vars:
+          SOURCE: ttl.sh/claim-machinery-api-57cf04b1fb68:latest
+          TARGET: ghcr.io/stuttgart-things/claim-machinery-api:latest
+          TARGET_USERNAME: patrick-hermann-sva
+          TARGET_PASSWORD: env:GITHUB_TOKEN
 
   do:
     desc: Select a task to run
