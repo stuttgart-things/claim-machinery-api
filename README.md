@@ -54,6 +54,17 @@ Or via CLI flag (overrides env):
 go run main.go --template-profile-path /absolute/path/to/profile.yaml
 ```
 
+Or as container (overrides env):
+
+```bash
+docker run --rm \
+  -v $PWD/tests/profile.yaml:/tmp/profile.yaml \
+  -e TEMPLATE_PROFILE_PATH=/tmp/profile.yaml \
+  -e TEMPLATES_DIR="/tmp" \
+  -p 8080:8080 \
+  ghcr.io/stuttgart-things/claim-machinery-api:v0.3.0
+```
+
 **Behavior:**
 - Profile entries (URLs/paths) are validated; unreachable entries trigger a warning and are skipped
 - Templates from the profile and directory are merged; duplicates are deduplicated based on `metadata.name` (profile takes precedence)
