@@ -27,6 +27,41 @@ A Backstage-compatible API for discovering, managing, and rendering KCL-based Cr
 
 </details>
 
+<details>
+
+<summary><strong>Template Profile</strong></summary>
+
+Add additional templates via profile file (merged with directory):
+
+templates:
+```bash
+cat <<EOF > profile.yaml
+---
+templates:
+  - https://raw.githubusercontent.com/stuttgart-things/kcl/refs/heads/main/crossplane/claim-xplane-volumeclaim/templates/volumeclaim-simple.yaml
+  - /tmp/template123.yaml
+EOF
+```
+
+```bash
+export TEMPLATE_PROFILE_PATH=/absolute/path/to/profile.yaml
+go run main.go
+```
+
+Or via CLI flag (overrides env):
+
+```bash
+go run main.go --template-profile-path /absolute/path/to/profile.yaml
+```
+
+**Behavior:**
+- Profile entries (URLs/paths) are validated; unreachable entries trigger a warning and are skipped
+- Templates from the profile and directory are merged; duplicates are deduplicated based on `metadata.name` (profile takes precedence)
+- On startup, the API displays loaded sources and final template names
+
+</details>
+
+
 ## API
 
 <details>
@@ -379,35 +414,7 @@ go run main.go --templates-dir /path/to/your/templates
 
 </details>
 
-<details>
-<summary><strong>Template Profile</strong></summary>
 
-Add additional templates via profile file (merged with directory):
-
-```yaml
----
-templates:
-  - https://raw.githubusercontent.com/stuttgart-things/kcl/refs/heads/main/crossplane/claim-xplane-volumeclaim/templates/volumeclaim-simple.yaml
-  - /tmp/template123.yaml
-```
-
-```bash
-export TEMPLATE_PROFILE_PATH=/absolute/path/to/profile.yaml
-go run main.go
-```
-
-Or via CLI flag (overrides env):
-
-```bash
-go run main.go --template-profile-path /absolute/path/to/profile.yaml
-```
-
-**Behavior:**
-- Profile entries (URLs/paths) are validated; unreachable entries trigger a warning and are skipped
-- Templates from the profile and directory are merged; duplicates are deduplicated based on `metadata.name` (profile takes precedence)
-- On startup, the API displays loaded sources and final template names
-
-</details>
 
 <details>
 <summary><strong>Server Port</strong></summary>
