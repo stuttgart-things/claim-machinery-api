@@ -9,9 +9,9 @@ import (
 
 var (
 	// Version information (set via ldflags during build)
-	version = "dev"
-	commit  = "none"
-	date    = "unknown"
+	Version = "dev"
+	Commit  = "none"
+	Date    = "unknown"
 
 	// Flags
 	templatesDir string

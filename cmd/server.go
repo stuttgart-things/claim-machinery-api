@@ -29,9 +29,9 @@ func init() {
 
 func runServer(cmd *cobra.Command, args []string) error {
 	fmt.Println(logo)
-	fmt.Printf("Version:    %s\n", version)
-	fmt.Printf("Commit:     %s\n", commit)
-	fmt.Printf("Build Date: %s\n\n", date)
+	fmt.Printf("Version:    %s\n", Version)
+	fmt.Printf("Commit:     %s\n", Commit)
+	fmt.Printf("Build Date: %s\n\n", Date)
 
 	// Load templates directory (flag > env > default)
 	if templatesDir == "" {

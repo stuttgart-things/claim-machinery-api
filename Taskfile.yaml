@@ -18,18 +18,44 @@ vars:
   PROJECT:
     sh: |
       basename $(pwd)
-  MODULE: github.com/stuttgart-things/claim-machinery-api
+  GO_MODULE: github.com/stuttgart-things/claim-machinery-api
   DAGGER_MOUDLE_DIR: ./.dagger
   SOURCE_CODE_DIR: "."
-  BIN_EXPORT_PATH: /tmp/go/build/{{ .PROJECT }}
+  BIN_EXPORT_PATH: /tmp/go/build
   TEMPLATES_DIR: internal/claimtemplate/testdata
   TEMPLATE_PROFILE_PATH: tests/profile.yaml
   DAGGER_KCL_MODULE: github.com/stuttgart-things/dagger/kcl@v0.74.0
   DEPLOYMENT_SOURCE_DIR: deployment
   KCL_PROFILE_FILE: tests/kcl-deploy-profile.yaml
   RENDERED_OUTPUT_PATH: /tmp/rendered-{{ .PROJECT }}.yaml
+  LINT_REPORT_PATH: /tmp/lint-report-{{ .PROJECT }}.txt
+  TEST_REPORT_PATH: /tmp/test-report-{{ .PROJECT }}.txt
 
 tasks:
+  pr-git:
+    desc: Create pr
+    description: Create a pull request with pior linting, building, testing, and scanning
+    deps: [pr]
+    cmds:
+      - task: git:pr
+
+  pr:
+    desc: Create pull request
+    cmds:
+      - task: lint
+      - task: build-test-api
+      - task: build-scan-image-kcl
+      - task: build-output-binary
+      - |
+        echo ""
+        echo "==================== SUMMARY ===================="
+        echo "✔ Lint: Code was checked"
+        echo "  → Lint report: {{ .LINT_REPORT_PATH }}"
+        echo "✔ Build & Test: API built and tested"
+        echo "  → Test output: {{ .TEST_REPORT_PATH }}"
+        echo "✔ Build & Scan: Container image built, pushed and scanned"
+        echo "================================================="
+
   build:
     desc: Build binary using Dagger with ldflags
     vars:
@@ -71,13 +97,13 @@ tasks:
           TARGET_USERNAME: $GITHUB_USER
           TARGET_PASSWORD: env:GITHUB_TOKEN # pragma: allowlist secret
 
-
   lint:
     desc: Run Go lint via Dagger module
     cmds:
       - |
         dagger call -m {{ .DAGGER_MOUDLE_DIR }} lint \
           --src "{{ .SOURCE_CODE_DIR }}" \
+          export --path={{ .LINT_REPORT_PATH }} \
           --progress plain
 
   build-test-api:
@@ -86,19 +112,19 @@ tasks:
       - |
         dagger call -m {{ .DAGGER_MOUDLE_DIR }} build-and-test \
         --src "{{ .SOURCE_CODE_DIR }}" \
-        --progress plain -vv
+        --progress plain -vv | tee {{ .TEST_REPORT_PATH }}
 
-  build-push-image-kcl:
-    desc: Build and push container image with KCL build module
-    vars:
-      DEV_IMAGE_DESTINATION: "ttl.sh/sthings/claim-machinery-api"
-    cmds:
-      - |
-        dagger call -m {{ .DAGGER_MOUDLE_DIR }} build-image-with-kcl \
-        --source "{{ .SOURCE_CODE_DIR }}" \
-        --repo "{{ .DEV_IMAGE_DESTINATION }}:{{ .DATE }}" \
-        --push=true \
-        --progress plain -vv
+  # build-push-image-kcl:
+  #   desc: Build and push container image with KCL build module
+  #   vars:
+  #     DEV_IMAGE_DESTINATION: "ttl.sh/sthings/claim-machinery-api"
+  #   cmds:
+  #     - |
+  #       dagger call -m {{ .DAGGER_MOUDLE_DIR }} build-image-with-kcl \
+  #       --source "{{ .SOURCE_CODE_DIR }}" \
+  #       --repo "{{ .DEV_IMAGE_DESTINATION }}:{{ .DATE }}" \
+  #       --push=true \
+  #       --progress plain -vv
 
   build-scan-image-kcl:
     desc: Build, push and scan container image with KCL build module
@@ -205,13 +231,14 @@ tasks:
         dagger call -m {{ .DAGGER_MOUDLE_DIR }} build \
         --src "{{ .SOURCE_CODE_DIR }}" \
         --bin-name="{{ .PROJECT }}" \
+         --ldflags "-X {{ .GO_MODULE }}/cmd.Version={{ .DATE }} -X {{ .GO_MODULE }}/cmd.Date=$(date -u +%Y-%m-%dT%H:%M:%SZ) -X {{ .GO_MODULE }}/cmd.Commit=$(git rev-parse --short HEAD 2>/dev/null || echo 'none')" \
         --progress plain -vv \
         export --path={{ .BIN_EXPORT_PATH }}
 
         ls -lta {{ .BIN_EXPORT_PATH }}
         du -sh {{ .BIN_EXPORT_PATH }}/{{ .PROJECT }}
 
-        # Pretty summary for the user
+        # SUMMARY
         BIN_FILE="{{ .BIN_EXPORT_PATH }}/{{ .PROJECT }}"
         SIZE=$(du -sh "$BIN_FILE" | awk '{print $1}')
         SHASUM=$(sha256sum "$BIN_FILE" | awk '{print $1}')
@@ -222,6 +249,7 @@ tasks:
         NC='\033[0m'
 
         echo -e "${BLUE}==============================================${NC}"
+        {{ .BIN_EXPORT_PATH }}/{{ .PROJECT }} version
 
   build-scan-image-ko:
     desc: Build, push and scan container image
@@ -352,7 +380,7 @@ tasks:
         set -e
         BIN_FILE="{{ .BIN_EXPORT_PATH }}/{{ .PROJECT }}"
         if [ ! -x "$BIN_FILE" ]; then
-          echo "Binary not found at $BIN_FILE. Run 'task build-output-binary' first." >&2
+          echo "Binary nicht gefunden unter $BIN_FILE. Bitte zuerst 'task build-output-binary' ausführen." >&2
           exit 1
         fi
         FLAGS="--templates-dir {{ .TEMPLATES_DIR }}"

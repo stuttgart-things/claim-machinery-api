@@ -12,9 +12,9 @@ var versionCmd = &cobra.Command{
 	Long:  `Print the version, commit SHA, and build date of claim-machinery-api.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println(logo)
-		fmt.Printf("Version:    %s\n", version)
-		fmt.Printf("Commit:     %s\n", commit)
-		fmt.Printf("Build Date: %s\n", date)
+		fmt.Printf("Version:    %s\n", Version)
+		fmt.Printf("Commit:     %s\n", Commit)
+		fmt.Printf("Build Date: %s\n", Date)
 	},
 }
 
