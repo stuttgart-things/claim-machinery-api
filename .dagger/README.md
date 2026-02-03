@@ -164,6 +164,54 @@ dagger call -m .dagger build-image \
 
 ---
 
+### `run-api`
+Builds the API container image (using KCL) and runs it as a service with a mounted profile file.
+
+**Features:**
+- ✅ Builds container image via `build-image-with-kcl`
+- ✅ Mounts a profile YAML into the container
+- ✅ Sets `TEMPLATE_PROFILE_PATH` and `TEMPLATES_DIR` environment variables
+- ✅ Exposes port 8080 as a Dagger service
+
+**Usage:**
+```bash
+dagger call -m .dagger run-api \
+  --source . \
+  --profile-file tests/profile.yaml \
+  up --progress plain
+```
+
+```bash
+dagger call -m .dagger run-api \
+  --source "https://github.com/stuttgart-things/claim-machinery-api#main" \
+  --profile-file tests/profile.yaml \
+  up --progress plain
+```
+
+**Optional Parameters:**
+```bash
+dagger call -m .dagger run-api \
+  --source . \
+  --profile-file tests/profile.yaml \
+  --profile-file-name custom-profile.yaml \
+  --repo ttl.sh/claim-machinery-api:latest \
+  --push true \
+  --host-port 9090 \
+  up --progress plain
+```
+
+**Parameters:**
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `source` | - | Source directory (required) |
+| `profileFile` | - | Profile YAML file to mount into the container (required) |
+| `profileFileName` | `profile.yaml` | Filename for the mounted profile inside the container |
+| `repo` | `ttl.sh/claim-machinery-api:latest` | Image repository tag (used when push is true) |
+| `push` | `false` | Push image to registry before running |
+| `hostPort` | `8080` | Host port to expose |
+
+---
+
 ### `scan-image`
 Scans a container image for vulnerabilities using Trivy.
 
