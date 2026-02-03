@@ -45,7 +45,7 @@ func (m *Dagger) RunApi(
 
 	// Return as a service
 	svc := finalContainer.
-		WithExposedPort(8080).
+		WithExposedPort(hostPort).
 		AsService()
 
 	return svc, nil
