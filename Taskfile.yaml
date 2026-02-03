@@ -360,6 +360,15 @@ tasks:
             /tmp/trivy-scan-{{ .PROJECT }}.json 2>/dev/null || echo "✅ No vulnerabilities found!"
         fi
 
+  run-api:
+    desc: Run API as Dagger service with profile
+    cmds:
+      - |
+        dagger call -m {{ .DAGGER_MOUDLE_DIR }} run-api \
+          --source "{{ .SOURCE_CODE_DIR }}" \
+          --profile-file {{ .TEMPLATE_PROFILE_PATH }} \
+          up --progress plain
+
   run-local-go:
     desc: Run API locally with go run (flags supported)
     cmds:
