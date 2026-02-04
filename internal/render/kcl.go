@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"regexp"
+	"strings"
 
 	kcl "kcl-lang.io/kcl-go"
 )
@@ -84,7 +85,7 @@ func RenderKCLFromOCI(
 	// Add parameters as -D flags
 	for key, value := range allAnswers {
 		fmt.Printf("%s=%v\n", key, value)
-		args = append(args, "-D", fmt.Sprintf("%s=%v", key, value))
+		args = append(args, "-D", formatKCLFlag(key, value))
 	}
 
 	// Execute kcl CLI command
@@ -132,9 +133,16 @@ func convertToOptionStrings(answers map[string]interface{}) []string {
 		// Convert the value to string
 		var strValue string
 		switch v := value.(type) {
+		case []string:
+			strValue = formatKCLList(v)
+		case []interface{}:
+			items := make([]string, 0, len(v))
+			for _, item := range v {
+				items = append(items, fmt.Sprintf("%v", item))
+			}
+			strValue = formatKCLList(items)
 		case string:
-			strValue = v
-			strValue = "'" + strValue + "'"
+			strValue = "'" + v + "'"
 		}
 
 		// Create the "key=value" string and add to slice
@@ -142,6 +150,31 @@ func convertToOptionStrings(answers map[string]interface{}) []string {
 	}
 
 	return options
+}
+
+// formatKCLFlag formats a key-value pair as a KCL -D flag string.
+func formatKCLFlag(key string, value interface{}) string {
+	switch v := value.(type) {
+	case []string:
+		return fmt.Sprintf("%s=%s", key, formatKCLList(v))
+	case []interface{}:
+		items := make([]string, 0, len(v))
+		for _, item := range v {
+			items = append(items, fmt.Sprintf("%v", item))
+		}
+		return fmt.Sprintf("%s=%s", key, formatKCLList(items))
+	default:
+		return fmt.Sprintf("%s=%v", key, value)
+	}
+}
+
+// formatKCLList formats a string slice as a KCL list literal, e.g. ["a","b"].
+func formatKCLList(items []string) string {
+	quoted := make([]string, 0, len(items))
+	for _, item := range items {
+		quoted = append(quoted, `"`+item+`"`)
+	}
+	return "[" + strings.Join(quoted, ",") + "]"
 }
 
 // replaceTripleQuotes replaces ”'value”' with 'value' in a string

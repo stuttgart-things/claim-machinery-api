@@ -1,0 +1,28 @@
+---
+apiVersion: resources.stuttgart-things.com/v1alpha1
+kind: ClaimTemplate
+metadata:
+  name: multiselect-test
+  title: Multiselect Test Template
+  description: Template for testing multiselect parameter support
+spec:
+  type: test
+  source: oci://ghcr.io/stuttgart-things/test
+  tag: 0.1.0
+  parameters:
+    - name: playbooks
+      title: Playbooks
+      description: Select one or more playbooks to run
+      type: array
+      multiselect: true
+      enum:
+        - baseos
+        - deploy-docker
+        - configure-network
+      default:
+        - baseos
+
+    - name: name
+      title: Resource Name
+      type: string
+      default: test-resource

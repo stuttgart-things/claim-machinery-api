@@ -46,6 +46,10 @@ type Parameter struct {
 	// Only applies to parameters with enum values
 	AllowRandom bool `yaml:"allowRandom,omitempty" json:"allowRandom,omitempty"`
 
+	// Multiselect allows selecting multiple values from enum options
+	// Only applies to parameters with enum values
+	Multiselect bool `yaml:"multiselect,omitempty" json:"multiselect,omitempty"`
+
 	// Validation
 	Pattern   string `yaml:"pattern,omitempty" json:"pattern,omitempty"`
 	MinLength *int   `yaml:"minLength,omitempty" json:"minLength,omitempty"`

@@ -16,7 +16,20 @@ func BuildParameterValues(t *claimtemplate.ClaimTemplate) map[string]interface{}
 	for _, p := range t.Spec.Parameters {
 		// Use default value if available, otherwise use a reasonable default
 		if p.Default != nil {
-			params[p.Name] = p.Default
+			// For multiselect parameters, convert []interface{} defaults to []string
+			if p.Multiselect {
+				if items, ok := p.Default.([]interface{}); ok {
+					strs := make([]string, 0, len(items))
+					for _, item := range items {
+						strs = append(strs, fmt.Sprintf("%v", item))
+					}
+					params[p.Name] = strs
+				} else {
+					params[p.Name] = p.Default
+				}
+			} else {
+				params[p.Name] = p.Default
+			}
 		} else {
 			// Provide reasonable defaults based on type
 			switch p.Type {
