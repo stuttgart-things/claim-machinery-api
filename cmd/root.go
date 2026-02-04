@@ -14,8 +14,9 @@ var (
 	Date    = "unknown"
 
 	// Flags
-	templatesDir string
-	profilePath  string
+	templatesDir      string
+	profilePath       string
+	enableTemplatesDir bool
 )
 
 var rootCmd = &cobra.Command{
@@ -34,6 +35,7 @@ By default, it starts the API server. Use subcommands for other operations.`,
 func init() {
 	rootCmd.PersistentFlags().StringVar(&templatesDir, "templates-dir", "", "Path to templates directory")
 	rootCmd.PersistentFlags().StringVar(&profilePath, "template-profile-path", "", "Path to template profile YAML")
+	rootCmd.PersistentFlags().BoolVar(&enableTemplatesDir, "enable-templates-dir", false, "Enable loading templates from templates directory")
 }
 
 func Execute() {

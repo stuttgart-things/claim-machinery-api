@@ -51,6 +51,13 @@ func runRender(cmd *cobra.Command, args []string) error {
 	fmt.Printf("Commit:     %s\n", Commit)
 	fmt.Printf("Build Date: %s\n\n", Date)
 
+	// Resolve enableTemplatesDir from flag or env var
+	if !enableTemplatesDir {
+		if v := os.Getenv("ENABLE_TEMPLATES_DIR"); v == "true" {
+			enableTemplatesDir = true
+		}
+	}
+
 	// Load templates directory (flag > env > default)
 	if templatesDir == "" {
 		templatesDir = os.Getenv("TEMPLATES_DIR")
@@ -74,25 +81,24 @@ func runRender(cmd *cobra.Command, args []string) error {
 	var templates []*claimtemplate.ClaimTemplate
 	var sources []string
 
-	if profilePath == "" {
-		// Load from directory only
-		dirTemplates, err := app.LoadAllTemplates(templatesDir)
+	// Load from templates directory only if enabled
+	var dirTemplates []*claimtemplate.ClaimTemplate
+	if enableTemplatesDir {
+		var err error
+		dirTemplates, err = app.LoadAllTemplates(templatesDir)
 		if err != nil {
-			fmt.Printf("❌ Failed to load templates from directory: %v\n", err)
+			fmt.Printf("Failed to load templates from directory: %v\n", err)
 			os.Exit(1)
 		}
+		sources = append(sources, templatesDir)
+	}
+
+	if profilePath == "" {
 		templates = dirTemplates
-		sources = []string{templatesDir}
 	} else {
-		// Combine directory templates with profile templates
-		dirTemplates, err1 := app.LoadAllTemplates(templatesDir)
-		if err1 != nil {
-			fmt.Printf("❌ Failed to load templates from directory: %v\n", err1)
-			os.Exit(1)
-		}
 		profileTemplates, profileSources, err2 := app.LoadTemplatesFromProfile(profilePath)
 		if err2 != nil {
-			fmt.Printf("❌ Failed to load templates from profile: %v\n", err2)
+			fmt.Printf("Failed to load templates from profile: %v\n", err2)
 			os.Exit(1)
 		}
 
@@ -109,7 +115,7 @@ func runRender(cmd *cobra.Command, args []string) error {
 			templates = append(templates, t)
 		}
 
-		sources = append([]string{templatesDir}, profileSources...)
+		sources = append(sources, profileSources...)
 	}
 
 	fmt.Printf("📂 Loaded %d templates\n\n", len(templates))

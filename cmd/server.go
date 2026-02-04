@@ -33,6 +33,13 @@ func runServer(cmd *cobra.Command, args []string) error {
 	fmt.Printf("Commit:     %s\n", Commit)
 	fmt.Printf("Build Date: %s\n\n", Date)
 
+	// Resolve enableTemplatesDir from flag or env var
+	if !enableTemplatesDir {
+		if v := os.Getenv("ENABLE_TEMPLATES_DIR"); v == "true" {
+			enableTemplatesDir = true
+		}
+	}
+
 	// Load templates directory (flag > env > default)
 	if templatesDir == "" {
 		templatesDir = os.Getenv("TEMPLATES_DIR")
@@ -53,26 +60,27 @@ func runServer(cmd *cobra.Command, args []string) error {
 		profilePath = "tests/profile.yaml"
 	}
 
-	var server *api.Server
-	var err error
-	if profilePath == "" {
-		// Load from directory only
-		dirTemplates, err1 := app.LoadAllTemplates(templatesDir)
-		if err1 != nil {
-			log.Fatalf("failed to load templates from dir: %v", err1)
+	var dirTemplates []*claimtemplate.ClaimTemplate
+	if enableTemplatesDir {
+		var err error
+		dirTemplates, err = app.LoadAllTemplates(templatesDir)
+		if err != nil {
+			log.Fatalf("failed to load templates from dir: %v", err)
 		}
 		fmt.Printf("📂 Using templates directory: %s\n", templatesDir)
 		fmt.Printf("🧾 Loaded %d templates from directory\n", len(dirTemplates))
 		for _, t := range dirTemplates {
 			fmt.Printf("   • %s\n", t.Metadata.Name)
 		}
+	} else {
+		fmt.Println("📂 Templates directory loading disabled")
+	}
+
+	var server *api.Server
+	var err error
+	if profilePath == "" {
 		server, err = api.NewServerWithTemplates(dirTemplates)
 	} else {
-		// Combine directory templates with profile templates
-		dirTemplates, err1 := app.LoadAllTemplates(templatesDir)
-		if err1 != nil {
-			log.Fatalf("failed to load templates from dir: %v", err1)
-		}
 		profileTemplates, sources, err2 := app.LoadTemplatesFromProfile(profilePath)
 		if err2 != nil {
 			log.Fatalf("failed to load templates from profile: %v", err2)
@@ -91,8 +99,6 @@ func runServer(cmd *cobra.Command, args []string) error {
 			final = append(final, t)
 		}
 
-		// Log loaded sources for visibility
-		fmt.Printf("📂 Using templates directory: %s\n", templatesDir)
 		fmt.Printf("🧾 Loaded %d templates from profile %s\n", len(profileTemplates), profilePath)
 		for _, s := range sources {
 			fmt.Printf("   • source: %s\n", s)
