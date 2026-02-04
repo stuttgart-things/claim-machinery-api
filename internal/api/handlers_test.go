@@ -5,15 +5,25 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
+// testdataDir returns the absolute path to the shared claimtemplate testdata directory.
+func testdataDir(t *testing.T) string {
+	t.Helper()
+	_, file, _, ok := runtime.Caller(0)
+	require.True(t, ok, "failed to determine test file path")
+	return filepath.Join(filepath.Dir(file), "..", "claimtemplate", "testdata")
+}
+
 func TestHealthCheck(t *testing.T) {
 	// Create server
-	server, err := NewServer("internal/claimtemplate/testdata")
+	server, err := NewServer(testdataDir(t))
 	require.NoError(t, err)
 
 	// Create request
@@ -30,7 +40,7 @@ func TestHealthCheck(t *testing.T) {
 
 func TestListTemplates(t *testing.T) {
 	// Create server
-	server, err := NewServer("internal/claimtemplate/testdata")
+	server, err := NewServer(testdataDir(t))
 	require.NoError(t, err)
 
 	// Create request
@@ -55,11 +65,11 @@ func TestListTemplates(t *testing.T) {
 
 func TestGetTemplate(t *testing.T) {
 	// Create server
-	server, err := NewServer("internal/claimtemplate/testdata")
+	server, err := NewServer(testdataDir(t))
 	require.NoError(t, err)
 
 	// Create request
-	req := httptest.NewRequest(http.MethodGet, "/api/v1/claim-templates/volumeclaim", nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/claim-templates/volumeclaim-simple", nil)
 	w := httptest.NewRecorder()
 
 	// Handle request
@@ -79,7 +89,7 @@ func TestGetTemplate(t *testing.T) {
 
 func TestGetTemplate_NotFound(t *testing.T) {
 	// Create server
-	server, err := NewServer("internal/claimtemplate/testdata")
+	server, err := NewServer(testdataDir(t))
 	require.NoError(t, err)
 
 	// Create request for non-existent template
@@ -95,7 +105,7 @@ func TestGetTemplate_NotFound(t *testing.T) {
 
 func TestOrderClaim(t *testing.T) {
 	// Create server
-	server, err := NewServer("internal/claimtemplate/testdata")
+	server, err := NewServer(testdataDir(t))
 	require.NoError(t, err)
 
 	// Create request body
@@ -110,7 +120,7 @@ func TestOrderClaim(t *testing.T) {
 	// Create request
 	req := httptest.NewRequest(
 		http.MethodPost,
-		"/api/v1/claim-templates/volumeclaim/order",
+		"/api/v1/claim-templates/volumeclaim-simple/order",
 		bytes.NewReader(body),
 	)
 	req.Header.Set("Content-Type", "application/json")
@@ -134,7 +144,7 @@ func TestOrderClaim(t *testing.T) {
 
 func TestOrderClaim_NotFound(t *testing.T) {
 	// Create server
-	server, err := NewServer("internal/claimtemplate/testdata")
+	server, err := NewServer(testdataDir(t))
 	require.NoError(t, err)
 
 	// Create request body
@@ -160,13 +170,13 @@ func TestOrderClaim_NotFound(t *testing.T) {
 
 func TestOrderClaim_InvalidBody(t *testing.T) {
 	// Create server
-	server, err := NewServer("internal/claimtemplate/testdata")
+	server, err := NewServer(testdataDir(t))
 	require.NoError(t, err)
 
 	// Create request with invalid JSON
 	req := httptest.NewRequest(
 		http.MethodPost,
-		"/api/v1/claim-templates/volumeclaim/order",
+		"/api/v1/claim-templates/volumeclaim-simple/order",
 		bytes.NewReader([]byte("invalid json")),
 	)
 	req.Header.Set("Content-Type", "application/json")
