@@ -13,10 +13,10 @@ func TestLoadClaimTemplate(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Equal(t, "ClaimTemplate", tmpl.Kind)
-	require.Equal(t, "volumeclaim", tmpl.Metadata.Name)
+	require.Equal(t, "volumeclaim-simple", tmpl.Metadata.Name)
 	require.Equal(t, "oci://ghcr.io/stuttgart-things/claim-xplane-volumeclaim", tmpl.Spec.Source)
 
-	require.Len(t, tmpl.Spec.Parameters, 4)
+	require.Len(t, tmpl.Spec.Parameters, 10)
 
 	param := tmpl.Spec.Parameters[0]
 	require.Equal(t, "templateName", param.Name)
