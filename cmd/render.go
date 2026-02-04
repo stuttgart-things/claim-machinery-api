@@ -152,6 +152,7 @@ func runRender(cmd *cobra.Command, args []string) error {
 	// Step 2: Build dynamic form based on template parameters
 	params := make(map[string]interface{})
 	paramValues := make(map[string]*string)
+	multiSelectValues := make(map[string]*[]string)
 
 	// Create form fields for each parameter
 	var formGroups []*huh.Group
@@ -159,22 +160,39 @@ func runRender(cmd *cobra.Command, args []string) error {
 	var visibleCount int
 
 	for _, p := range tmpl.Spec.Parameters {
-		// Create a string pointer to hold the value (including hidden params)
-		defaultVal := ""
-		if p.Default != nil {
-			defaultVal = fmt.Sprintf("%v", p.Default)
-		}
-		paramValues[p.Name] = &defaultVal
-
 		// Skip hidden parameters - they use their default value
 		if p.Hidden {
+			defaultVal := ""
+			if p.Default != nil {
+				defaultVal = fmt.Sprintf("%v", p.Default)
+			}
+			paramValues[p.Name] = &defaultVal
 			continue
 		}
 
-		visibleCount++
-		field := createField(p, paramValues[p.Name])
-		if field != nil {
-			currentFields = append(currentFields, field)
+		// Handle multiselect parameters
+		if p.Multiselect && len(p.Enum) > 0 {
+			defaults := defaultsToStringSlice(p.Default)
+			multiSelectValues[p.Name] = &defaults
+
+			visibleCount++
+			field := createMultiSelectField(p, multiSelectValues[p.Name])
+			if field != nil {
+				currentFields = append(currentFields, field)
+			}
+		} else {
+			// Create a string pointer to hold the value (including hidden params)
+			defaultVal := ""
+			if p.Default != nil {
+				defaultVal = fmt.Sprintf("%v", p.Default)
+			}
+			paramValues[p.Name] = &defaultVal
+
+			visibleCount++
+			field := createField(p, paramValues[p.Name])
+			if field != nil {
+				currentFields = append(currentFields, field)
+			}
 		}
 
 		// Group fields (max 5 per group for better UX)
@@ -201,7 +219,19 @@ func runRender(cmd *cobra.Command, args []string) error {
 	// Resolve random selections and pass all values as strings
 	rand.Seed(time.Now().UnixNano())
 	for _, p := range tmpl.Spec.Parameters {
-		strVal := *paramValues[p.Name]
+		// Handle multiselect values
+		if p.Multiselect && len(p.Enum) > 0 {
+			if vals, ok := multiSelectValues[p.Name]; ok && len(*vals) > 0 {
+				params[p.Name] = *vals
+			}
+			continue
+		}
+
+		valPtr, ok := paramValues[p.Name]
+		if !ok {
+			continue
+		}
+		strVal := *valPtr
 		if strVal == "" {
 			continue
 		}
@@ -249,10 +279,15 @@ func runRender(cmd *cobra.Command, args []string) error {
 		allParams[k] = v
 	}
 
-	// Convert all values to strings (KCL expects string types)
+	// Convert scalar values to strings; preserve slices for KCL list rendering
 	stringParams := make(map[string]interface{})
 	for k, v := range allParams {
-		stringParams[k] = fmt.Sprintf("%v", v)
+		switch v.(type) {
+		case []string, []interface{}:
+			stringParams[k] = v
+		default:
+			stringParams[k] = fmt.Sprintf("%v", v)
+		}
 	}
 
 	result := render.RenderKCLFromOCI(tmpl.Spec.Source, tmpl.Spec.Tag, stringParams)
@@ -287,6 +322,46 @@ func runRender(cmd *cobra.Command, args []string) error {
 	}
 
 	return nil
+}
+
+// defaultsToStringSlice converts a parameter's Default value to a []string.
+func defaultsToStringSlice(def interface{}) []string {
+	if def == nil {
+		return nil
+	}
+	switch v := def.(type) {
+	case []interface{}:
+		out := make([]string, 0, len(v))
+		for _, item := range v {
+			out = append(out, fmt.Sprintf("%v", item))
+		}
+		return out
+	case []string:
+		return v
+	default:
+		return nil
+	}
+}
+
+// createMultiSelectField creates a multi-select huh field for parameters with multiselect: true.
+func createMultiSelectField(p claimtemplate.Parameter, value *[]string) huh.Field {
+	title := p.Title
+	if p.Required {
+		title += " *"
+	}
+
+	description := p.Description
+
+	var options []huh.Option[string]
+	for _, e := range p.Enum {
+		options = append(options, huh.NewOption(e, e))
+	}
+
+	return huh.NewMultiSelect[string]().
+		Title(title).
+		Description(description).
+		Options(options...).
+		Value(value)
 }
 
 // createField creates the appropriate huh field based on parameter type
