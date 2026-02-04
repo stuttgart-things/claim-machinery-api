@@ -1,3 +1,10 @@
+## [0.4.1](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.4.0...v0.4.1) (2026-02-04)
+
+
+### Bug Fixes
+
+* fix/release-config ([1c7a347](https://github.com/stuttgart-things/claim-machinery-api/commit/1c7a347ada17d88e4b1d71ad59a58c107158be59))
+
 # [0.4.0](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.3.0...v0.4.0) (2026-02-04)
 
 
