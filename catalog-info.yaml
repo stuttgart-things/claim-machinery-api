@@ -49,11 +49,3 @@ spec:
   system: platform-engineering
   definition:
     $text: https://github.com/stuttgart-things/claim-machinery-api/blob/main/docs/openapi.yaml
----
-apiVersion: backstage.io/v1alpha1
-kind: System
-metadata:
-  name: platform-engineering
-  description: Platform Engineering tooling and infrastructure
-spec:
-  owner: user:patrick-hermann-sva
