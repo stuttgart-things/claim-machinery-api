@@ -69,7 +69,7 @@ func (m *Dagger) BuildAndTest(
 		// Uncomment to see JSON logs from API during tests
 		// WithEnvVariable("LOG_FORMAT", "json").
 		WithWorkdir("/app").
-		WithEntrypoint([]string{"./bin/" + binName}).
+		WithEntrypoint([]string{"./bin/" + binName, "server"}).
 		AsService()
 
 	// Create test container that runs tests against the API
