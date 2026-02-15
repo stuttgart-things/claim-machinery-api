@@ -129,6 +129,9 @@ func runRender(cmd *cobra.Command, args []string) error {
 	var templateOptions []huh.Option[string]
 
 	for _, t := range templates {
+		if t.Metadata.Name == "" {
+			continue
+		}
 		templateMap[t.Metadata.Name] = t
 		label := fmt.Sprintf("%s - %s", t.Metadata.Name, t.Metadata.Title)
 		templateOptions = append(templateOptions, huh.NewOption(label, t.Metadata.Name))
@@ -167,7 +170,8 @@ func runRender(cmd *cobra.Command, args []string) error {
 
 	for _, p := range tmpl.Spec.Parameters {
 		// Skip hidden parameters - they use their default value
-		if p.Hidden {
+		// Also auto-hide templateName when it has a default (internal implementation detail)
+		if p.Hidden || (p.Name == "templateName" && p.Default != nil) {
 			defaultVal := ""
 			if p.Default != nil {
 				defaultVal = fmt.Sprintf("%v", p.Default)

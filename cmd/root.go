@@ -25,10 +25,10 @@ var rootCmd = &cobra.Command{
 	Long: `Claim Machinery API provides a service for rendering claim templates
 using KCL (KusionStack Configuration Language) from OCI registries.
 
-By default, it starts the API server. Use subcommands for other operations.`,
-	// Default behavior: run server
+By default, it launches the interactive template renderer. Use 'server' subcommand to start the API server.`,
+	// Default behavior: run render
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return serverCmd.RunE(cmd, args)
+		return renderCmd.RunE(cmd, args)
 	},
 }
 
