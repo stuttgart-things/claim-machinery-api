@@ -13,9 +13,6 @@ A Backstage-compatible API for discovering, managing, and rendering KCL-based Cr
 
 ## Features
 
-<details>
-<summary><strong>Feature Overview</strong></summary>
-
 | Feature | Description |
 |---------|-------------|
 | Template Discovery | Browse and search KCL-based Crossplane claim templates |
@@ -23,17 +20,212 @@ A Backstage-compatible API for discovering, managing, and rendering KCL-based Cr
 | Claim Rendering | Render claims with custom parameters using KCL |
 | Backstage Integration | Native support for Backstage Software Catalog |
 | OCI Support | Load templates from OCI registries |
-| Parameter Validation | Built-in parameter validation with custom rules |
+| Parameter Schema | Exposes parameter metadata (types, enums, patterns, defaults) for client-side validation |
+| Interactive CLI | Terminal UI for rendering claims with forms, dropdowns, and live YAML preview |
+
+> **Note:** Authentication and authorization are not built into the API. These are expected to be handled by an upstream API gateway or service mesh.
+
+## Architecture
+
+```
+┌──────────────────────────────────────────┐
+│           HTTP Request                   │
+├──────────────────────────────────────────┤
+│  Middleware (CORS, logging, request ID,  │
+│             error/panic recovery)        │
+├──────────────────────────────────────────┤
+│  API Handlers (list, get, order claims)  │
+├──────────────────────────────────────────┤
+│  Application Layer                       │
+│  - Parameter merging with defaults       │
+│  - Template loading (dir + profile)      │
+├──────────────────────────────────────────┤
+│  KCL Rendering Engine                    │
+│  - OCI-based (kcl run oci://...)         │
+│  - File-based (Go SDK)                   │
+├──────────────────────────────────────────┤
+│  External: OCI Registries (ghcr.io)      │
+└──────────────────────────────────────────┘
+```
+
+**Tech stack:** Go, Gorilla Mux, KCL SDK, Cobra, Charmbracelet (bubbletea/huh)
+
+## Quick Start
+
+```bash
+git clone https://github.com/stuttgart-things/claim-machinery-api.git
+cd claim-machinery-api
+go mod download
+
+# Run API server (default mode)
+go run main.go
+
+# Or interactive CLI
+go run main.go render
+```
+
+The server loads templates from `internal/claimtemplate/testdata` and `tests/profile.yaml` by default, and listens on port `8080`.
+
+## API Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/v1/claim-templates` | GET | List all available claim templates |
+| `/api/v1/claim-templates/{name}` | GET | Get template details with parameter schema |
+| `/api/v1/claim-templates/{name}/order` | POST | Render a claim with custom parameters |
+| `/health` | GET | Health check |
+| `/version` | GET | Build version metadata |
+| `/openapi.yaml` | GET | OpenAPI specification |
+| `/docs` | GET | OpenAPI documentation (Redoc UI) |
+
+### List Templates
+
+```bash
+curl http://localhost:8080/api/v1/claim-templates
+```
+
+Response:
+
+```json
+{
+  "apiVersion": "api.claim-machinery.io/v1alpha1",
+  "kind": "ClaimTemplateList",
+  "items": [
+    {
+      "apiVersion": "sthings.io/v1alpha1",
+      "kind": "ClaimTemplate",
+      "metadata": {
+        "name": "volumeclaim",
+        "title": "Crossplane Volume Claim",
+        "description": "Creates a persistent volume claim via Crossplane",
+        "tags": ["storage", "crossplane"]
+      },
+      "spec": { "type": "volumeclaim", "source": "oci://...", "parameters": [...] }
+    }
+  ]
+}
+```
+
+### Get Template Details
+
+```bash
+curl http://localhost:8080/api/v1/claim-templates/volumeclaim
+```
+
+Returns the full `ClaimTemplate` object including all parameter definitions (type, enum, default, required, pattern, etc.).
+
+### Render a Claim
+
+```bash
+curl -X POST http://localhost:8080/api/v1/claim-templates/volumeclaim/order \
+  -H "Content-Type: application/json" \
+  -d '{"parameters": {"namespace": "production", "storage": "100Gi"}}'
+```
+
+Response:
+
+```json
+{
+  "apiVersion": "api.claim-machinery.io/v1alpha1",
+  "kind": "OrderResponse",
+  "metadata": {
+    "name": "volumeclaim",
+    "timestamp": "2025-01-10T12:00:00Z"
+  },
+  "rendered": "apiVersion: sthings.io/v1alpha1\nkind: VolumeClaim\n..."
+}
+```
+
+Extract just the YAML:
+
+```bash
+curl -s -X POST http://localhost:8080/api/v1/claim-templates/volumeclaim/order \
+  -H "Content-Type: application/json" \
+  -d '{"parameters": {"namespace": "production", "storage": "100Gi"}}' | jq -r '.rendered'
+```
+
+Passing an empty body `{}` renders with all default values.
+
+<details>
+<summary><strong>More Examples (HarborProject)</strong></summary>
+
+```bash
+# With default parameters
+curl -X POST http://localhost:8080/api/v1/claim-templates/harborproject/order \
+  -H "Content-Type: application/json" \
+  -d '{}'
+
+# With custom parameters
+curl -X POST http://localhost:8080/api/v1/claim-templates/harborproject/order \
+  -H "Content-Type: application/json" \
+  -d '{
+    "parameters": {
+      "projectName": "my-app-project",
+      "harborURL": "https://harbor.idp.kubermatic.sva.dev",
+      "storageQuota": 10737418240,
+      "harborInsecure": false,
+      "providerConfigRef": "default"
+    }
+  }'
+```
 
 </details>
 
-<details>
+### Health & Version
 
+```bash
+curl http://localhost:8080/health
+# {"status":"healthy","timestamp":"2025-01-10T12:00:00Z"}
+
+curl http://localhost:8080/version
+# {"version":"dev","commit":"none","buildDate":"unknown"}
+```
+
+## Usage
+
+### API Server (Default)
+
+```bash
+# Run directly (default mode)
+claim-machinery-api
+
+# Or explicitly
+claim-machinery-api server
+```
+
+### Interactive CLI
+
+```bash
+claim-machinery-api render
+```
+
+Features: template selection, dynamic parameter forms, enum dropdowns, random value selection, default pre-fill, type/pattern validation, live YAML preview, and optional file save.
+
+### Configuration
+
+Both modes support the same configuration options:
+
+```bash
+# Custom templates directory
+claim-machinery-api --templates-dir /path/to/templates
+
+# Custom profile (or disable with "")
+claim-machinery-api --template-profile-path /path/to/profile.yaml
+
+# Environment variables
+export TEMPLATES_DIR=/path/to/templates
+export TEMPLATE_PROFILE_PATH=/path/to/profile.yaml
+export PORT=9090
+export LOG_FORMAT=json   # default: text
+```
+
+**Priority:** Flag > Environment Variable > Default
+
+<details>
 <summary><strong>Template Profile</strong></summary>
 
-Add additional templates via profile file (merged with directory):
+Add additional templates via a profile file (merged with the templates directory):
 
-templates:
 ```bash
 cat <<EOF > profile.yaml
 ---
@@ -54,7 +246,7 @@ Or via CLI flag (overrides env):
 go run main.go --template-profile-path /absolute/path/to/profile.yaml
 ```
 
-Or as container (overrides env):
+Or as container:
 
 ```bash
 docker run --rm \
@@ -72,226 +264,13 @@ docker run --rm \
 
 </details>
 
-
-## API
-
 <details>
-<summary><strong>API Endpoints Overview</strong></summary>
+<summary><strong>Request ID and Correlation</strong></summary>
 
-```bash
-# List all available claim templates
-GET /api/v1/claim-templates
-
-# Get template details with schema
-GET /api/v1/claim-templates/{name}
-
-# Render a claim with parameters
-POST /api/v1/claim-templates/{name}/order
-```
-
-</details>
-
-<details>
-<summary><strong>Version Endpoint</strong></summary>
-
-```bash
-curl http://localhost:8080/version
-# {"version":"dev","commit":"none","buildDate":"unknown"}
-```
-
-</details>
-
-<details>
-<summary><strong>OpenAPI Specification and Documentation</strong></summary>
-
-```bash
-# OpenAPI spec (served from docs/openapi.yaml if present)
-curl http://localhost:8080/openapi.yaml
-
-# Redoc UI
-open http://localhost:8080/docs
-```
-
-</details>
-
-<details>
-<summary><strong>Health Check</strong></summary>
-
-```bash
-curl http://localhost:8080/health
-```
-
-</details>
-
-<details>
-<summary><strong>List All Templates</strong></summary>
-
-```bash
-curl http://localhost:8080/api/v1/claim-templates
-```
-
-</details>
-
-<details>
-<summary><strong>Get Single Template Details</strong></summary>
-
-```bash
-curl http://localhost:8080/api/v1/claim-templates/volumeclaim
-```
-
-```bash
-curl http://localhost:8080/api/v1/claim-templates/harborproject
-```
-
-</details>
-
-<details>
-<summary><strong>Render Template - VolumeClaim Example</strong></summary>
-
-```bash
-curl -X POST http://localhost:8080/api/v1/claim-templates/volumeclaim/order \
-  -H "Content-Type: application/json" \
-  -d '{}'
-```
-
-```bash
-curl -X POST http://localhost:8080/api/v1/claim-templates/volumeclaim/order \
-  -H "Content-Type: application/json" \
-  -d '{"parameters": {"namespace": "production", "storage": "100Gi"}}'
-```
-
-**Extract YAML from response:**
-
-```bash
-curl -s -X POST http://localhost:8080/api/v1/claim-templates/volumeclaim/order \
-  -H "Content-Type: application/json" \
-  -d '{"parameters": {"namespace": "production", "storage": "100Gi"}}' | jq -r '.rendered'
-```
-
-</details>
-
-<details>
-<summary><strong>Render Template - HarborProject Example</strong></summary>
-
-**With default parameters:**
-
-```bash
-curl -X POST http://localhost:8080/api/v1/claim-templates/harborproject/order \
-  -H "Content-Type: application/json" \
-  -d '{}'
-```
-
-**With custom parameters:**
-
-```bash
-curl -X POST http://localhost:8080/api/v1/claim-templates/harborproject/order \
-  -H "Content-Type: application/json" \
-  -d '{
-    "parameters": {
-      "projectName": "my-app-project",
-      "harborURL": "https://harbor.idp.kubermatic.sva.dev",
-      "storageQuota": 10737418240,
-      "harborInsecure": false,
-      "providerConfigRef": "default"
-    }
-  }'
-```
-
-**Extract YAML from response:**
-
-```bash
-curl -s -X POST http://localhost:8080/api/v1/claim-templates/harborproject/order \
-  -H "Content-Type: application/json" \
-  -d '{
-    "parameters": {
-      "projectName": "my-app-project",
-      "harborURL": "https://harbor.idp.kubermatic.sva.dev",
-      "storageQuota": 10737418240
-    }
-  }' | jq -r '.rendered'
-```
-
-</details>
-
-## Usage
-
-### API Server (Default)
-
-Start the HTTP API server:
-
-```bash
-# Run directly (default mode)
-claim-machinery-api
-
-# Or explicitly
-claim-machinery-api server
-```
-
-The server will:
-- Load templates from `internal/claimtemplate/testdata` (default)
-- Additionally load from `tests/profile.yaml` (default profile)
-- Start HTTP server on port 8080
-
-### Interactive CLI
-
-Render claims interactively with a terminal UI:
-
-```bash
-claim-machinery-api render
-```
-
-**Features:**
-- Interactive template selection
-- Dynamic forms based on template parameters
-- Enum fields as dropdowns
-- Random value selection for enums
-- Default values pre-filled
-- Parameter validation (type, pattern, required)
-- Live YAML preview with syntax highlighting
-- Optional file save with suggested path
-
-**Workflow:**
-1. Select a template from the list
-2. Fill in parameters (or use defaults)
-3. Confirm rendering
-4. View rendered YAML
-5. Optionally save to file
-
-### Configuration
-
-Both modes support the same configuration options:
-
-```bash
-# Custom templates directory
-claim-machinery-api --templates-dir /path/to/templates
-
-# Custom profile (or disable with "")
-claim-machinery-api --template-profile-path /path/to/profile.yaml
-
-# Environment variables
-export TEMPLATES_DIR=/path/to/templates
-export TEMPLATE_PROFILE_PATH=/path/to/profile.yaml
-claim-machinery-api render
-```
-
-**Priority:** Flag > Environment Variable > Default
-
-## Development
-
-<details>
-<summary><strong>Getting Started</strong></summary>
-
-```bash
-git clone https://github.com/stuttgart-things/claim-machinery-api.git
-cd claim-machinery-api
-go mod download
-
-# Run API server
-go run main.go
-
-# Or interactive CLI
-go run main.go render
-```
+- Incoming `X-Request-ID` header is preserved; otherwise the server generates an ID
+- Response always includes the `X-Request-ID` header (CORS: exposed)
+- Logs (text/JSON) include `requestId` for correlation
+- On panics, the server returns JSON with `{"error":"internal server error","requestId":"..."}` and logs structured output
 
 </details>
 
@@ -306,12 +285,21 @@ DEBUG=1 go run main.go
 
 </details>
 
-### Testing CLIs
+## Development
+
+<details>
+<summary><strong>Testing</strong></summary>
+
+```bash
+go test ./...
+```
+
+</details>
 
 <details>
 <summary><strong>Legacy Test CLIs (tests/cli & tests/cli-api)</strong></summary>
 
-> **Note:** These are legacy test tools. The new integrated CLI via `claim-machinery-api render` is recommended.
+> **Note:** These are legacy test tools. The integrated CLI via `claim-machinery-api render` is recommended.
 
 Two interactive CLI tools are available in `/tests` for testing and development.
 
@@ -405,73 +393,15 @@ See [Taskfile.yaml](Taskfile.yaml) for all available tasks.
 
 </details>
 
-## Configuration
-
-<details>
-<summary><strong>Templates Directory</strong></summary>
-
-Configure the templates directory (defaults to `internal/claimtemplate/testdata`):
-
-```bash
-export TEMPLATES_DIR=/path/to/your/templates
-go run main.go
-```
-
-Equivalent via CLI flag (overrides env):
-
-```bash
-go run main.go --templates-dir /path/to/your/templates
-```
-
-</details>
-
-
-
-<details>
-<summary><strong>Server Port</strong></summary>
-
-Set a custom port with the `PORT` environment variable (default `8080`):
-
-```bash
-PORT=9090 go run main.go
-```
-
-</details>
-
-<details>
-<summary><strong>Logging</strong></summary>
-
-- Standard: Text logs with method, path, status, duration, remote IP, and user agent
-- Enable JSON logs:
-
-```bash
-LOG_FORMAT=json go run main.go
-```
-
-</details>
-
-<details>
-<summary><strong>Request ID and Correlation</strong></summary>
-
-- Incoming `X-Request-ID` header is preserved; otherwise the server generates an ID
-- Response always includes the `X-Request-ID` header (CORS: exposed)
-- Logs (text/JSON) include `requestId` for correlation
-- On panics, the server returns JSON with `{"error":"internal server error","requestId":"..."}` and logs structured output
-
-</details>
-
 ## Documentation
-
-<details>
-<summary><strong>Additional Resources</strong></summary>
 
 | Document | Description |
 |----------|-------------|
-| [SPEC.md](./SPEC.md) | Full technical specification |
-| [ROADMAP.md](./ROADMAP.md) | Project roadmap and tracking |
+| [SPEC.md](./docs/SPEC.md) | Full technical specification |
+| [ROADMAP.md](./docs/ROADMAP.md) | Project roadmap and tracking |
 | [API Examples](./docs/api-examples.md) | API usage examples |
-
-</details>
+| [Template Schema](./docs/claim-template-schema.md) | Claim template specification |
+| [OpenAPI Spec](./docs/openapi.yaml) | OpenAPI / Swagger definition |
 
 ## License
 
