@@ -11,6 +11,8 @@ includes:
     taskfile: https://raw.githubusercontent.com/stuttgart-things/tasks/refs/heads/main/dagger/modules.yaml
   image:
     taskfile: https://raw.githubusercontent.com/stuttgart-things/tasks/refs/heads/main/docker/copy.yaml
+  precommit:
+    taskfile: https://raw.githubusercontent.com/stuttgart-things/tasks/refs/heads/main/dagger/precommit.yaml
   goBuild:
     taskfile: https://raw.githubusercontent.com/stuttgart-things/tasks/refs/heads/main/go/build.yaml
 
@@ -34,6 +36,11 @@ vars:
   TEST_REPORT_PATH: /tmp/test-report-{{ .PROJECT }}.txt
 
 tasks:
+  pre-commit:
+    desc: Run pre-commit hooks via Dagger
+    cmds:
+      - task: precommit:run-pre-commit
+
   pr-git:
     desc: Create pr
     description: Create a pull request with pior linting, building, testing, and scanning
