@@ -47,7 +47,7 @@ tasks:
           LINT_SOURCE_DIR: "./"
           YAML_CONFIG_PATH: .yamllint
           MARKDOWN_CONFIG_PATH: .mdlrc
-          MERGED_OUTPUT_FILE: 'md-yaml-lint-findings.txt'
+          MERGED_OUTPUT_FILE: '/tmp/md-yaml-lint-findings.txt'
 
 
   pr-git:
