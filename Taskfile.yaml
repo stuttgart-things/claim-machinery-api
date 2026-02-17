@@ -17,6 +17,10 @@ includes:
 
   k8sMicroservice:
     taskfile: /home/sthings/projects/tasks/go/k8s-microservice.yaml
+    dir: .
+    BRANCH:
+      sh: |
+        if [ $(git rev-parse --abbrev-ref HEAD) != "main" ]; then echo $(git rev-parse --abbrev-ref HEAD); else echo main ; fi
 
 vars:
   DATE:
