@@ -36,6 +36,19 @@ kcl run main.k \
   -D config.ingressTlsEnabled=True \
   -D config.ingressTlsSecretName="api-tls" # pragma: allowlist secret
 
+# Enable Gateway API HTTPRoute (alternative to ingress)
+kcl run main.k \
+  -D config.httpRouteEnabled=True \
+  -D config.httpRouteParentRefName="main-gateway" \
+  -D config.httpRouteHostname="api.example.com"
+
+# HTTPRoute with gateway in different namespace
+kcl run main.k \
+  -D config.httpRouteEnabled=True \
+  -D config.httpRouteParentRefName="main-gateway" \
+  -D config.httpRouteParentRefNamespace="gateway-system" \
+  -D config.httpRouteHostname="api.example.com"
+
 # Production-like setup
 kcl run main.k \
   -D config.namespace=production \
@@ -119,6 +132,11 @@ kcl run main.k | kubectl delete -f -
 | `config.ingressTlsEnabled` | bool | `False` | Enable TLS |
 | `config.ingressTlsSecretName` | string | `claim-machinery-api-tls` | TLS secret name |
 | `config.ingressAnnotations` | {str:str} | `{}` | Ingress annotations (e.g., cert-manager) |
+| `config.httpRouteEnabled` | bool | `False` | Enable Gateway API HTTPRoute |
+| `config.httpRouteParentRefName` | string | `` | Gateway name (required when httpRouteEnabled) |
+| `config.httpRouteParentRefNamespace` | string | `` | Gateway namespace (optional) |
+| `config.httpRouteHostname` | string | `` | HTTPRoute hostname (defaults to ingressHost) |
+| `config.httpRouteAnnotations` | {str:str} | `{}` | HTTPRoute annotations |
 | `config.templatesDir` | string | `/app/templates` | Templates directory (TEMPLATES_DIR env var) |
 | `config.templateProfilePath` | string | `/app/config/profile.yaml` | Template profile path (TEMPLATE_PROFILE_PATH env var) |
 | `config.templateProfile` | string | `` | Template profile YAML content (mounted as file) |
@@ -143,7 +161,75 @@ kcl run main.k | kubectl delete -f -
 | `deploy.k` | Deployment resource |
 | `service.k` | Service resource |
 | `ingress.k` | Ingress resource |
+| `httproute.k` | HTTPRoute resource (Gateway API) |
 | `main.k` | Entry point |
+
+## Gateway API Example
+
+The deployment supports [Gateway API](https://gateway-api.sigs.k8s.io/) HTTPRoute as an alternative to Ingress. This requires a Gateway resource deployed on the cluster (e.g. with Cilium).
+
+### Example Gateway (Cilium)
+
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: whatever-gateway
+  namespace: default
+spec:
+  gatewayClassName: cilium
+  listeners:
+    - name: https
+      port: 443
+      protocol: HTTPS
+      hostname: "*.whatever.sthings-vsphere.labul.sva.de"
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: wildcard-whatever-tls
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: http
+      port: 80
+      protocol: HTTP
+      hostname: "*.whatever.sthings-vsphere.labul.sva.de"
+      allowedRoutes:
+        namespaces:
+          from: All
+```
+
+> **Note:** Set `allowedRoutes.namespaces.from: All` on the Gateway listeners to allow HTTPRoutes from other namespaces. With `from: Same` (default), only routes in the Gateway's own namespace are accepted.
+
+### Deploy with HTTPRoute
+
+```bash
+# Render and apply with Gateway API HTTPRoute
+kcl run main.k \
+  -D config.namespace=claim-machinery \
+  -D config.httpRouteEnabled=True \
+  -D config.httpRouteParentRefName="whatever-gateway" \
+  -D config.httpRouteParentRefNamespace="default" \
+  -D config.httpRouteHostname="claim-api.whatever.sthings-vsphere.labul.sva.de" \
+  -D 'config.templateProfiles=["https://raw.githubusercontent.com/stuttgart-things/kcl/refs/heads/main/crossplane/claim-xplane-volumeclaim/templates/volumeclaim-simple.yaml","https://raw.githubusercontent.com/stuttgart-things/kcl/refs/heads/main/crossplane/claim-xplane-harborproject/templates/harborproject-simple.yaml"]' \
+  -D 'config.extraEnvVars={"TEMPLATE_PROFILE_PATH": "/app/config/profile.yaml"}' \
+  | yq '.manifests | (.[] | splitDoc)' - \
+  | kubectl apply -f -
+```
+
+### Verify HTTPRoute
+
+```bash
+# Check HTTPRoute status (should show Accepted: True)
+kubectl -n claim-machinery get httproute claim-machinery-api
+
+# Check HTTPRoute details
+kubectl -n claim-machinery get httproute claim-machinery-api -o yaml | yq '.status.parents[0].conditions'
+
+# Test endpoint
+curl http://claim-api.whatever.sthings-vsphere.labul.sva.de/health
+```
 
 ## Dagger Deployment
 

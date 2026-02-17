@@ -11,6 +11,11 @@ _ingressEnabled = option("config.ingressEnabled")
 _ingressHost = option("config.ingressHost")
 _ingressTlsEnabled = option("config.ingressTlsEnabled")
 _ingressAnnotations = option("config.ingressAnnotations") or {}
+_httpRouteEnabled = option("config.httpRouteEnabled")
+_httpRouteParentRefName = option("config.httpRouteParentRefName")
+_httpRouteParentRefNamespace = option("config.httpRouteParentRefNamespace")
+_httpRouteHostname = option("config.httpRouteHostname")
+_httpRouteAnnotations = option("config.httpRouteAnnotations") or {}
 _templateProfile = option("config.templateProfile")
 _templateProfiles = option("config.templateProfiles") or []
 _extraEnvVars = option("config.extraEnvVars") or {}
@@ -22,13 +27,23 @@ config: schema.ClaimMachineryAPI = schema.ClaimMachineryAPI {
     if _namespace:
         namespace = _namespace
     if _ingressEnabled:
-        ingressEnabled = _ingressEnabled
+        ingressEnabled = _ingressEnabled in [True, "True", "true"]
     if _ingressHost:
         ingressHost = _ingressHost
     if _ingressTlsEnabled:
-        ingressTlsEnabled = _ingressTlsEnabled
+        ingressTlsEnabled = _ingressTlsEnabled in [True, "True", "true"]
     if _ingressAnnotations:
         ingressAnnotations = _ingressAnnotations
+    if _httpRouteEnabled:
+        httpRouteEnabled = _httpRouteEnabled in [True, "True", "true"]
+    if _httpRouteParentRefName:
+        httpRouteParentRefName = _httpRouteParentRefName
+    if _httpRouteParentRefNamespace:
+        httpRouteParentRefNamespace = _httpRouteParentRefNamespace
+    if _httpRouteHostname:
+        httpRouteHostname = _httpRouteHostname
+    if _httpRouteAnnotations:
+        httpRouteAnnotations = _httpRouteAnnotations
     if _templateProfile:
         templateProfile = _templateProfile
     if _templateProfiles:

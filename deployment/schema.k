@@ -33,6 +33,13 @@ schema ClaimMachineryAPI:
     ingressTlsSecretName: str = "claim-machinery-api-tls"
     ingressAnnotations: {str:str} = {}  # Ingress-specific annotations (e.g. cert-manager.io/cluster-issuer)
 
+    # HTTPRoute (Gateway API)
+    httpRouteEnabled: bool = False
+    httpRouteParentRefName: str = ""  # Gateway name (required when httpRouteEnabled)
+    httpRouteParentRefNamespace: str = ""  # Gateway namespace (optional, defaults to same namespace)
+    httpRouteHostname: str = ""  # Hostname for HTTPRoute (defaults to ingressHost if empty)
+    httpRouteAnnotations: {str:str} = {}
+
     # Application config
     templatesDir: str = "/app/config/"
     templateProfilePath: str = "/app/config/profile.yaml"

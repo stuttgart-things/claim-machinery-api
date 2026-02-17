@@ -10,6 +10,7 @@ import secret
 import deploy
 import service
 import ingress
+import httproute
 
 # Export all manifests (filter out None values)
 manifests = [
@@ -22,5 +23,6 @@ manifests = [
         deploy.deployment
         service.service
         ingress.ingress
+        httproute.httproute
     ] if m
 ]
