@@ -12,10 +12,11 @@ includes:
     taskfile: https://raw.githubusercontent.com/stuttgart-things/tasks/refs/heads/main/dagger/modules.yaml
   image:
     taskfile: https://raw.githubusercontent.com/stuttgart-things/tasks/refs/heads/main/docker/copy.yaml
-  precommit:
-    taskfile: https://raw.githubusercontent.com/stuttgart-things/tasks/refs/heads/main/dagger/precommit.yaml
   goBuild:
     taskfile: https://raw.githubusercontent.com/stuttgart-things/tasks/refs/heads/main/go/build.yaml
+
+  k8sMicroservice:
+    taskfile: /home/sthings/projects/tasks/go/k8s-microservice.yaml
 
 vars:
   DATE:
@@ -37,16 +38,17 @@ vars:
   TEST_REPORT_PATH: /tmp/test-report-{{ .PROJECT }}.txt
 
 tasks:
-  pre-commit:
-    desc: Run pre-commit hooks via Dagger
-    cmds:
-      - task: precommit:run-pre-commit
-
   commit:
     desc: Commit and push with Dagger pre-commit validation
-    deps: [pre-commit]
+    # deps: [pre-commit]
     cmds:
-      - task: git:push
+      - task: k8sMicroservice:commit
+        vars:
+          LINT_SOURCE_DIR: "./"
+          YAML_CONFIG_PATH: .yamllint
+          MARKDOWN_CONFIG_PATH: .mdlrc
+          MERGED_OUTPUT_FILE: 'md-yaml-lint-findings.txt'
+
 
   pr-git:
     desc: Create pr
