@@ -1,6 +1,5 @@
 ---
 version: 3
-
 includes:
   git:
     taskfile: https://raw.githubusercontent.com/stuttgart-things/tasks/refs/heads/main/git/git.yaml
@@ -18,9 +17,6 @@ includes:
   k8sMicroservice:
     taskfile: /home/sthings/projects/tasks/go/k8s-microservice.yaml
     dir: .
-    BRANCH:
-      sh: |
-        if [ $(git rev-parse --abbrev-ref HEAD) != "main" ]; then echo $(git rev-parse --abbrev-ref HEAD); else echo main ; fi
 
 vars:
   DATE:
@@ -44,7 +40,6 @@ vars:
 tasks:
   commit:
     desc: Commit and push with Dagger pre-commit validation
-    # deps: [pre-commit]
     cmds:
       - task: k8sMicroservice:commit
         vars:
@@ -52,7 +47,14 @@ tasks:
           YAML_CONFIG_PATH: .yamllint
           MARKDOWN_CONFIG_PATH: .mdlrc
           MERGED_OUTPUT_FILE: '/tmp/md-yaml-lint-findings.txt'
+          BRANCH:
+            sh: |
+              if [ $(git rev-parse --abbrev-ref HEAD) != "main" ]; then echo $(git rev-parse --abbrev-ref HEAD); else echo main ; fi
 
+      - task: git:commit
+        vars:
+          BRANCH:
+            sh: if [ $(git rev-parse --abbrev-ref HEAD) != "main" ]; then echo $(git rev-parse --abbrev-ref HEAD); else echo main ; fi
 
   pr-git:
     desc: Create pr

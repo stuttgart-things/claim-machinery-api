@@ -3,10 +3,11 @@
   2:2       warning  missing starting space in comment  (comments)
 
 ./Taskfile.yaml
-  23:121    warning  line too long (126 > 120 characters)  (line-length)
-  110:121   warning  line too long (160 > 120 characters)  (line-length)
-  269:121   warning  line too long (214 > 120 characters)  (line-length)
-  441:121   warning  line too long (127 > 120 characters)  (line-length)
+  52:121    warning  line too long (132 > 120 characters)  (line-length)
+  57:121    warning  line too long (134 > 120 characters)  (line-length)
+  112:121   warning  line too long (160 > 120 characters)  (line-length)
+  271:121   warning  line too long (214 > 120 characters)  (line-length)
+  443:121   warning  line too long (127 > 120 characters)  (line-length)
 
 ./catalog-info.yaml
   29:4      warning  missing starting space in comment  (comments)
