@@ -41,6 +41,12 @@ tasks:
     cmds:
       - task: precommit:run-pre-commit
 
+  commit:
+    desc: Commit and push with Dagger pre-commit validation
+    deps: [pre-commit]
+    cmds:
+      - task: git:push
+
   pr-git:
     desc: Create pr
     description: Create a pull request with pior linting, building, testing, and scanning
