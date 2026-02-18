@@ -39,7 +39,7 @@ vars:
 
 tasks:
   commit:
-    desc: Commit and push with Dagger pre-commit validation
+    desc: Commit changes with pre-commit validation
     cmds:
       - task: k8sMicroservice:commit
         vars:
