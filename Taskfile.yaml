@@ -50,11 +50,6 @@ tasks:
             sh: |
               if [ $(git rev-parse --abbrev-ref HEAD) != "main" ]; then echo $(git rev-parse --abbrev-ref HEAD); else echo main ; fi
 
-      # - task: git:push
-      #   vars:
-      #     BRANCH:
-      #       sh: if [ $(git rev-parse --abbrev-ref HEAD) != "main" ]; then echo $(git rev-parse --abbrev-ref HEAD); else echo main ; fi
-
   pr-git:
     desc: Create pr
     description: Create a pull request with pior linting, building, testing, and scanning
