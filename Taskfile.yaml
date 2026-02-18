@@ -13,7 +13,6 @@ includes:
     taskfile: https://raw.githubusercontent.com/stuttgart-things/tasks/refs/heads/main/docker/copy.yaml
   goBuild:
     taskfile: https://raw.githubusercontent.com/stuttgart-things/tasks/refs/heads/main/go/build.yaml
-
   k8sMicroservice:
     taskfile: /home/sthings/projects/tasks/go/k8s-microservice.yaml
     dir: .
