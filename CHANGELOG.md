@@ -1,3 +1,19 @@
+# [0.5.0](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.4.1...v0.5.0) (2026-03-01)
+
+
+### Bug Fixes
+
+* pass GITHUB_TOKEN to ko for ghcr.io auth and disable SBOM push ([4009113](https://github.com/stuttgart-things/claim-machinery-api/commit/4009113733af60c2ec9d4255713415dab7f4e8fe))
+* remove duplicate platform-engineering system declaration ([3aa919c](https://github.com/stuttgart-things/claim-machinery-api/commit/3aa919cdd716813758dccc91d0d45729ccfb0377))
+* use server subcommand in Dagger BuildAndTest entrypoint ([7494f50](https://github.com/stuttgart-things/claim-machinery-api/commit/7494f5002fba5185b7fe7aecb05ab872eb4d7ac1))
+* UX improvements for render command ([#36](https://github.com/stuttgart-things/claim-machinery-api/issues/36)) ([8ac4e6f](https://github.com/stuttgart-things/claim-machinery-api/commit/8ac4e6f97903aaf93a032c07b90ca24ec8518dda))
+
+
+### Features
+
+* add Gateway API HTTPRoute as alternative to Ingress ([576c0e1](https://github.com/stuttgart-things/claim-machinery-api/commit/576c0e15f21a18447fa73a3046d970e1a1ea8b50))
+* consolidated Dagger-based release pipeline ([#67](https://github.com/stuttgart-things/claim-machinery-api/issues/67)) ([9ea1f4a](https://github.com/stuttgart-things/claim-machinery-api/commit/9ea1f4aa59cf7d308d859da7756167e4b7330e72)), closes [#52](https://github.com/stuttgart-things/claim-machinery-api/issues/52)
+
 ## [0.4.1](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.4.0...v0.4.1) (2026-02-04)
 
 
