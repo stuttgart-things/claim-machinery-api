@@ -4,8 +4,6 @@ on:
   push:
     branches:
       - main
-    tags:
-      - 'v*'
   pull_request:
     branches:
       - main
@@ -31,12 +29,11 @@ jobs:
       - name: Set image repository
         id: image-repo
         run: |
-          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
-            TAG="${GITHUB_REF#refs/tags/}"
+          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == "refs/heads/main" ]]; then
             echo "repo=ghcr.io/${{ github.repository }}" >> $GITHUB_OUTPUT
-            echo "tag=${TAG}" >> $GITHUB_OUTPUT
+            echo "tag=main" >> $GITHUB_OUTPUT
           else
-            # For non-tag pushes, use ttl.sh for testing
+            # For PRs and other triggers, use ttl.sh for ephemeral testing
             RANDOM_TAG=$(openssl rand -hex 6)
             echo "repo=ttl.sh/claim-machinery-api-${RANDOM_TAG}" >> $GITHUB_OUTPUT
             echo "tag=latest" >> $GITHUB_OUTPUT
@@ -88,6 +85,6 @@ jobs:
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
-          if [[ "${{ github.ref }}" != refs/tags/* ]]; then
+          if [[ "${{ steps.image-repo.outputs.repo }}" == ttl.sh/* ]]; then
             echo "⏰ **Note:** ttl.sh images expire after 1 hour" >> $GITHUB_STEP_SUMMARY
           fi
