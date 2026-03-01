@@ -15,13 +15,24 @@ func (m *Dagger) koBuildWithConfig(
 	buildArg string,
 	koVersion string,
 	push string,
+	tokenName string,
+	token *dagger.Secret,
 ) (string, error) {
 	ctr := dag.Container().
 		From(fmt.Sprintf("ghcr.io/ko-build/ko:%s", koVersion)).
 		WithMountedDirectory("/src", src).
 		WithWorkdir("/src").
-		WithEnvVariable("KO_DOCKER_REPO", repo).
-		WithExec([]string{"ko", "build", fmt.Sprintf("--push=%s", push), buildArg})
+		WithEnvVariable("KO_DOCKER_REPO", repo)
+
+	// Configure registry auth when pushing to ghcr.io
+	if token != nil && push == "true" && strings.Contains(repo, "ghcr.io") {
+		ctr = ctr.
+			WithSecretVariable(tokenName, token).
+			WithExec([]string{"sh", "-c",
+				fmt.Sprintf("echo $%s | ko login ghcr.io --username=token --password-stdin", tokenName)})
+	}
+
+	ctr = ctr.WithExec([]string{"ko", "build", fmt.Sprintf("--push=%s", push), "--sbom=none", buildArg})
 
 	stdout, err := ctr.Stdout(ctx)
 	if err != nil {
@@ -65,6 +76,8 @@ func (m *Dagger) BuildImage(
 		buildArg,
 		koVersion,
 		push,
+		tokenName,
+		token,
 	)
 
 	if err != nil {
