@@ -1,0 +1,893 @@
+=== YAML Linting Results ===
+./.ko.yaml
+  2:2       warning  missing starting space in comment  (comments)
+
+./Taskfile.yaml
+  51:121    warning  line too long (132 > 120 characters)  (line-length)
+  106:121   warning  line too long (160 > 120 characters)  (line-length)
+  265:121   warning  line too long (214 > 120 characters)  (line-length)
+  437:121   warning  line too long (127 > 120 characters)  (line-length)
+
+./catalog-info.yaml
+  29:4      warning  missing starting space in comment  (comments)
+
+./.github/workflows/build-scan-image.yaml
+  3:1       warning  truthy value should be one of [false, true]  (truthy)
+  50:121    warning  line too long (158 > 120 characters)  (line-length)
+  67:121    warning  line too long (124 > 120 characters)  (line-length)
+  72:121    warning  line too long (123 > 120 characters)  (line-length)
+  83:121    warning  line too long (128 > 120 characters)  (line-length)
+  87:121    warning  line too long (125 > 120 characters)  (line-length)
+
+./.github/workflows/build-test.yaml
+  2:1       warning  truthy value should be one of [false, true]  (truthy)
+
+./.github/workflows/lint-repo.yaml
+  3:1       warning  truthy value should be one of [false, true]  (truthy)
+
+./.task/remote/ansible-rke.yaml.af26761d39b864fd949b77f6fe7b6bd6bf84f9882414ded4a1f073a8003db5e7.yaml
+  11:121    warning  line too long (124 > 120 characters)  (line-length)
+  43:121    warning  line too long (246 > 120 characters)  (line-length)
+  45:121    warning  line too long (191 > 120 characters)  (line-length)
+  50:121    warning  line too long (202 > 120 characters)  (line-length)
+  83:5      error    wrong indentation: expected 2 but found 4  (indentation)
+  88:121    warning  line too long (139 > 120 characters)  (line-length)
+  120:121   warning  line too long (253 > 120 characters)  (line-length)
+  122:121   warning  line too long (197 > 120 characters)  (line-length)
+  127:121   warning  line too long (202 > 120 characters)  (line-length)
+
+./.task/remote/docker-copy.yaml.f1160b161bf0c5374b94905ddb6529769997aef7672990ea8124156b336f3347.yaml
+  19:121    warning  line too long (124 > 120 characters)  (line-length)
+  21:121    warning  line too long (149 > 120 characters)  (line-length)
+
+./.task/remote/git-git.yaml.16ee48772efd86ece6c599a63f80208b49c6d44cad93675245fafcc83920638e.yaml
+  7:121     warning  line too long (126 > 120 characters)  (line-length)
+  60:121    warning  line too long (127 > 120 characters)  (line-length)
+  87:121    warning  line too long (123 > 120 characters)  (line-length)
+  122:121   warning  line too long (126 > 120 characters)  (line-length)
+
+./dist/config.yaml
+  68:121    warning  line too long (191 > 120 characters)  (line-length)
+  138:121   warning  line too long (147 > 120 characters)  (line-length)
+  150:121   warning  line too long (131 > 120 characters)  (line-length)
+
+./docs/spec.yaml
+  101:21    error    too many spaces inside braces  (braces)
+  101:49    error    too many spaces inside braces  (braces)
+  142:21    error    too many spaces inside braces  (braces)
+  142:51    error    too many spaces inside braces  (braces)
+  145:21    error    too many spaces inside braces  (braces)
+  145:49    error    too many spaces inside braces  (braces)
+  148:21    error    too many spaces inside braces  (braces)
+  148:73    error    too many spaces inside braces  (braces)
+  175:18    error    too many spaces inside braces  (braces)
+  175:31    error    too many spaces inside braces  (braces)
+  190:22    error    too many spaces inside braces  (braces)
+  190:35    error    too many spaces inside braces  (braces)
+  191:20    error    too many spaces inside braces  (braces)
+  191:61    error    too many spaces inside braces  (braces)
+
+./tests/kcl-deploy-profile.yaml
+  2:121     warning  line too long (178 > 120 characters)  (line-length)
+
+./tests/profile.yaml
+  5:4       warning  missing starting space in comment  (comments)
+  5:121     warning  line too long (141 > 120 characters)  (line-length)
+  8:121     warning  line too long (151 > 120 characters)  (line-length)
+  9:121     warning  line too long (155 > 120 characters)  (line-length)
+
+./tests/rendered-claim-api.yaml
+  73:7      error    wrong indentation: expected 8 but found 6  (indentation)
+  74:121    warning  line too long (179 > 120 characters)  (line-length)
+  77:9      error    wrong indentation: expected 10 but found 8  (indentation)
+  81:9      error    wrong indentation: expected 10 but found 8  (indentation)
+  112:13    error    wrong indentation: expected 14 but found 12  (indentation)
+  114:9     error    wrong indentation: expected 10 but found 8  (indentation)
+  124:7     error    wrong indentation: expected 8 but found 6  (indentation)
+  143:3     error    wrong indentation: expected 4 but found 2  (indentation)
+  167:3     error    wrong indentation: expected 4 but found 2  (indentation)
+  168:5     error    wrong indentation: expected 6 but found 4  (indentation)
+  171:3     error    wrong indentation: expected 4 but found 2  (indentation)
+  174:7     error    wrong indentation: expected 8 but found 6  (indentation)
+
+
+
+=== Markdown Linting Results ===
+./CHANGELOG.md:11: MD001 Header levels should only increment by one level at a time
+./CHANGELOG.md:26: MD001 Header levels should only increment by one level at a time
+./CHANGELOG.md:33: MD001 Header levels should only increment by one level at a time
+./CHANGELOG.md:1: MD002 First header should be a top level header
+./CHANGELOG.md:3: MD012 Multiple consecutive blank lines
+./CHANGELOG.md:10: MD012 Multiple consecutive blank lines
+./CHANGELOG.md:25: MD012 Multiple consecutive blank lines
+./CHANGELOG.md:32: MD012 Multiple consecutive blank lines
+./CHANGELOG.md:1: MD013 Line length
+./CHANGELOG.md:8: MD013 Line length
+./CHANGELOG.md:13: MD013 Line length
+./CHANGELOG.md:23: MD013 Line length
+./CHANGELOG.md:30: MD013 Line length
+./CHANGELOG.md:26: MD024 Multiple headers with the same content
+./CHANGELOG.md:33: MD024 Multiple headers with the same content
+./README.md:12: MD013 Line length
+./README.md:19: MD013 Line length
+./README.md:23: MD013 Line length
+./README.md:24: MD013 Line length
+./README.md:26: MD013 Line length
+./README.md:67: MD013 Line length
+./README.md:74: MD013 Line length
+./README.md:75: MD013 Line length
+./README.md:103: MD013 Line length
+./README.md:115: MD013 Line length
+./README.md:202: MD013 Line length
+./README.md:261: MD013 Line length
+./README.md:262: MD013 Line length
+./README.md:270: MD013 Line length
+./README.md:273: MD013 Line length
+./README.md:302: MD013 Line length
+./README.md:335: MD013 Line length
+./README.md:403: MD013 Line length
+./README.md:261: MD032 Lists should be surrounded by blank lines
+./README.md:149: MD033 Inline HTML
+./README.md:150: MD033 Inline HTML
+./README.md:150: MD033 Inline HTML
+./README.md:224: MD033 Inline HTML
+./README.md:225: MD033 Inline HTML
+./README.md:225: MD033 Inline HTML
+./README.md:230: MD033 Inline HTML
+./README.md:267: MD033 Inline HTML
+./README.md:268: MD033 Inline HTML
+./README.md:268: MD033 Inline HTML
+./README.md:277: MD033 Inline HTML
+./README.md:278: MD033 Inline HTML
+./README.md:278: MD033 Inline HTML
+./README.md:290: MD033 Inline HTML
+./README.md:291: MD033 Inline HTML
+./README.md:291: MD033 Inline HTML
+./README.md:299: MD033 Inline HTML
+./README.md:300: MD033 Inline HTML
+./README.md:300: MD033 Inline HTML
+./README.md:332: MD033 Inline HTML
+./README.md:333: MD033 Inline HTML
+./README.md:333: MD033 Inline HTML
+./README.md:373: MD033 Inline HTML
+./README.md:374: MD033 Inline HTML
+./README.md:374: MD033 Inline HTML
+./README.md:154: MD034 Bare URL used
+./README.md:159: MD034 Bare URL used
+./README.md:164: MD034 Bare URL used
+./README.md:233: MD034 Bare URL used
+./README.md:335: MD034 Bare URL used
+./README.md:376: MD034 Bare URL used
+./deployment/README.md:119: MD013 Line length
+./deployment/README.md:131: MD013 Line length
+./deployment/README.md:133: MD013 Line length
+./deployment/README.md:134: MD013 Line length
+./deployment/README.md:136: MD013 Line length
+./deployment/README.md:137: MD013 Line length
+./deployment/README.md:138: MD013 Line length
+./deployment/README.md:140: MD013 Line length
+./deployment/README.md:141: MD013 Line length
+./deployment/README.md:142: MD013 Line length
+./deployment/README.md:144: MD013 Line length
+./deployment/README.md:146: MD013 Line length
+./deployment/README.md:148: MD013 Line length
+./deployment/README.md:150: MD013 Line length
+./deployment/README.md:169: MD013 Line length
+./deployment/README.md:203: MD013 Line length
+./deployment/README.md:215: MD013 Line length
+./deployment/README.md:216: MD013 Line length
+./deployment/README.md:236: MD013 Line length
+./deployment/README.md:249: MD013 Line length
+./deployment/README.md:259: MD013 Line length
+./deployment/README.md:273: MD013 Line length
+./deployment/README.md:279: MD013 Line length
+./deployment/README.md:287: MD013 Line length
+./deployment/README.md:293: MD013 Line length
+./deployment/README.md:305: MD013 Line length
+./deployment/README.md:307: MD013 Line length
+./deployment/README.md:317: MD013 Line length
+./deployment/README.md:330: MD013 Line length
+./deployment/README.md:348: MD013 Line length
+./dist/CHANGELOG.md:1: MD002 First header should be a top level header
+./dist/CHANGELOG.md:1: MD022 Headers should be surrounded by blank lines
+./dist/CHANGELOG.md:2: MD032 Lists should be surrounded by blank lines
+./docs/API_IMPLEMENTATION_SUMMARY.md:33: MD013 Line length
+./docs/API_IMPLEMENTATION_SUMMARY.md:7: MD022 Headers should be surrounded by blank lines
+./docs/API_IMPLEMENTATION_SUMMARY.md:12: MD022 Headers should be surrounded by blank lines
+./docs/API_IMPLEMENTATION_SUMMARY.md:24: MD022 Headers should be surrounded by blank lines
+./docs/API_IMPLEMENTATION_SUMMARY.md:29: MD022 Headers should be surrounded by blank lines
+./docs/API_IMPLEMENTATION_SUMMARY.md:102: MD022 Headers should be surrounded by blank lines
+./docs/API_IMPLEMENTATION_SUMMARY.md:111: MD022 Headers should be surrounded by blank lines
+./docs/API_IMPLEMENTATION_SUMMARY.md:120: MD022 Headers should be surrounded by blank lines
+./docs/API_IMPLEMENTATION_SUMMARY.md:125: MD022 Headers should be surrounded by blank lines
+./docs/API_IMPLEMENTATION_SUMMARY.md:130: MD022 Headers should be surrounded by blank lines
+./docs/API_IMPLEMENTATION_SUMMARY.md:142: MD022 Headers should be surrounded by blank lines
+./docs/API_IMPLEMENTATION_SUMMARY.md:151: MD022 Headers should be surrounded by blank lines
+./docs/API_IMPLEMENTATION_SUMMARY.md:157: MD022 Headers should be surrounded by blank lines
+./docs/API_IMPLEMENTATION_SUMMARY.md:163: MD022 Headers should be surrounded by blank lines
+./docs/API_IMPLEMENTATION_SUMMARY.md:169: MD022 Headers should be surrounded by blank lines
+./docs/API_IMPLEMENTATION_SUMMARY.md:226: MD022 Headers should be surrounded by blank lines
+./docs/API_IMPLEMENTATION_SUMMARY.md:235: MD022 Headers should be surrounded by blank lines
+./docs/API_IMPLEMENTATION_SUMMARY.md:50: MD029 Ordered list item prefix
+./docs/API_IMPLEMENTATION_SUMMARY.md:54: MD029 Ordered list item prefix
+./docs/API_IMPLEMENTATION_SUMMARY.md:256: MD029 Ordered list item prefix
+./docs/API_IMPLEMENTATION_SUMMARY.md:257: MD029 Ordered list item prefix
+./docs/API_IMPLEMENTATION_SUMMARY.md:258: MD029 Ordered list item prefix
+./docs/API_IMPLEMENTATION_SUMMARY.md:259: MD029 Ordered list item prefix
+./docs/API_IMPLEMENTATION_SUMMARY.md:16: MD031 Fenced code blocks should be surrounded by blank lines
+./docs/API_IMPLEMENTATION_SUMMARY.md:35: MD031 Fenced code blocks should be surrounded by blank lines
+./docs/API_IMPLEMENTATION_SUMMARY.md:121: MD031 Fenced code blocks should be surrounded by blank lines
+./docs/API_IMPLEMENTATION_SUMMARY.md:126: MD031 Fenced code blocks should be surrounded by blank lines
+./docs/API_IMPLEMENTATION_SUMMARY.md:131: MD031 Fenced code blocks should be surrounded by blank lines
+./docs/API_IMPLEMENTATION_SUMMARY.md:152: MD031 Fenced code blocks should be surrounded by blank lines
+./docs/API_IMPLEMENTATION_SUMMARY.md:158: MD031 Fenced code blocks should be surrounded by blank lines
+./docs/API_IMPLEMENTATION_SUMMARY.md:164: MD031 Fenced code blocks should be surrounded by blank lines
+./docs/API_IMPLEMENTATION_SUMMARY.md:170: MD031 Fenced code blocks should be surrounded by blank lines
+./docs/API_IMPLEMENTATION_SUMMARY.md:227: MD031 Fenced code blocks should be surrounded by blank lines
+./docs/API_IMPLEMENTATION_SUMMARY.md:236: MD031 Fenced code blocks should be surrounded by blank lines
+./docs/API_IMPLEMENTATION_SUMMARY.md:8: MD032 Lists should be surrounded by blank lines
+./docs/API_IMPLEMENTATION_SUMMARY.md:13: MD032 Lists should be surrounded by blank lines
+./docs/API_IMPLEMENTATION_SUMMARY.md:25: MD032 Lists should be surrounded by blank lines
+./docs/API_IMPLEMENTATION_SUMMARY.md:30: MD032 Lists should be surrounded by blank lines
+./docs/API_IMPLEMENTATION_SUMMARY.md:103: MD032 Lists should be surrounded by blank lines
+./docs/API_IMPLEMENTATION_SUMMARY.md:112: MD032 Lists should be surrounded by blank lines
+./docs/API_IMPLEMENTATION_SUMMARY.md:143: MD032 Lists should be surrounded by blank lines
+./docs/BACKSTAGE_COMPATIBILITY.md:5: MD013 Line length
+./docs/BACKSTAGE_COMPATIBILITY.md:13: MD013 Line length
+./docs/BACKSTAGE_COMPATIBILITY.md:15: MD013 Line length
+./docs/BACKSTAGE_COMPATIBILITY.md:17: MD013 Line length
+./docs/BACKSTAGE_COMPATIBILITY.md:18: MD013 Line length
+./docs/BACKSTAGE_COMPATIBILITY.md:22: MD022 Headers should be surrounded by blank lines
+./docs/BACKSTAGE_COMPATIBILITY.md:55: MD022 Headers should be surrounded by blank lines
+./docs/BACKSTAGE_COMPATIBILITY.md:107: MD022 Headers should be surrounded by blank lines
+./docs/BACKSTAGE_COMPATIBILITY.md:340: MD022 Headers should be surrounded by blank lines
+./docs/BACKSTAGE_COMPATIBILITY.md:345: MD022 Headers should be surrounded by blank lines
+./docs/BACKSTAGE_COMPATIBILITY.md:350: MD022 Headers should be surrounded by blank lines
+./docs/BACKSTAGE_COMPATIBILITY.md:355: MD022 Headers should be surrounded by blank lines
+./docs/BACKSTAGE_COMPATIBILITY.md:323: MD029 Ordered list item prefix
+./docs/BACKSTAGE_COMPATIBILITY.md:328: MD029 Ordered list item prefix
+./docs/BACKSTAGE_COMPATIBILITY.md:333: MD029 Ordered list item prefix
+./docs/BACKSTAGE_COMPATIBILITY.md:23: MD031 Fenced code blocks should be surrounded by blank lines
+./docs/BACKSTAGE_COMPATIBILITY.md:30: MD031 Fenced code blocks should be surrounded by blank lines
+./docs/BACKSTAGE_COMPATIBILITY.md:56: MD031 Fenced code blocks should be surrounded by blank lines
+./docs/BACKSTAGE_COMPATIBILITY.md:63: MD031 Fenced code blocks should be surrounded by blank lines
+./docs/BACKSTAGE_COMPATIBILITY.md:108: MD031 Fenced code blocks should be surrounded by blank lines
+./docs/BACKSTAGE_COMPATIBILITY.md:124: MD031 Fenced code blocks should be surrounded by blank lines
+./docs/BACKSTAGE_COMPATIBILITY.md:341: MD031 Fenced code blocks should be surrounded by blank lines
+./docs/BACKSTAGE_COMPATIBILITY.md:346: MD031 Fenced code blocks should be surrounded by blank lines
+./docs/BACKSTAGE_COMPATIBILITY.md:351: MD031 Fenced code blocks should be surrounded by blank lines
+./docs/BACKSTAGE_COMPATIBILITY.md:356: MD031 Fenced code blocks should be surrounded by blank lines
+./docs/CONTAINER_WORK_SYNCED.md:51: MD007 Unordered list indentation
+./docs/CONTAINER_WORK_SYNCED.md:5: MD013 Line length
+./docs/CONTAINER_WORK_SYNCED.md:126: MD013 Line length
+./docs/CONTAINER_WORK_SYNCED.md:49: MD022 Headers should be surrounded by blank lines
+./docs/CONTAINER_WORK_SYNCED.md:56: MD022 Headers should be surrounded by blank lines
+./docs/CONTAINER_WORK_SYNCED.md:61: MD022 Headers should be surrounded by blank lines
+./docs/CONTAINER_WORK_SYNCED.md:66: MD022 Headers should be surrounded by blank lines
+./docs/CONTAINER_WORK_SYNCED.md:76: MD022 Headers should be surrounded by blank lines
+./docs/CONTAINER_WORK_SYNCED.md:81: MD022 Headers should be surrounded by blank lines
+./docs/CONTAINER_WORK_SYNCED.md:77: MD031 Fenced code blocks should be surrounded by blank lines
+./docs/CONTAINER_WORK_SYNCED.md:82: MD031 Fenced code blocks should be surrounded by blank lines
+./docs/CONTAINER_WORK_SYNCED.md:50: MD032 Lists should be surrounded by blank lines
+./docs/CONTAINER_WORK_SYNCED.md:57: MD032 Lists should be surrounded by blank lines
+./docs/CONTAINER_WORK_SYNCED.md:62: MD032 Lists should be surrounded by blank lines
+./docs/CONTAINER_WORK_SYNCED.md:67: MD032 Lists should be surrounded by blank lines
+./docs/CONTAINER_WORK_SYNCED.md:118: MD032 Lists should be surrounded by blank lines
+./docs/CONTAINER_WORK_SYNCED.md:132: MD036 Emphasis used instead of a header
+./docs/KCL_INTEGRATION_SUMMARY.md:4: MD013 Line length
+./docs/KCL_INTEGRATION_SUMMARY.md:38: MD013 Line length
+./docs/KCL_INTEGRATION_SUMMARY.md:42: MD013 Line length
+./docs/KCL_INTEGRATION_SUMMARY.md:46: MD013 Line length
+./docs/KCL_INTEGRATION_SUMMARY.md:132: MD013 Line length
+./docs/KCL_INTEGRATION_SUMMARY.md:3: MD022 Headers should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:10: MD022 Headers should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:18: MD022 Headers should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:29: MD022 Headers should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:32: MD022 Headers should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:51: MD022 Headers should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:63: MD022 Headers should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:73: MD022 Headers should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:76: MD022 Headers should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:100: MD022 Headers should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:106: MD022 Headers should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:110: MD022 Headers should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:113: MD022 Headers should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:122: MD022 Headers should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:136: MD022 Headers should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:149: MD022 Headers should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:162: MD022 Headers should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:174: MD022 Headers should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:184: MD022 Headers should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:193: MD022 Headers should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:200: MD022 Headers should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:211: MD022 Headers should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:220: MD022 Headers should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:247: MD022 Headers should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:274: MD022 Headers should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:286: MD022 Headers should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:296: MD022 Headers should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:303: MD022 Headers should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:311: MD022 Headers should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:316: MD022 Headers should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:325: MD022 Headers should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:339: MD022 Headers should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:342: MD022 Headers should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:349: MD022 Headers should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:355: MD022 Headers should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:360: MD022 Headers should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:401: MD022 Headers should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:411: MD022 Headers should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:419: MD022 Headers should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:433: MD022 Headers should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:448: MD022 Headers should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:460: MD022 Headers should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:477: MD022 Headers should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:484: MD022 Headers should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:489: MD022 Headers should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:503: MD022 Headers should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:512: MD022 Headers should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:525: MD022 Headers should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:530: MD022 Headers should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:539: MD022 Headers should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:546: MD022 Headers should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:100: MD024 Multiple headers with the same content
+./docs/KCL_INTEGRATION_SUMMARY.md:32: MD026 Trailing punctuation in header
+./docs/KCL_INTEGRATION_SUMMARY.md:51: MD026 Trailing punctuation in header
+./docs/KCL_INTEGRATION_SUMMARY.md:63: MD026 Trailing punctuation in header
+./docs/KCL_INTEGRATION_SUMMARY.md:76: MD026 Trailing punctuation in header
+./docs/KCL_INTEGRATION_SUMMARY.md:100: MD026 Trailing punctuation in header
+./docs/KCL_INTEGRATION_SUMMARY.md:106: MD026 Trailing punctuation in header
+./docs/KCL_INTEGRATION_SUMMARY.md:113: MD026 Trailing punctuation in header
+./docs/KCL_INTEGRATION_SUMMARY.md:122: MD026 Trailing punctuation in header
+./docs/KCL_INTEGRATION_SUMMARY.md:136: MD026 Trailing punctuation in header
+./docs/KCL_INTEGRATION_SUMMARY.md:548: MD029 Ordered list item prefix
+./docs/KCL_INTEGRATION_SUMMARY.md:549: MD029 Ordered list item prefix
+./docs/KCL_INTEGRATION_SUMMARY.md:33: MD031 Fenced code blocks should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:52: MD031 Fenced code blocks should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:77: MD031 Fenced code blocks should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:101: MD031 Fenced code blocks should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:114: MD031 Fenced code blocks should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:123: MD031 Fenced code blocks should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:137: MD031 Fenced code blocks should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:150: MD031 Fenced code blocks should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:175: MD031 Fenced code blocks should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:185: MD031 Fenced code blocks should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:201: MD031 Fenced code blocks should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:221: MD031 Fenced code blocks should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:248: MD031 Fenced code blocks should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:275: MD031 Fenced code blocks should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:326: MD031 Fenced code blocks should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:434: MD031 Fenced code blocks should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:449: MD031 Fenced code blocks should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:461: MD031 Fenced code blocks should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:478: MD031 Fenced code blocks should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:485: MD031 Fenced code blocks should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:490: MD031 Fenced code blocks should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:504: MD031 Fenced code blocks should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:513: MD031 Fenced code blocks should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:12: MD032 Lists should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:19: MD032 Lists should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:64: MD032 Lists should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:107: MD032 Lists should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:163: MD032 Lists should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:194: MD032 Lists should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:287: MD032 Lists should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:297: MD032 Lists should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:304: MD032 Lists should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:312: MD032 Lists should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:317: MD032 Lists should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:350: MD032 Lists should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:356: MD032 Lists should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:361: MD032 Lists should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:402: MD032 Lists should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:412: MD032 Lists should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:420: MD032 Lists should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:526: MD032 Lists should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:531: MD032 Lists should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:540: MD032 Lists should be surrounded by blank lines
+./docs/KCL_INTEGRATION_SUMMARY.md:547: MD032 Lists should be surrounded by blank lines
+./docs/ROADMAP.md:36: MD007 Unordered list indentation
+./docs/ROADMAP.md:77: MD007 Unordered list indentation
+./docs/ROADMAP.md:105: MD007 Unordered list indentation
+./docs/ROADMAP.md:62: MD013 Line length
+./docs/ROADMAP.md:125: MD013 Line length
+./docs/ROADMAP.md:9: MD022 Headers should be surrounded by blank lines
+./docs/ROADMAP.md:29: MD022 Headers should be surrounded by blank lines
+./docs/ROADMAP.md:100: MD022 Headers should be surrounded by blank lines
+./docs/SPEC.md:11: MD013 Line length
+./docs/SPEC.md:72: MD013 Line length
+./docs/SPEC.md:604: MD022 Headers should be surrounded by blank lines
+./docs/SPEC.md:610: MD022 Headers should be surrounded by blank lines
+./docs/SPEC.md:616: MD022 Headers should be surrounded by blank lines
+./docs/SPEC.md:101: MD031 Fenced code blocks should be surrounded by blank lines
+./docs/SPEC.md:150: MD031 Fenced code blocks should be surrounded by blank lines
+./docs/SPEC.md:227: MD031 Fenced code blocks should be surrounded by blank lines
+./docs/SPEC.md:239: MD031 Fenced code blocks should be surrounded by blank lines
+./docs/SPEC.md:97: MD032 Lists should be surrounded by blank lines
+./docs/SPEC.md:138: MD032 Lists should be surrounded by blank lines
+./docs/SPEC.md:147: MD032 Lists should be surrounded by blank lines
+./docs/SPEC.md:215: MD032 Lists should be surrounded by blank lines
+./docs/SPEC.md:224: MD032 Lists should be surrounded by blank lines
+./docs/SPEC.md:259: MD032 Lists should be surrounded by blank lines
+./docs/SPEC.md:605: MD032 Lists should be surrounded by blank lines
+./docs/SPEC.md:611: MD032 Lists should be surrounded by blank lines
+./docs/SPEC.md:617: MD032 Lists should be surrounded by blank lines
+./docs/TESTING_GUIDE.md:170: MD013 Line length
+./docs/TESTING_GUIDE.md:236: MD013 Line length
+./docs/TESTING_GUIDE.md:248: MD013 Line length
+./docs/TESTING_GUIDE.md:518: MD013 Line length
+./docs/TESTING_GUIDE.md:519: MD013 Line length
+./docs/TESTING_GUIDE.md:520: MD013 Line length
+./docs/TESTING_GUIDE.md:5: MD022 Headers should be surrounded by blank lines
+./docs/TESTING_GUIDE.md:26: MD022 Headers should be surrounded by blank lines
+./docs/TESTING_GUIDE.md:38: MD022 Headers should be surrounded by blank lines
+./docs/TESTING_GUIDE.md:89: MD022 Headers should be surrounded by blank lines
+./docs/TESTING_GUIDE.md:140: MD022 Headers should be surrounded by blank lines
+./docs/TESTING_GUIDE.md:145: MD022 Headers should be surrounded by blank lines
+./docs/TESTING_GUIDE.md:159: MD022 Headers should be surrounded by blank lines
+./docs/TESTING_GUIDE.md:166: MD022 Headers should be surrounded by blank lines
+./docs/TESTING_GUIDE.md:186: MD022 Headers should be surrounded by blank lines
+./docs/TESTING_GUIDE.md:193: MD022 Headers should be surrounded by blank lines
+./docs/TESTING_GUIDE.md:200: MD022 Headers should be surrounded by blank lines
+./docs/TESTING_GUIDE.md:220: MD022 Headers should be surrounded by blank lines
+./docs/TESTING_GUIDE.md:324: MD022 Headers should be surrounded by blank lines
+./docs/TESTING_GUIDE.md:329: MD022 Headers should be surrounded by blank lines
+./docs/TESTING_GUIDE.md:339: MD022 Headers should be surrounded by blank lines
+./docs/TESTING_GUIDE.md:350: MD022 Headers should be surrounded by blank lines
+./docs/TESTING_GUIDE.md:455: MD022 Headers should be surrounded by blank lines
+./docs/TESTING_GUIDE.md:463: MD022 Headers should be surrounded by blank lines
+./docs/TESTING_GUIDE.md:479: MD022 Headers should be surrounded by blank lines
+./docs/TESTING_GUIDE.md:491: MD022 Headers should be surrounded by blank lines
+./docs/TESTING_GUIDE.md:501: MD022 Headers should be surrounded by blank lines
+./docs/TESTING_GUIDE.md:506: MD022 Headers should be surrounded by blank lines
+./docs/TESTING_GUIDE.md:193: MD024 Multiple headers with the same content
+./docs/TESTING_GUIDE.md:89: MD026 Trailing punctuation in header
+./docs/TESTING_GUIDE.md:140: MD026 Trailing punctuation in header
+./docs/TESTING_GUIDE.md:145: MD026 Trailing punctuation in header
+./docs/TESTING_GUIDE.md:159: MD026 Trailing punctuation in header
+./docs/TESTING_GUIDE.md:166: MD026 Trailing punctuation in header
+./docs/TESTING_GUIDE.md:186: MD026 Trailing punctuation in header
+./docs/TESTING_GUIDE.md:193: MD026 Trailing punctuation in header
+./docs/TESTING_GUIDE.md:200: MD026 Trailing punctuation in header
+./docs/TESTING_GUIDE.md:329: MD026 Trailing punctuation in header
+./docs/TESTING_GUIDE.md:339: MD026 Trailing punctuation in header
+./docs/TESTING_GUIDE.md:350: MD026 Trailing punctuation in header
+./docs/TESTING_GUIDE.md:6: MD031 Fenced code blocks should be surrounded by blank lines
+./docs/TESTING_GUIDE.md:11: MD031 Fenced code blocks should be surrounded by blank lines
+./docs/TESTING_GUIDE.md:27: MD031 Fenced code blocks should be surrounded by blank lines
+./docs/TESTING_GUIDE.md:32: MD031 Fenced code blocks should be surrounded by blank lines
+./docs/TESTING_GUIDE.md:39: MD031 Fenced code blocks should be surrounded by blank lines
+./docs/TESTING_GUIDE.md:44: MD031 Fenced code blocks should be surrounded by blank lines
+./docs/TESTING_GUIDE.md:76: MD031 Fenced code blocks should be surrounded by blank lines
+./docs/TESTING_GUIDE.md:81: MD031 Fenced code blocks should be surrounded by blank lines
+./docs/TESTING_GUIDE.md:90: MD031 Fenced code blocks should be surrounded by blank lines
+./docs/TESTING_GUIDE.md:95: MD031 Fenced code blocks should be surrounded by blank lines
+./docs/TESTING_GUIDE.md:141: MD031 Fenced code blocks should be surrounded by blank lines
+./docs/TESTING_GUIDE.md:146: MD031 Fenced code blocks should be surrounded by blank lines
+./docs/TESTING_GUIDE.md:151: MD031 Fenced code blocks should be surrounded by blank lines
+./docs/TESTING_GUIDE.md:160: MD031 Fenced code blocks should be surrounded by blank lines
+./docs/TESTING_GUIDE.md:167: MD031 Fenced code blocks should be surrounded by blank lines
+./docs/TESTING_GUIDE.md:174: MD031 Fenced code blocks should be surrounded by blank lines
+./docs/TESTING_GUIDE.md:187: MD031 Fenced code blocks should be surrounded by blank lines
+./docs/TESTING_GUIDE.md:194: MD031 Fenced code blocks should be surrounded by blank lines
+./docs/TESTING_GUIDE.md:201: MD031 Fenced code blocks should be surrounded by blank lines
+./docs/TESTING_GUIDE.md:208: MD031 Fenced code blocks should be surrounded by blank lines
+./docs/TESTING_GUIDE.md:219: MD031 Fenced code blocks should be surrounded by blank lines
+./docs/TESTING_GUIDE.md:259: MD031 Fenced code blocks should be surrounded by blank lines
+./docs/TESTING_GUIDE.md:290: MD031 Fenced code blocks should be surrounded by blank lines
+./docs/TESTING_GUIDE.md:330: MD031 Fenced code blocks should be surrounded by blank lines
+./docs/TESTING_GUIDE.md:340: MD031 Fenced code blocks should be surrounded by blank lines
+./docs/TESTING_GUIDE.md:351: MD031 Fenced code blocks should be surrounded by blank lines
+./docs/TESTING_GUIDE.md:363: MD031 Fenced code blocks should be surrounded by blank lines
+./docs/TESTING_GUIDE.md:370: MD031 Fenced code blocks should be surrounded by blank lines
+./docs/TESTING_GUIDE.md:377: MD031 Fenced code blocks should be surrounded by blank lines
+./docs/TESTING_GUIDE.md:393: MD031 Fenced code blocks should be surrounded by blank lines
+./docs/TESTING_GUIDE.md:405: MD031 Fenced code blocks should be surrounded by blank lines
+./docs/TESTING_GUIDE.md:436: MD031 Fenced code blocks should be surrounded by blank lines
+./docs/TESTING_GUIDE.md:441: MD031 Fenced code blocks should be surrounded by blank lines
+./docs/TESTING_GUIDE.md:480: MD031 Fenced code blocks should be surrounded by blank lines
+./docs/TESTING_GUIDE.md:492: MD031 Fenced code blocks should be surrounded by blank lines
+./docs/TESTING_GUIDE.md:269: MD032 Lists should be surrounded by blank lines
+./docs/TESTING_GUIDE.md:273: MD032 Lists should be surrounded by blank lines
+./docs/TESTING_GUIDE.md:277: MD032 Lists should be surrounded by blank lines
+./docs/TESTING_GUIDE.md:281: MD032 Lists should be surrounded by blank lines
+./docs/TESTING_GUIDE.md:286: MD032 Lists should be surrounded by blank lines
+./docs/TESTING_GUIDE.md:289: MD032 Lists should be surrounded by blank lines
+./docs/TESTING_GUIDE.md:326: MD032 Lists should be surrounded by blank lines
+./docs/TESTING_GUIDE.md:335: MD032 Lists should be surrounded by blank lines
+./docs/TESTING_GUIDE.md:502: MD032 Lists should be surrounded by blank lines
+./docs/TESTING_GUIDE.md:507: MD032 Lists should be surrounded by blank lines
+./docs/TESTING_GUIDE.md:13: MD034 Bare URL used
+./docs/TESTING_GUIDE.md:222: MD034 Bare URL used
+./docs/TESTING_GUIDE.md:524: MD036 Emphasis used instead of a header
+./docs/api-examples.md:452: MD010 Hard tabs
+./docs/api-examples.md:453: MD010 Hard tabs
+./docs/api-examples.md:454: MD010 Hard tabs
+./docs/api-examples.md:455: MD010 Hard tabs
+./docs/api-examples.md:456: MD010 Hard tabs
+./docs/api-examples.md:462: MD010 Hard tabs
+./docs/api-examples.md:463: MD010 Hard tabs
+./docs/api-examples.md:464: MD010 Hard tabs
+./docs/api-examples.md:465: MD010 Hard tabs
+./docs/api-examples.md:466: MD010 Hard tabs
+./docs/api-examples.md:467: MD010 Hard tabs
+./docs/api-examples.md:469: MD010 Hard tabs
+./docs/api-examples.md:470: MD010 Hard tabs
+./docs/api-examples.md:474: MD010 Hard tabs
+./docs/api-examples.md:475: MD010 Hard tabs
+./docs/api-examples.md:476: MD010 Hard tabs
+./docs/api-examples.md:477: MD010 Hard tabs
+./docs/api-examples.md:479: MD010 Hard tabs
+./docs/api-examples.md:480: MD010 Hard tabs
+./docs/api-examples.md:481: MD010 Hard tabs
+./docs/api-examples.md:482: MD010 Hard tabs
+./docs/api-examples.md:483: MD010 Hard tabs
+./docs/api-examples.md:484: MD010 Hard tabs
+./docs/api-examples.md:485: MD010 Hard tabs
+./docs/api-examples.md:486: MD010 Hard tabs
+./docs/api-examples.md:487: MD010 Hard tabs
+./docs/api-examples.md:488: MD010 Hard tabs
+./docs/api-examples.md:489: MD010 Hard tabs
+./docs/api-examples.md:491: MD010 Hard tabs
+./docs/api-examples.md:492: MD010 Hard tabs
+./docs/api-examples.md:496: MD010 Hard tabs
+./docs/api-examples.md:498: MD010 Hard tabs
+./docs/api-examples.md:499: MD010 Hard tabs
+./docs/api-examples.md:500: MD010 Hard tabs
+./docs/api-examples.md:501: MD010 Hard tabs
+./docs/api-examples.md:502: MD010 Hard tabs
+./docs/api-examples.md:503: MD010 Hard tabs
+./docs/api-examples.md:163: MD013 Line length
+./docs/api-examples.md:205: MD013 Line length
+./docs/api-examples.md:53: MD024 Multiple headers with the same content
+./docs/api-examples.md:59: MD024 Multiple headers with the same content
+./docs/api-examples.md:131: MD024 Multiple headers with the same content
+./docs/api-examples.md:146: MD024 Multiple headers with the same content
+./docs/api-examples.md:173: MD024 Multiple headers with the same content
+./docs/api-examples.md:188: MD024 Multiple headers with the same content
+./docs/api-examples.md:215: MD024 Multiple headers with the same content
+./docs/api-examples.md:261: MD024 Multiple headers with the same content
+./docs/api-examples.md:293: MD024 Multiple headers with the same content
+./docs/api-examples.md:320: MD024 Multiple headers with the same content
+./docs/api-examples.md:326: MD024 Multiple headers with the same content
+./docs/claim-template-schema.md:29: MD013 Line length
+./docs/claim-template-schema.md:31: MD013 Line length
+./docs/claim-template-schema.md:33: MD013 Line length
+./docs/claim-template-schema.md:39: MD013 Line length
+./docs/claim-template-schema.md:40: MD013 Line length
+./docs/claim-template-schema.md:50: MD013 Line length
+./docs/claim-template-schema.md:53: MD013 Line length
+./docs/claim-template-schema.md:54: MD013 Line length
+./docs/claim-template-schema.md:55: MD013 Line length
+./docs/claim-template-schema.md:56: MD013 Line length
+./docs/claim-template-schema.md:57: MD013 Line length
+./docs/claim-template-schema.md:58: MD013 Line length
+./docs/claim-template-schema.md:59: MD013 Line length
+./docs/claim-template-schema.md:60: MD013 Line length
+./docs/claim-template-schema.md:61: MD013 Line length
+./docs/claim-template-schema.md:62: MD013 Line length
+./docs/claim-template-schema.md:70: MD013 Line length
+./docs/claim-template-schema.md:71: MD013 Line length
+./docs/claim-template-schema.md:75: MD013 Line length
+./docs/claim-template-schema.md:76: MD013 Line length
+./docs/claim-template-schema.md:79: MD013 Line length
+./docs/claim-template-schema.md:80: MD013 Line length
+./docs/claim-template-schema.md:81: MD013 Line length
+./docs/claim-template-schema.md:87: MD013 Line length
+./docs/claim-template-schema.md:88: MD013 Line length
+./docs/claim-template-schema.md:89: MD013 Line length
+./docs/claim-template-schema.md:90: MD013 Line length
+./docs/claim-template-schema.md:91: MD013 Line length
+./docs/claim-template-schema.md:92: MD013 Line length
+./docs/claim-template-schema.md:93: MD013 Line length
+./docs/claim-template-schema.md:95: MD013 Line length
+./docs/claim-template-schema.md:101: MD013 Line length
+./docs/claim-template-schema.md:121: MD013 Line length
+./docs/claim-template-schema.md:143: MD013 Line length
+./docs/claim-template-schema.md:339: MD013 Line length
+./docs/claim-template-schema.md:340: MD013 Line length
+./docs/claim-template-schema.md:341: MD013 Line length
+./docs/claim-template-schema.md:343: MD013 Line length
+./docs/claim-template-schema.md:79: MD032 Lists should be surrounded by blank lines
+./docs/claim-template-schema.md:114: MD032 Lists should be surrounded by blank lines
+./docs/claim-template-schema.md:137: MD032 Lists should be surrounded by blank lines
+./docs/claim-template-schema.md:160: MD032 Lists should be surrounded by blank lines
+./docs/index.md:3: MD013 Line length
+./docs/index.md:7: MD013 Line length
+./docs/template-spec.md:3: MD013 Line length
+./docs/template-spec.md:29: MD013 Line length
+./docs/template-spec.md:39: MD013 Line length
+./docs/template-spec.md:49: MD013 Line length
+./docs/template-spec.md:60: MD013 Line length
+./docs/template-spec.md:69: MD013 Line length
+./docs/template-spec.md:70: MD013 Line length
+./docs/template-spec.md:137: MD013 Line length
+./docs/template-spec.md:218: MD013 Line length
+./docs/template-spec.md:150: MD032 Lists should be surrounded by blank lines
+./docs/template-spec.md:175: MD032 Lists should be surrounded by blank lines
+./docs/template-spec.md:373: MD032 Lists should be surrounded by blank lines
+./docs/template-spec.md:383: MD032 Lists should be surrounded by blank lines
+./docs/template-spec.md:391: MD032 Lists should be surrounded by blank lines
+./docs/template-spec.md:398: MD032 Lists should be surrounded by blank lines
+./node_modules/array-ify/README.md:5: MD012 Multiple consecutive blank lines
+./node_modules/array-ify/README.md:12: MD012 Multiple consecutive blank lines
+./node_modules/array-ify/README.md:31: MD012 Multiple consecutive blank lines
+./node_modules/array-ify/README.md:38: MD012 Multiple consecutive blank lines
+./node_modules/array-ify/README.md:43: MD012 Multiple consecutive blank lines
+./node_modules/array-ify/README.md:1: MD013 Line length
+./node_modules/array-ify/README.md:36: MD013 Line length
+./node_modules/array-ify/README.md:8: MD014 Dollar signs used before commands without showing output
+./node_modules/array-ify/README.md:1: MD019 Multiple spaces after hash on atx style header
+./node_modules/compare-func/README.md:5: MD012 Multiple consecutive blank lines
+./node_modules/compare-func/README.md:12: MD012 Multiple consecutive blank lines
+./node_modules/compare-func/README.md:37: MD012 Multiple consecutive blank lines
+./node_modules/compare-func/README.md:52: MD012 Multiple consecutive blank lines
+./node_modules/compare-func/README.md:57: MD012 Multiple consecutive blank lines
+./node_modules/compare-func/README.md:62: MD012 Multiple consecutive blank lines
+./node_modules/compare-func/README.md:1: MD013 Line length
+./node_modules/compare-func/README.md:50: MD013 Line length
+./node_modules/compare-func/README.md:55: MD013 Line length
+./node_modules/compare-func/README.md:8: MD014 Dollar signs used before commands without showing output
+./node_modules/compare-func/README.md:1: MD019 Multiple spaces after hash on atx style header
+./node_modules/conventional-changelog-conventionalcommits/LICENSE.md:1: MD002 First header should be a top level header
+./node_modules/conventional-changelog-conventionalcommits/LICENSE.md:15: MD009 Trailing spaces
+./node_modules/conventional-changelog-conventionalcommits/README.md:32: MD013 Line length
+./node_modules/conventional-changelog-conventionalcommits/README.md:47: MD013 Line length
+./node_modules/conventional-changelog-conventionalcommits/README.md:51: MD013 Line length
+./node_modules/conventional-changelog-conventionalcommits/README.md:78: MD013 Line length
+./node_modules/conventional-changelog-conventionalcommits/README.md:80: MD013 Line length
+./node_modules/conventional-changelog-conventionalcommits/README.md:86: MD013 Line length
+./node_modules/conventional-changelog-conventionalcommits/README.md:87: MD013 Line length
+./node_modules/conventional-changelog-conventionalcommits/README.md:88: MD013 Line length
+./node_modules/conventional-changelog-conventionalcommits/README.md:89: MD013 Line length
+./node_modules/conventional-changelog-conventionalcommits/README.md:90: MD013 Line length
+./node_modules/dot-prop/readme.md:110: MD010 Hard tabs
+./node_modules/dot-prop/readme.md:111: MD010 Hard tabs
+./node_modules/dot-prop/readme.md:112: MD010 Hard tabs
+./node_modules/dot-prop/readme.md:113: MD010 Hard tabs
+./node_modules/dot-prop/readme.md:114: MD010 Hard tabs
+./node_modules/dot-prop/readme.md:115: MD010 Hard tabs
+./node_modules/dot-prop/readme.md:116: MD010 Hard tabs
+./node_modules/dot-prop/readme.md:5: MD012 Multiple consecutive blank lines
+./node_modules/dot-prop/readme.md:12: MD012 Multiple consecutive blank lines
+./node_modules/dot-prop/readme.md:61: MD012 Multiple consecutive blank lines
+./node_modules/dot-prop/readme.md:106: MD012 Multiple consecutive blank lines
+./node_modules/dot-prop/readme.md:92: MD013 Line length
+./node_modules/dot-prop/readme.md:111: MD013 Line length
+./node_modules/dot-prop/readme.md:115: MD013 Line length
+./node_modules/dot-prop/readme.md:8: MD014 Dollar signs used before commands without showing output
+./node_modules/dot-prop/readme.md:109: MD033 Inline HTML
+./node_modules/dot-prop/readme.md:110: MD033 Inline HTML
+./node_modules/dot-prop/readme.md:111: MD033 Inline HTML
+./node_modules/dot-prop/readme.md:113: MD033 Inline HTML
+./node_modules/dot-prop/readme.md:114: MD033 Inline HTML
+./node_modules/dot-prop/readme.md:115: MD033 Inline HTML
+./node_modules/is-obj/readme.md:8: MD012 Multiple consecutive blank lines
+./node_modules/is-obj/readme.md:15: MD012 Multiple consecutive blank lines
+./node_modules/is-obj/readme.md:31: MD012 Multiple consecutive blank lines
+./node_modules/is-obj/readme.md:36: MD012 Multiple consecutive blank lines
+./node_modules/is-obj/readme.md:6: MD013 Line length
+./node_modules/is-obj/readme.md:11: MD014 Dollar signs used before commands without showing output
+./node_modules/is-obj/readme.md:5: MD033 Inline HTML
+
+Further documentation is available for these failures:
+ - MD001: https://github.com/markdownlint/markdownlint/blob/main/docs/RULES.md#md001---header-levels-should-only-increment-by-one-level-at-a-time
+ - MD002: https://github.com/markdownlint/markdownlint/blob/main/docs/RULES.md#md002---first-header-should-be-a-top-level-header
+ - MD012: https://github.com/markdownlint/markdownlint/blob/main/docs/RULES.md#md012---multiple-consecutive-blank-lines
+ - MD013: https://github.com/markdownlint/markdownlint/blob/main/docs/RULES.md#md013---line-length
+ - MD024: https://github.com/markdownlint/markdownlint/blob/main/docs/RULES.md#md024---multiple-headers-with-the-same-content
+ - MD032: https://github.com/markdownlint/markdownlint/blob/main/docs/RULES.md#md032---lists-should-be-surrounded-by-blank-lines
+ - MD033: https://github.com/markdownlint/markdownlint/blob/main/docs/RULES.md#md033---inline-html
+ - MD034: https://github.com/markdownlint/markdownlint/blob/main/docs/RULES.md#md034---bare-url-used
+ - MD022: https://github.com/markdownlint/markdownlint/blob/main/docs/RULES.md#md022---headers-should-be-surrounded-by-blank-lines
+ - MD029: https://github.com/markdownlint/markdownlint/blob/main/docs/RULES.md#md029---ordered-list-item-prefix
+ - MD031: https://github.com/markdownlint/markdownlint/blob/main/docs/RULES.md#md031---fenced-code-blocks-should-be-surrounded-by-blank-lines
+ - MD007: https://github.com/markdownlint/markdownlint/blob/main/docs/RULES.md#md007---unordered-list-indentation
+ - MD036: https://github.com/markdownlint/markdownlint/blob/main/docs/RULES.md#md036---emphasis-used-instead-of-a-header
+ - MD026: https://github.com/markdownlint/markdownlint/blob/main/docs/RULES.md#md026---trailing-punctuation-in-header
+ - MD010: https://github.com/markdownlint/markdownlint/blob/main/docs/RULES.md#md010---hard-tabs
+ - MD014: https://github.com/markdownlint/markdownlint/blob/main/docs/RULES.md#md014---dollar-signs-used-before-commands-without-showing-output
+ - MD019: https://github.com/markdownlint/markdownlint/blob/main/docs/RULES.md#md019---multiple-spaces-after-hash-on-atx-style-header
+ - MD009: https://github.com/markdownlint/markdownlint/blob/main/docs/RULES.md#md009---trailing-spaces
+
+
+=== Secrets Scan Results ===
+{
+  "version": "1.5.0",
+  "plugins_used": [
+    {
+      "name": "ArtifactoryDetector"
+    },
+    {
+      "name": "AWSKeyDetector"
+    },
+    {
+      "name": "AzureStorageKeyDetector"
+    },
+    {
+      "name": "Base64HighEntropyString",
+      "limit": 4.5
+    },
+    {
+      "name": "BasicAuthDetector"
+    },
+    {
+      "name": "CloudantDetector"
+    },
+    {
+      "name": "DiscordBotTokenDetector"
+    },
+    {
+      "name": "GitHubTokenDetector"
+    },
+    {
+      "name": "GitLabTokenDetector"
+    },
+    {
+      "name": "HexHighEntropyString",
+      "limit": 3.0
+    },
+    {
+      "name": "IbmCloudIamDetector"
+    },
+    {
+      "name": "IbmCosHmacDetector"
+    },
+    {
+      "name": "IPPublicDetector"
+    },
+    {
+      "name": "JwtTokenDetector"
+    },
+    {
+      "name": "KeywordDetector",
+      "keyword_exclude": ""
+    },
+    {
+      "name": "MailchimpDetector"
+    },
+    {
+      "name": "NpmDetector"
+    },
+    {
+      "name": "OpenAIDetector"
+    },
+    {
+      "name": "PrivateKeyDetector"
+    },
+    {
+      "name": "PypiTokenDetector"
+    },
+    {
+      "name": "SendGridDetector"
+    },
+    {
+      "name": "SlackDetector"
+    },
+    {
+      "name": "SoftlayerDetector"
+    },
+    {
+      "name": "SquareOAuthDetector"
+    },
+    {
+      "name": "StripeDetector"
+    },
+    {
+      "name": "TelegramBotTokenDetector"
+    },
+    {
+      "name": "TwilioKeyDetector"
+    }
+  ],
+  "filters_used": [
+    {
+      "path": "detect_secrets.filters.allowlist.is_line_allowlisted"
+    },
+    {
+      "path": "detect_secrets.filters.common.is_ignored_due_to_verification_policies",
+      "min_level": 2
+    },
+    {
+      "path": "detect_secrets.filters.heuristic.is_indirect_reference"
+    },
+    {
+      "path": "detect_secrets.filters.heuristic.is_likely_id_string"
+    },
+    {
+      "path": "detect_secrets.filters.heuristic.is_lock_file"
+    },
+    {
+      "path": "detect_secrets.filters.heuristic.is_not_alphanumeric_string"
+    },
+    {
+      "path": "detect_secrets.filters.heuristic.is_potential_uuid"
+    },
+    {
+      "path": "detect_secrets.filters.heuristic.is_prefixed_with_dollar_sign"
+    },
+    {
+      "path": "detect_secrets.filters.heuristic.is_sequential_string"
+    },
+    {
+      "path": "detect_secrets.filters.heuristic.is_swagger_file"
+    },
+    {
+      "path": "detect_secrets.filters.heuristic.is_templated_secret"
+    }
+  ],
+  "results": {
+    ".dagger/dagger.gen.go": [
+      {
+        "type": "Secret Keyword",
+        "filename": ".dagger/dagger.gen.go",
+        "hashed_secret": "44e17306b837162269a410204daaa5ecee4ec22c",
+        "is_verified": false,
+        "line_number": 541
+      }
+    ],
+    "dagger.json": [
+      {
+        "type": "Hex High Entropy String",
+        "filename": "dagger.json",
+        "hashed_secret": "798abd4bf954372806d5f869d7d7c8bafa4b0645",
+        "is_verified": false,
+        "line_number": 11
+      },
+      {
+        "type": "Hex High Entropy String",
+        "filename": "dagger.json",
+        "hashed_secret": "5cbef963e98c81edddb9f50366be35381b282244",
+        "is_verified": false,
+        "line_number": 16
+      }
+    ],
+    "dist/metadata.json": [
+      {
+        "type": "Hex High Entropy String",
+        "filename": "dist/metadata.json",
+        "hashed_secret": "22daabf647e6eb17debe54687fb8874351470d46",
+        "is_verified": false,
+        "line_number": 1
+      }
+    ],
+    "node_modules/.package-lock.json": [
+      {
+        "type": "Base64 High Entropy String",
+        "filename": "node_modules/.package-lock.json",
+        "hashed_secret": "d4703c99ad3cf77a2bba133d139e74d023573c1e",
+        "is_verified": false,
+        "line_number": 9
+      },
+      {
+        "type": "Base64 High Entropy String",
+        "filename": "node_modules/.package-lock.json",
+        "hashed_secret": "23f390a5a802353f57d5ada37b4fc1318821819e",
+        "is_verified": false,
+        "line_number": 15
+      },
+      {
+        "type": "Base64 High Entropy String",
+        "filename": "node_modules/.package-lock.json",
+        "hashed_secret": "8aacb9084c76f244a9a0a78664d2e7c1e1d43151",
+        "is_verified": false,
+        "line_number": 25
+      },
+      {
+        "type": "Base64 High Entropy String",
+        "filename": "node_modules/.package-lock.json",
+        "hashed_secret": "a32ffe8d9fdbaeb585585ce8cd7b374a3023dc5c",
+        "is_verified": false,
+        "line_number": 37
+      },
+      {
+        "type": "Base64 High Entropy String",
+        "filename": "node_modules/.package-lock.json",
+        "hashed_secret": "f89ed9527422d1b197cbc9a4515b18bf462823a3",
+        "is_verified": false,
+        "line_number": 49
+      }
+    ]
+  },
+  "generated_at": "2026-02-18T10:10:34Z"
+}
