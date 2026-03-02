@@ -111,6 +111,7 @@ func (m *Dagger) BuildImage(
 	return imageRef, nil
 }
 
+// ScanImage scans a container image for vulnerabilities using Trivy
 func (m *Dagger) ScanImage(
 	ctx context.Context,
 	imageRef string, // Fully qualified image reference (e.g., "ttl.sh/my-repo:1.0.0")
