@@ -29,7 +29,7 @@ jobs:
       - name: Set image repository
         id: image-repo
         run: |
-          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == "refs/heads/main" ]]; then
+          if [[ "${{ github.ref }}" == "refs/heads/main" && ("${{ github.event_name }}" == "push" || "${{ github.event_name }}" == "workflow_dispatch") ]]; then
             echo "repo=ghcr.io/${{ github.repository }}" >> $GITHUB_OUTPUT
             echo "tag=main" >> $GITHUB_OUTPUT
           else
