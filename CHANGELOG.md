@@ -1,3 +1,10 @@
+## [0.5.4](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.5.3...v0.5.4) (2026-03-02)
+
+
+### Bug Fixes
+
+* improve koBuildWithConfig documentation ([aa72fa1](https://github.com/stuttgart-things/claim-machinery-api/commit/aa72fa14483e0ec366e3110a7acbc4859f2922bb))
+
 ## [0.5.3](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.5.2...v0.5.3) (2026-03-02)
 
 
