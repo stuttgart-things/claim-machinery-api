@@ -40,3 +40,6 @@ dist/
 
 # Node modules
 node_modules/
+
+# Claude Code
+.claude/
