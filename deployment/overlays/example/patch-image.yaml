@@ -1,0 +1,13 @@
+---
+# Strategic merge patch: override the container image.
+# Replace REPLACE_WITH_VERSION with the desired release tag, e.g. v0.5.6.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: claim-machinery-api
+spec:
+  template:
+    spec:
+      containers:
+        - name: claim-machinery-api
+          image: ghcr.io/stuttgart-things/claim-machinery-api:REPLACE_WITH_VERSION

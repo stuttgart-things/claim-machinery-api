@@ -1,0 +1,9 @@
+---
+# JSON patch: override the ingress hostname.
+# Replace claim-machinery-api.example.com with your actual domain.
+- op: replace
+  path: /spec/rules/0/host
+  value: claim-machinery-api.example.com
+- op: replace
+  path: /spec/tls/0/hosts/0
+  value: claim-machinery-api.example.com

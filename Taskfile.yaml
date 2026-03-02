@@ -571,6 +571,104 @@ tasks:
         echo ""
         echo "OCI artifact pushed: {{ .KUSTOMIZE_OCI_REPO }}:{{ .TAG }}"
 
+  deploy-pull-base:
+    desc: Pull kustomize base from OCI registry
+    vars:
+      VERSION:
+        sh: 'gum input --placeholder "Enter version (e.g., v0.5.6)" --value "$(git describe --tags --abbrev=0 2>/dev/null || echo v0.0.0)" --header "VERSION"'
+    cmds:
+      - |
+        echo ""
+        echo "Pulling kustomize base..."
+        echo "Source: {{ .KUSTOMIZE_OCI_REPO }}:{{ .VERSION }}"
+        echo "Target: {{ .KUSTOMIZE_BASE_EXPORT_PATH }}"
+        echo ""
+
+        rm -rf "{{ .KUSTOMIZE_BASE_EXPORT_PATH }}"
+        mkdir -p "{{ .KUSTOMIZE_BASE_EXPORT_PATH }}"
+
+        oras pull "{{ .KUSTOMIZE_OCI_REPO }}:{{ .VERSION }}" \
+          -o "{{ .KUSTOMIZE_BASE_EXPORT_PATH }}"
+
+        echo ""
+        echo "Kustomize base pulled successfully!"
+        ls -la "{{ .KUSTOMIZE_BASE_EXPORT_PATH }}/"
+
+  deploy-apply:
+    desc: Apply kustomize base or overlay to cluster
+    vars:
+      OVERLAY:
+        sh: |
+          CHOICES=$(ls -d deployment/overlays/*/ 2>/dev/null | sed 's|/$||' || true)
+          BASE="{{ .KUSTOMIZE_BASE_EXPORT_PATH }}"
+          ALL="${BASE}"
+          if [ -n "$CHOICES" ]; then
+            ALL=$(printf "%s\n%s" "$BASE" "$CHOICES")
+          fi
+          echo "$ALL" | gum choose --header "SELECT KUSTOMIZE TARGET"
+    cmds:
+      - |
+        echo ""
+        echo "Preview of: {{ .OVERLAY }}"
+        echo "---"
+        kubectl kustomize "{{ .OVERLAY }}"
+        echo "---"
+        echo ""
+      - |
+        if gum confirm "Apply to cluster?"; then
+          kubectl apply -k "{{ .OVERLAY }}"
+          echo ""
+          echo "Applied successfully!"
+        else
+          echo "Aborted."
+        fi
+
+  deploy:
+    desc: Pull kustomize base and apply to cluster
+    vars:
+      VERSION:
+        sh: 'gum input --placeholder "Enter version (e.g., v0.5.6)" --value "$(git describe --tags --abbrev=0 2>/dev/null || echo v0.0.0)" --header "VERSION"'
+    cmds:
+      - |
+        echo ""
+        echo "Pulling kustomize base..."
+        echo "Source: {{ .KUSTOMIZE_OCI_REPO }}:{{ .VERSION }}"
+        echo "Target: {{ .KUSTOMIZE_BASE_EXPORT_PATH }}"
+        echo ""
+
+        rm -rf "{{ .KUSTOMIZE_BASE_EXPORT_PATH }}"
+        mkdir -p "{{ .KUSTOMIZE_BASE_EXPORT_PATH }}"
+
+        oras pull "{{ .KUSTOMIZE_OCI_REPO }}:{{ .VERSION }}" \
+          -o "{{ .KUSTOMIZE_BASE_EXPORT_PATH }}"
+
+        echo ""
+        echo "Kustomize base pulled successfully!"
+        ls -la "{{ .KUSTOMIZE_BASE_EXPORT_PATH }}/"
+      - |
+        CHOICES=$(ls -d deployment/overlays/*/ 2>/dev/null | sed 's|/$||' || true)
+        BASE="{{ .KUSTOMIZE_BASE_EXPORT_PATH }}"
+        ALL="${BASE}"
+        if [ -n "$CHOICES" ]; then
+          ALL=$(printf "%s\n%s" "$BASE" "$CHOICES")
+        fi
+        OVERLAY=$(echo "$ALL" | gum choose --header "SELECT KUSTOMIZE TARGET")
+
+        echo ""
+        echo "Preview of: ${OVERLAY}"
+        echo "---"
+        kubectl kustomize "${OVERLAY}"
+        echo "---"
+        echo ""
+
+        if gum confirm "Apply to cluster?"; then
+          kubectl apply -k "${OVERLAY}"
+          echo ""
+          echo "Applied successfully!"
+        else
+          echo "Aborted."
+        fi
+
   do:
     desc: Select a task to run
     cmds:
