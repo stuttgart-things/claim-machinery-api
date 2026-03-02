@@ -1,3 +1,10 @@
+## [0.5.3](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.5.2...v0.5.3) (2026-03-02)
+
+
+### Bug Fixes
+
+* trigger release after build completes via workflow_run ([95684d9](https://github.com/stuttgart-things/claim-machinery-api/commit/95684d9caa267ed68550aa9bc0d034cae30036a5))
+
 ## [0.5.2](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.5.1...v0.5.2) (2026-03-02)
 
 
