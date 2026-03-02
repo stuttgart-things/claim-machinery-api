@@ -1,3 +1,10 @@
+## [0.5.2](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.5.1...v0.5.2) (2026-03-02)
+
+
+### Bug Fixes
+
+* handle workflow_dispatch on main for ghcr.io push ([304e90b](https://github.com/stuttgart-things/claim-machinery-api/commit/304e90bcf002b2b861144ba3b00dbb2f993bfd67))
+
 ## [0.5.1](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.5.0...v0.5.1) (2026-03-02)
 
 
