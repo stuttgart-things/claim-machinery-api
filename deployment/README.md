@@ -346,3 +346,242 @@ dagger -m github.com/stuttgart-things/blueprints/kubernetes-deployment@v1.44.0 c
 | `--operation` | `apply` | Kubernetes operation (`apply` or `delete`) |
 | `--namespace` | `default` | Target Kubernetes namespace |
 | `--kube-config` | - | Kubeconfig secret (use `env:KUBECONFIG` for environment variable) |
+
+## Kustomize Base Rendering
+
+The KCL Dagger module provides a `render-kustomize-base` function that renders KCL output into a [kustomize](https://kustomize.io/) base directory. This lets you customize manifests at deploy time using standard kustomize overlays — without re-running KCL.
+
+### Generate the Base
+
+```bash
+# Render kustomize base from local KCL source + parameters file
+dagger call -m github.com/stuttgart-things/dagger/kcl render-kustomize-base \
+  --source ./deployment \
+  --parameters-file ./tests/kcl-deploy-profile.yaml \
+  export --path=/tmp/kustomize-base
+
+# Render from OCI source
+dagger call -m github.com/stuttgart-things/dagger/kcl render-kustomize-base \
+  --oci-source ghcr.io/stuttgart-things/kcl-claim-machinery-api \
+  --parameters 'config.namespace=production,config.replicas=3' \
+  export --path=/tmp/kustomize-base
+```
+
+### Output Structure
+
+```
+base/
+  kustomization.yaml
+  configmap-claim-machinery-api.yaml
+  configmap-claim-machinery-api-profile.yaml
+  deployment-claim-machinery-api.yaml
+  ingress-claim-machinery-api.yaml
+  namespace-claim-machinery.yaml
+  service-claim-machinery-api.yaml
+  serviceaccount-claim-machinery-api.yaml
+```
+
+Files are named `kind-name.yaml` (lowercased, sanitized). The generated `kustomization.yaml` lists all resource files.
+
+### Validate
+
+```bash
+# Dry-run with kubectl
+kubectl kustomize /tmp/kustomize-base/
+
+# Or apply directly
+kubectl apply -k /tmp/kustomize-base/
+```
+
+### Kustomize Overlays
+
+Once you have the base, create overlay directories to customize per environment.
+
+#### Recommended Directory Layout
+
+```
+deployment/
+  kustomize/
+    base/                          # output of render-kustomize-base
+      kustomization.yaml
+      deployment-claim-machinery-api.yaml
+      service-claim-machinery-api.yaml
+      ...
+    overlays/
+      dev/
+        kustomization.yaml
+        patch-ingress-host.yaml
+      staging/
+        kustomization.yaml
+        patch-ingress-host.yaml
+        patch-replicas.yaml
+      production/
+        kustomization.yaml
+        patch-ingress-host.yaml
+        patch-replicas.yaml
+        patch-resources.yaml
+```
+
+#### Patch Ingress Host (JSON Patch)
+
+Change the ingress hostname per environment:
+
+`overlays/production/kustomization.yaml`:
+```yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base
+
+patches:
+  - path: patch-ingress-host.yaml
+    target:
+      kind: Ingress
+      name: claim-machinery-api
+```
+
+`overlays/production/patch-ingress-host.yaml`:
+```yaml
+- op: replace
+  path: /spec/rules/0/host
+  value: claim-api.production.example.com
+- op: replace
+  path: /spec/tls/0/hosts/0
+  value: claim-api.production.example.com
+- op: replace
+  path: /spec/tls/0/secretName
+  value: claim-machinery-api-tls-production
+```
+
+```bash
+kubectl apply -k overlays/production/
+```
+
+#### Scale Replicas and Resources (Strategic Merge Patch)
+
+`overlays/production/patch-replicas.yaml`:
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: claim-machinery-api
+spec:
+  replicas: 3
+  template:
+    spec:
+      containers:
+        - name: claim-machinery-api
+          resources:
+            requests:
+              cpu: 250m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 512Mi
+```
+
+`overlays/production/kustomization.yaml`:
+```yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base
+
+patches:
+  - path: patch-ingress-host.yaml
+    target:
+      kind: Ingress
+      name: claim-machinery-api
+  - path: patch-replicas.yaml
+```
+
+#### Override ConfigMap Values
+
+Change environment variables (port, log format, debug) without touching the deployment:
+
+`overlays/staging/patch-configmap.yaml`:
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: claim-machinery-api
+data:
+  PORT: "9090"
+  LOG_FORMAT: json
+  DEBUG: "true"
+```
+
+#### Switch from Ingress to Gateway API HTTPRoute
+
+Remove the ingress resource and add an HTTPRoute in the overlay:
+
+`overlays/gateway/kustomization.yaml`:
+```yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base
+  - httproute.yaml
+
+patches:
+  - target:
+      kind: Ingress
+      name: claim-machinery-api
+    patch: |
+      $patch: delete
+      apiVersion: networking.k8s.io/v1
+      kind: Ingress
+      metadata:
+        name: claim-machinery-api
+```
+
+`overlays/gateway/httproute.yaml`:
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: claim-machinery-api
+  namespace: claim-machinery
+spec:
+  parentRefs:
+    - name: whatever-gateway
+      namespace: default
+  hostnames:
+    - claim-api.whatever.sthings-vsphere.labul.sva.de
+  rules:
+    - backendRefs:
+        - name: claim-machinery-api
+          port: 8080
+```
+
+```bash
+kubectl apply -k overlays/gateway/
+```
+
+#### Change Namespace
+
+Kustomize can override the namespace for all resources:
+
+```yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base
+namespace: my-custom-namespace
+```
+
+#### Add Labels or Annotations
+
+```yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base
+
+commonLabels:
+  environment: production
+  team: platform
+
+commonAnnotations:
+  owner: platform-team@example.com
+```
