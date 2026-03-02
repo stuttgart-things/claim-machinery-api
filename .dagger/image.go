@@ -48,7 +48,7 @@ func (m *Dagger) koBuildWithConfig(
 	return strings.TrimSpace(stdout), nil
 }
 
-// BuildImage builds a container image using ko
+// BuildImage builds a container image using ko and optionally scans it with Trivy
 func (m *Dagger) BuildImage(
 	ctx context.Context,
 	src *dagger.Directory,
