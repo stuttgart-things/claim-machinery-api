@@ -17,6 +17,7 @@ func (m *Dagger) koBuildWithConfig(
 	push string,
 	tokenName string,
 	token *dagger.Secret,
+	tag string,
 ) (string, error) {
 	ctr := dag.Container().
 		From(fmt.Sprintf("ghcr.io/ko-build/ko:%s", koVersion)).
@@ -32,7 +33,12 @@ func (m *Dagger) koBuildWithConfig(
 				fmt.Sprintf("echo $%s | ko login ghcr.io --username=token --password-stdin", tokenName)})
 	}
 
-	ctr = ctr.WithExec([]string{"ko", "build", fmt.Sprintf("--push=%s", push), "--sbom=none", buildArg})
+	koArgs := []string{"ko", "build", fmt.Sprintf("--push=%s", push), "--sbom=none", "--bare"}
+	if tag != "" {
+		koArgs = append(koArgs, fmt.Sprintf("--tags=%s", tag))
+	}
+	koArgs = append(koArgs, buildArg)
+	ctr = ctr.WithExec(koArgs)
 
 	stdout, err := ctr.Stdout(ctx)
 	if err != nil {
@@ -63,6 +69,9 @@ func (m *Dagger) BuildImage(
 	// +optional
 	token *dagger.Secret,
 	// +optional
+	// +default=""
+	tag string,
+	// +optional
 	// +default=false
 	scan bool,
 	// +optional
@@ -78,6 +87,7 @@ func (m *Dagger) BuildImage(
 		push,
 		tokenName,
 		token,
+		tag,
 	)
 
 	if err != nil {
