@@ -7,7 +7,8 @@ import (
 	"strings"
 )
 
-// koBuildWithConfig builds using ko respecting .ko.yaml configuration
+// koBuildWithConfig builds a container image using ko, respecting .ko.yaml configuration.
+// It uses --bare to publish directly to the repo URL without import-path suffixes.
 func (m *Dagger) koBuildWithConfig(
 	ctx context.Context,
 	src *dagger.Directory,
