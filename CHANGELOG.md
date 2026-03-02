@@ -1,3 +1,10 @@
+## [0.5.5](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.5.4...v0.5.5) (2026-03-02)
+
+
+### Bug Fixes
+
+* clarify BuildImage function documentation ([83ae7af](https://github.com/stuttgart-things/claim-machinery-api/commit/83ae7af331b1773b005959462822d110b3bf655d))
+
 ## [0.5.4](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.5.3...v0.5.4) (2026-03-02)
 
 
