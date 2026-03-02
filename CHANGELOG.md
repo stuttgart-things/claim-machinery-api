@@ -1,3 +1,10 @@
+## [0.5.6](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.5.5...v0.5.6) (2026-03-02)
+
+
+### Bug Fixes
+
+* add ScanImage function documentation ([5a3f03c](https://github.com/stuttgart-things/claim-machinery-api/commit/5a3f03cccc9f99b57cb5f8238873bbe1b5d133c0))
+
 ## [0.5.5](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.5.4...v0.5.5) (2026-03-02)
 
 
