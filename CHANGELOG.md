@@ -1,3 +1,10 @@
+## [0.5.1](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.5.0...v0.5.1) (2026-03-02)
+
+
+### Bug Fixes
+
+* use ko --bare flag for clean image naming and add tag parameter ([8a3e925](https://github.com/stuttgart-things/claim-machinery-api/commit/8a3e925c2abb43d6cde622bedee44d7fcb5b7a7a))
+
 # [0.5.0](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.4.1...v0.5.0) (2026-03-01)
 
 
