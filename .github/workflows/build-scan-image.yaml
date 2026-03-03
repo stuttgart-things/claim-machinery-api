@@ -14,77 +14,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build-scan-push:
-    name: Build, Scan & Push Image
-    runs-on: ubuntu-latest
-
-    permissions:
-      contents: read
-      packages: write
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-
-      - name: Set image repository
-        id: image-repo
-        run: |
-          if [[ "${{ github.ref }}" == "refs/heads/main" && ("${{ github.event_name }}" == "push" || "${{ github.event_name }}" == "workflow_dispatch") ]]; then
-            echo "repo=ghcr.io/${{ github.repository }}" >> $GITHUB_OUTPUT
-            echo "tag=main" >> $GITHUB_OUTPUT
-          else
-            # For PRs and other triggers, use ttl.sh for ephemeral testing
-            RANDOM_TAG=$(openssl rand -hex 6)
-            echo "repo=ttl.sh/claim-machinery-api-${RANDOM_TAG}" >> $GITHUB_OUTPUT
-            echo "tag=latest" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Build and push image with scan
-        id: build-image
-        uses: dagger/dagger-for-github@v8.3.0
-        with:
-          module: ./.dagger
-          call: build-image --src . --repo "${{ steps.image-repo.outputs.repo }}" --tag "${{ steps.image-repo.outputs.tag }}" --push="true" --token env:GITHUB_TOKEN --scan="true" --scan-severity="HIGH,CRITICAL" --progress plain
-          cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Upload scan report
-        if: false  # Scan report from BuildImage is not exported separately
-        uses: actions/upload-artifact@v7
-        with:
-          name: trivy-scan-report
-          path: /tmp/trivy-scan-report.json
-          retention-days: 30
-
-      - name: Check for vulnerabilities
-        if: false  # Vulnerability check requires scan report export
-        run: |
-          if command -v jq &> /dev/null; then
-            VULN_COUNT=$(jq '[.Results[]?.Vulnerabilities[]?] | length' /tmp/trivy-scan-report.json 2>/dev/null || echo "0")
-            echo "Found $VULN_COUNT HIGH/CRITICAL vulnerabilities"
-
-            if [ "$VULN_COUNT" -gt 0 ]; then
-              echo "::warning::Image contains $VULN_COUNT HIGH/CRITICAL vulnerabilities"
-              jq -r '.Results[]? | select(.Vulnerabilities) | "\(.Target): \(.Vulnerabilities | length) vulnerabilities"' \
-                /tmp/trivy-scan-report.json
-            else
-              echo "✅ No HIGH/CRITICAL vulnerabilities found!"
-            fi
-          fi
-
-      - name: Image Summary
-        run: |
-          echo "## 🎉 Container Image Build Complete" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Image:** \`${{ steps.image-repo.outputs.repo }}:${{ steps.image-repo.outputs.tag }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Pull command:**" >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
-          echo "docker pull ${{ steps.image-repo.outputs.repo }}:${{ steps.image-repo.outputs.tag }}" >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-
-          if [[ "${{ steps.image-repo.outputs.repo }}" == ttl.sh/* ]]; then
-            echo "⏰ **Note:** ttl.sh images expire after 1 hour" >> $GITHUB_STEP_SUMMARY
-          fi
+  build:
+    uses: stuttgart-things/github-workflow-templates/.github/workflows/call-ko-build.yaml@main
+    with:
+      runs-on: ubuntu-latest
+    secrets: inherit
