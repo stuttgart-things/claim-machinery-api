@@ -1,3 +1,10 @@
+# [0.7.0](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.6.0...v0.7.0) (2026-03-03)
+
+
+### Features
+
+* add GitHub Pages and GitLab Pages deployment ([042e218](https://github.com/stuttgart-things/claim-machinery-api/commit/042e218d982414a40a6173b1b6384b2782499d80))
+
 # [0.6.0](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.5.6...v0.6.0) (2026-03-02)
 
 
