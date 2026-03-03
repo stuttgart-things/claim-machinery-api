@@ -1,0 +1,58 @@
+stages:
+  - pages
+
+pages:
+  image: python:3.12-slim
+  stage: pages
+  script:
+    - pip install mkdocs-material
+    - |
+      python3 -c "
+      import yaml
+
+      with open('mkdocs.yml') as f:
+          config = yaml.safe_load(f)
+
+      # Replace techdocs-core plugin with material theme for GitLab Pages
+      config.pop('plugins', None)
+      config['theme'] = {
+          'name': 'material',
+          'palette': [
+              {
+                  'scheme': 'default',
+                  'primary': 'indigo',
+                  'accent': 'indigo',
+                  'toggle': {
+                      'icon': 'material/brightness-7',
+                      'name': 'Switch to dark mode',
+                  },
+              },
+              {
+                  'scheme': 'slate',
+                  'primary': 'indigo',
+                  'accent': 'indigo',
+                  'toggle': {
+                      'icon': 'material/brightness-4',
+                      'name': 'Switch to light mode',
+                  },
+              },
+          ],
+          'features': [
+              'navigation.tabs',
+              'navigation.sections',
+              'navigation.top',
+              'search.highlight',
+              'content.code.copy',
+          ],
+      }
+      config['plugins'] = ['search']
+
+      with open('mkdocs-pages.yml', 'w') as f:
+          yaml.dump(config, f, default_flow_style=False, sort_keys=False)
+      "
+    - mkdocs build -f mkdocs-pages.yml -d public
+  artifacts:
+    paths:
+      - public
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
