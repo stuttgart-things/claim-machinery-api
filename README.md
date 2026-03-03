@@ -11,6 +11,8 @@
 
 A Backstage-compatible API for discovering, managing, and rendering KCL-based Crossplane claim templates.
 
+**[Documentation](https://stuttgart-things.github.io/claim-machinery-api/)**
+
 ## Features
 
 | Feature | Description |
@@ -57,14 +59,14 @@ git clone https://github.com/stuttgart-things/claim-machinery-api.git
 cd claim-machinery-api
 go mod download
 
-# Run API server (default mode)
-go run main.go
+# Run API server
+go run main.go server
 
-# Or interactive CLI
+# Or interactive CLI (default when no subcommand is given)
 go run main.go render
 ```
 
-The server loads templates from `internal/claimtemplate/testdata` and `tests/profile.yaml` by default, and listens on port `8080`.
+The server loads templates from `tests/profile.yaml` by default and listens on port `8080`.
 
 ## API Endpoints
 
@@ -92,7 +94,7 @@ Response:
   "kind": "ClaimTemplateList",
   "items": [
     {
-      "apiVersion": "sthings.io/v1alpha1",
+      "apiVersion": "resources.stuttgart-things.com/v1alpha1",
       "kind": "ClaimTemplate",
       "metadata": {
         "name": "volumeclaim",
@@ -183,19 +185,19 @@ curl http://localhost:8080/version
 
 ## Usage
 
-### API Server (Default)
+### API Server
 
 ```bash
-# Run directly (default mode)
-claim-machinery-api
-
-# Or explicitly
 claim-machinery-api server
 ```
 
-### Interactive CLI
+### Interactive CLI (Default)
 
 ```bash
+# Default when no subcommand is given
+claim-machinery-api
+
+# Or explicitly
 claim-machinery-api render
 ```
 
@@ -215,6 +217,7 @@ claim-machinery-api --template-profile-path /path/to/profile.yaml
 # Environment variables
 export TEMPLATES_DIR=/path/to/templates
 export TEMPLATE_PROFILE_PATH=/path/to/profile.yaml
+export ENABLE_TEMPLATES_DIR=true  # enable loading from templates directory
 export PORT=9090
 export LOG_FORMAT=json   # default: text
 ```
@@ -254,7 +257,7 @@ docker run --rm \
   -e TEMPLATE_PROFILE_PATH=/tmp/profile.yaml \
   -e TEMPLATES_DIR="/tmp" \
   -p 8080:8080 \
-  ghcr.io/stuttgart-things/claim-machinery-api:v0.3.0
+  ghcr.io/stuttgart-things/claim-machinery-api:v0.5.6
 ```
 
 **Behavior:**
@@ -390,6 +393,85 @@ task run-local-go
 ```
 
 See [Taskfile.yaml](Taskfile.yaml) for all available tasks.
+
+</details>
+
+## Deployment
+
+The release pipeline publishes a kustomize base as an OCI artifact (`ghcr.io/stuttgart-things/claim-machinery-api-kustomize:<version>`) and a container image (`ghcr.io/stuttgart-things/claim-machinery-api:<version>`).
+
+<details>
+<summary><strong>Kustomize Overlay</strong></summary>
+
+A kustomize overlay example is provided in `deployment/overlays/example/`. Pull the base and customize:
+
+```bash
+oras pull ghcr.io/stuttgart-things/claim-machinery-api-kustomize:v0.5.6 \
+  -o deployment/kustomize-base
+
+kubectl kustomize deployment/overlays/example/
+```
+
+</details>
+
+<details>
+<summary><strong>Flux (GitOps)</strong></summary>
+
+A Flux app definition is available in the [stuttgart-things/flux](https://github.com/stuttgart-things/flux) repository at [`apps/claim-machinery-api/`](https://github.com/stuttgart-things/flux/tree/main/apps/claim-machinery-api). It uses a two-layer Flux reconciliation with `OCIRepository` + Flux `Kustomization` (not Helm) and Gateway API `HTTPRoute`.
+
+**1. Create the GitRepository source:**
+
+```yaml
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata:
+  name: stuttgart-things-flux
+  namespace: flux-system
+spec:
+  interval: 1m0s
+  url: https://github.com/stuttgart-things/flux.git
+  ref:
+    tag: v1.1.0
+```
+
+**2. Create the Kustomization:**
+
+```yaml
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: claim-machinery-api
+  namespace: flux-system
+spec:
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  sourceRef:
+    kind: GitRepository
+    name: stuttgart-things-flux
+  path: ./apps/claim-machinery-api
+  prune: true
+  wait: true
+  postBuild:
+    substitute:
+      CLAIM_MACHINERY_API_NAMESPACE: claim-machinery
+      CLAIM_MACHINERY_API_VERSION: v0.6.0
+      GATEWAY_NAME: my-gateway
+      GATEWAY_NAMESPACE: default
+      HOSTNAME: claim-api
+      DOMAIN: example.sthings-vsphere.labul.sva.de
+```
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `CLAIM_MACHINERY_API_NAMESPACE` | `claim-machinery` | Target namespace |
+| `CLAIM_MACHINERY_API_VERSION` | `v0.5.6` | OCI tag + container image tag |
+| `GATEWAY_NAME` | _(required)_ | Gateway parentRef name |
+| `GATEWAY_NAMESPACE` | `default` | Gateway parentRef namespace |
+| `HOSTNAME` | _(required)_ | HTTPRoute hostname prefix |
+| `DOMAIN` | _(required)_ | HTTPRoute domain suffix |
+
+**How it works:** The outer Kustomization reads `./apps/claim-machinery-api` from the GitRepository, substitutes variables, and creates the Namespace + OCIRepository + inner Kustomization + HTTPRoute. The inner Kustomization (`release.yaml`) reconciles the OCI kustomize base from `ghcr.io/stuttgart-things/claim-machinery-api-kustomize`, patches out the Ingress (replaced by HTTPRoute), overrides the container image tag, and applies the resulting manifests.
 
 </details>
 
