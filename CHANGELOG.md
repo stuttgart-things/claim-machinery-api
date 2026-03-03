@@ -1,3 +1,10 @@
+# [0.9.0](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.8.0...v0.9.0) (2026-03-03)
+
+
+### Features
+
+* add trigger-release and trigger-pages tasks for remote workflow dispatch ([fc86931](https://github.com/stuttgart-things/claim-machinery-api/commit/fc86931057e82e800f0f6134cef153cf0208bd0b))
+
 # [0.8.0](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.7.0...v0.8.0) (2026-03-03)
 
 
