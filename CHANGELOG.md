@@ -1,3 +1,10 @@
+# [0.8.0](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.7.0...v0.8.0) (2026-03-03)
+
+
+### Features
+
+* auto-deploy pages on release with changelog and flux deploy reference ([d6ad54b](https://github.com/stuttgart-things/claim-machinery-api/commit/d6ad54bbbb5297ea083f9961838e261ec2c734fd))
+
 # [0.7.0](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.6.0...v0.7.0) (2026-03-03)
 
 
