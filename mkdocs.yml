@@ -6,6 +6,7 @@ nav:
   - Template Specification: template-spec.md
   - API Examples: api-examples.md
   - Testing Guide: TESTING_GUIDE.md
+  - CI/CD: CICD.md
 
 plugins:
   - techdocs-core

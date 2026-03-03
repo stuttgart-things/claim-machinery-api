@@ -483,6 +483,7 @@ spec:
 | [ROADMAP.md](./docs/ROADMAP.md) | Project roadmap and tracking |
 | [API Examples](./docs/api-examples.md) | API usage examples |
 | [Template Schema](./docs/claim-template-schema.md) | Claim template specification |
+| [CI/CD Pattern](./docs/CICD.md) | CI/CD pipeline stages, Dagger functions, Taskfile interface |
 | [OpenAPI Spec](./docs/openapi.yaml) | OpenAPI / Swagger definition |
 
 ## License
