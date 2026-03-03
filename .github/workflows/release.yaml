@@ -12,12 +12,11 @@ jobs:
     if: >-
       github.event_name == 'workflow_dispatch' ||
       github.event.workflow_run.conclusion == 'success'
-    uses: stuttgart-things/github-workflow-templates/.github/workflows/call-go-microservice-release.yaml@main
+    uses: stuttgart-things/github-workflow-templates/.github/workflows/call-go-release.yaml@main
     with:
       runs-on: ubuntu-latest
-      source-image: ghcr.io/stuttgart-things/claim-machinery-api:main
-      target-image-repo: ghcr.io/stuttgart-things/claim-machinery-api
-      kcl-source-dir: deployment
+      stage-image: true
+      push-kustomize: true
       kcl-profile-file: tests/kcl-deploy-profile.yaml
       kustomize-oci-repo: ghcr.io/stuttgart-things/claim-machinery-api-kustomize
     secrets: inherit
