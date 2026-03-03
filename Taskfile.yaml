@@ -669,6 +669,30 @@ tasks:
           echo "Aborted."
         fi
 
+  trigger-release:
+    desc: Trigger Release workflow on GitHub Actions
+    cmds:
+      - |
+        echo "Triggering Release workflow on GitHub Actions..."
+        gh workflow run Release
+        sleep 2
+        RUN_ID=$(gh run list --workflow=Release --limit=1 --json databaseId --jq '.[0].databaseId')
+        echo "Run: https://github.com/stuttgart-things/claim-machinery-api/actions/runs/${RUN_ID}"
+        echo ""
+        gh run watch "${RUN_ID}"
+
+  trigger-pages:
+    desc: Trigger Deploy Pages workflow on GitHub Actions
+    cmds:
+      - |
+        echo "Triggering Deploy Pages workflow on GitHub Actions..."
+        gh workflow run "Deploy Pages"
+        sleep 2
+        RUN_ID=$(gh run list --workflow="Deploy Pages" --limit=1 --json databaseId --jq '.[0].databaseId')
+        echo "Run: https://github.com/stuttgart-things/claim-machinery-api/actions/runs/${RUN_ID}"
+        echo ""
+        gh run watch "${RUN_ID}"
+
   do:
     desc: Select a task to run
     cmds:
