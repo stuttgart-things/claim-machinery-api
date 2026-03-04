@@ -138,7 +138,7 @@ kcl run main.k | kubectl delete -f -
 | `config.httpRouteHostname` | string | `` | HTTPRoute hostname (defaults to ingressHost) |
 | `config.httpRouteAnnotations` | {str:str} | `{}` | HTTPRoute annotations |
 | `config.templatesDir` | string | `/app/templates` | Templates directory (TEMPLATES_DIR env var) |
-| `config.templateProfilePath` | string | `/app/config/profile.yaml` | Template profile path (TEMPLATE_PROFILE_PATH env var) |
+| `config.templateProfilePath` | string | `/app/config/profile.yaml` | Template profile path or HTTP URL (TEMPLATE_PROFILE_PATH env var) |
 | `config.templateProfile` | string | `` | Template profile YAML content (mounted as file) |
 | `config.port` | string | `8080` | Application port (PORT env var) |
 | `config.logFormat` | string | `text` | Log format (LOG_FORMAT env var: text/json) |

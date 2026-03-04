@@ -1,0 +1,16 @@
+---
+apiVersion: resources.stuttgart-things.com/v1alpha1
+kind: ClaimTemplate
+metadata:
+  name: test-simple
+  title: Test Template
+  description: A simple test template
+  tags:
+    - test
+spec:
+  source: oci://ghcr.io/stuttgart-things/test-template
+  parameters:
+    - name: claimName
+      type: string
+      description: Name of the claim
+      required: true

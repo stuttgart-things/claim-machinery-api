@@ -22,17 +22,33 @@ type profileYAML struct {
 }
 
 // LoadTemplatesFromProfile loads claim templates from a YAML profile file.
-// Entries can be local file paths or HTTP/HTTPS URLs. URLs are validated and
-// downloaded to a temporary file before parsing.
+// profilePath can be a local file path or an HTTP/HTTPS URL. Individual
+// entries inside the profile can also be local paths or URLs.
 func LoadTemplatesFromProfile(profilePath string) ([]*claimtemplate.ClaimTemplate, []string, error) {
-	f, err := os.Open(profilePath)
-	if err != nil {
-		return nil, nil, fmt.Errorf("open profile: %w", err)
+	var reader io.ReadCloser
+
+	if strings.HasPrefix(profilePath, "http://") || strings.HasPrefix(profilePath, "https://") {
+		tmpPath, err := downloadToTemp(profilePath)
+		if err != nil {
+			return nil, nil, fmt.Errorf("download profile from %s: %w", profilePath, err)
+		}
+		defer os.Remove(tmpPath)
+		f, err := os.Open(tmpPath)
+		if err != nil {
+			return nil, nil, fmt.Errorf("open downloaded profile: %w", err)
+		}
+		reader = f
+	} else {
+		f, err := os.Open(profilePath)
+		if err != nil {
+			return nil, nil, fmt.Errorf("open profile: %w", err)
+		}
+		reader = f
 	}
-	defer f.Close()
+	defer reader.Close()
 
 	var p profileYAML
-	if err := yaml.NewDecoder(f).Decode(&p); err != nil {
+	if err := yaml.NewDecoder(reader).Decode(&p); err != nil {
 		return nil, nil, fmt.Errorf("parse profile yaml: %w", err)
 	}
 

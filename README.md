@@ -214,15 +214,21 @@ claim-machinery-api --templates-dir /path/to/templates
 # Custom profile (or disable with "")
 claim-machinery-api --template-profile-path /path/to/profile.yaml
 
+# Profile from HTTP URL (downloaded at startup)
+claim-machinery-api --template-profile-path https://example.com/profile.yaml
+
 # Environment variables
 export TEMPLATES_DIR=/path/to/templates
-export TEMPLATE_PROFILE_PATH=/path/to/profile.yaml
+export TEMPLATE_PROFILE_PATH=/path/to/profile.yaml        # local file
+export TEMPLATE_PROFILE_PATH=https://example.com/profile.yaml  # or HTTP URL
 export ENABLE_TEMPLATES_DIR=true  # enable loading from templates directory
 export PORT=9090
 export LOG_FORMAT=json   # default: text
 ```
 
 **Priority:** Flag > Environment Variable > Default
+
+> **New in v0.6.0:** `TEMPLATE_PROFILE_PATH` supports HTTP/HTTPS URLs. The profile is downloaded at startup before parsing template entries.
 
 <details>
 <summary><strong>Template Profile</strong></summary>
@@ -460,16 +466,23 @@ spec:
       GATEWAY_NAMESPACE: default
       HOSTNAME: claim-api
       DOMAIN: example.sthings-vsphere.labul.sva.de
+      CLAIM_MACHINERY_PROFILE_PATH: /app/config/profile.yaml
+      TEMPLATE_PROFILES: |
+        templates:
+          - https://raw.githubusercontent.com/stuttgart-things/kcl/refs/heads/main/crossplane/claim-xplane-volumeclaim/templates/volumeclaim-simple.yaml
+          - https://raw.githubusercontent.com/stuttgart-things/kcl/refs/heads/main/crossplane/claim-xplane-harborproject/templates/harborproject-simple.yaml
 ```
 
 | Variable | Default | Purpose |
 |----------|---------|---------|
 | `CLAIM_MACHINERY_API_NAMESPACE` | `claim-machinery` | Target namespace |
-| `CLAIM_MACHINERY_API_VERSION` | `v0.5.6` | OCI tag + container image tag |
+| `CLAIM_MACHINERY_API_VERSION` | `v0.6.0` | OCI tag + container image tag |
 | `GATEWAY_NAME` | _(required)_ | Gateway parentRef name |
 | `GATEWAY_NAMESPACE` | `default` | Gateway parentRef namespace |
 | `HOSTNAME` | _(required)_ | HTTPRoute hostname prefix |
 | `DOMAIN` | _(required)_ | HTTPRoute domain suffix |
+| `TEMPLATE_PROFILES` | _(required)_ | Full profile.yaml content (template URL list) |
+| `CLAIM_MACHINERY_PROFILE_PATH` | `/app/config/profile.yaml` | Override to external HTTP URL |
 
 **How it works:** The outer Kustomization reads `./apps/claim-machinery-api` from the GitRepository, substitutes variables, and creates the Namespace + OCIRepository + inner Kustomization + HTTPRoute. The inner Kustomization (`release.yaml`) reconciles the OCI kustomize base from `ghcr.io/stuttgart-things/claim-machinery-api-kustomize`, patches out the Ingress (replaced by HTTPRoute), overrides the container image tag, and applies the resulting manifests.
 
