@@ -1,3 +1,10 @@
+# [0.11.0](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.10.0...v0.11.0) (2026-03-04)
+
+
+### Features
+
+* add labul-vsphere profile with all 6 templates ([c95c322](https://github.com/stuttgart-things/claim-machinery-api/commit/c95c322b373cf8f8a981548c612d5f4868dda49e))
+
 # [0.10.0](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.9.0...v0.10.0) (2026-03-04)
 
 
