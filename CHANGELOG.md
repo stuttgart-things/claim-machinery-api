@@ -1,3 +1,10 @@
+# [0.10.0](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.9.0...v0.10.0) (2026-03-04)
+
+
+### Features
+
+* support HTTP URL for TEMPLATE_PROFILE_PATH and configurable template profiles ([3069c42](https://github.com/stuttgart-things/claim-machinery-api/commit/3069c42df5fd45e4ce635b38438645deaff28af3))
+
 # [0.9.0](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.8.0...v0.9.0) (2026-03-03)
 
 
