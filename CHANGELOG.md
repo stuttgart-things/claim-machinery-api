@@ -1,3 +1,10 @@
+# [0.13.0](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.12.0...v0.13.0) (2026-03-06)
+
+
+### Features
+
+* add /release skill for triggering GitHub Actions release workflow ([609e8af](https://github.com/stuttgart-things/claim-machinery-api/commit/609e8afd8a94bc8ba5c0a422ca1937477dbb5fd9))
+
 # [0.11.0](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.10.0...v0.11.0) (2026-03-04)
 
 
