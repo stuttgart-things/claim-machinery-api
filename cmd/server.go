@@ -2,11 +2,14 @@ package cmd
 
 import (
 	"context"
+	"crypto/sha256"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strings"
 	"syscall"
 	"time"
 
@@ -114,14 +117,36 @@ func runServer(cmd *cobra.Command, args []string) error {
 		log.Fatalf("failed to create server: %v", err)
 	}
 
-	// Start server in goroutine
+	// Start server with automatic restart on crash
+	stopCh := make(chan struct{})
 	go func() {
-		if err := server.Start(); err != nil {
-			if err.Error() != "http: Server closed" {
-				log.Printf("❌ Server error: %v", err)
+		backoff := time.Second
+		const maxBackoff = 30 * time.Second
+		for {
+			if err := server.Start(); err != nil {
+				if err.Error() == "http: Server closed" {
+					return
+				}
+				log.Printf("Server error: %v (restarting in %s)", err, backoff)
+				select {
+				case <-stopCh:
+					return
+				case <-time.After(backoff):
+				}
+				backoff *= 2
+				if backoff > maxBackoff {
+					backoff = maxBackoff
+				}
+				continue
 			}
+			return
 		}
 	}()
+
+	// Start config auto-reload watcher if profile is a local file
+	if profilePath != "" && !strings.HasPrefix(profilePath, "http://") && !strings.HasPrefix(profilePath, "https://") {
+		go watchProfileForReload(stopCh, server, profilePath, enableTemplatesDir, templatesDir)
+	}
 
 	fmt.Println("✓ API server listening on http://localhost:8080")
 	fmt.Printf("📂 Using templates directory: %s\n", templatesDir)
@@ -138,6 +163,9 @@ func runServer(cmd *cobra.Command, args []string) error {
 	sig := <-sigChan
 	fmt.Printf("\n📮 Received signal: %v\n", sig)
 
+	// Signal watcher and restart loop to stop
+	close(stopCh)
+
 	// Graceful shutdown with timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -148,4 +176,83 @@ func runServer(cmd *cobra.Command, args []string) error {
 
 	fmt.Println("✓ Server stopped gracefully")
 	return nil
+}
+
+// watchProfileForReload periodically checks the profile file for changes and
+// reloads templates into the running server when a change is detected.
+func watchProfileForReload(stopCh <-chan struct{}, server *api.Server, profilePath string, enableTemplatesDir bool, templatesDir string) {
+	const pollInterval = 10 * time.Second
+	lastHash := fileHash(profilePath)
+
+	ticker := time.NewTicker(pollInterval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-stopCh:
+			return
+		case <-ticker.C:
+			currentHash := fileHash(profilePath)
+			if currentHash == lastHash {
+				continue
+			}
+			lastHash = currentHash
+			log.Println("Profile file changed, reloading templates...")
+
+			templates, err := loadMergedTemplates(enableTemplatesDir, templatesDir, profilePath)
+			if err != nil {
+				log.Printf("Failed to reload templates: %v (keeping previous)", err)
+				continue
+			}
+
+			server.UpdateTemplates(templates)
+			log.Printf("Templates reloaded successfully (%d templates)", len(templates))
+		}
+	}
+}
+
+// loadMergedTemplates loads and merges templates from directory and profile,
+// replicating the startup merge logic.
+func loadMergedTemplates(enableTemplatesDir bool, templatesDir, profilePath string) ([]*claimtemplate.ClaimTemplate, error) {
+	var dirTemplates []*claimtemplate.ClaimTemplate
+	if enableTemplatesDir {
+		var err error
+		dirTemplates, err = app.LoadAllTemplates(templatesDir)
+		if err != nil {
+			return nil, fmt.Errorf("load templates from dir: %w", err)
+		}
+	}
+
+	profileTemplates, _, err := app.LoadTemplatesFromProfile(profilePath)
+	if err != nil {
+		return nil, fmt.Errorf("load templates from profile: %w", err)
+	}
+
+	merged := make(map[string]*claimtemplate.ClaimTemplate)
+	for _, t := range dirTemplates {
+		merged[t.Metadata.Name] = t
+	}
+	for _, t := range profileTemplates {
+		merged[t.Metadata.Name] = t
+	}
+
+	result := make([]*claimtemplate.ClaimTemplate, 0, len(merged))
+	for _, t := range merged {
+		result = append(result, t)
+	}
+	return result, nil
+}
+
+// fileHash returns the SHA-256 hex digest of a file, or empty string on error.
+func fileHash(path string) string {
+	f, err := os.Open(path)
+	if err != nil {
+		return ""
+	}
+	defer f.Close()
+	h := sha256.New()
+	if _, err := io.Copy(h, f); err != nil {
+		return ""
+	}
+	return fmt.Sprintf("%x", h.Sum(nil))
 }

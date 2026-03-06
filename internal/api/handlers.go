@@ -42,7 +42,7 @@ func (s *Server) listTemplates(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Add all templates to response
-	for _, tmpl := range s.templates {
+	for _, tmpl := range s.getTemplateMap() {
 		response.Items = append(response.Items, *tmpl)
 	}
 
@@ -59,7 +59,7 @@ func (s *Server) getTemplate(w http.ResponseWriter, r *http.Request) {
 	name := vars["name"]
 
 	// Look up template
-	tmpl, exists := s.templates[name]
+	tmpl, exists := s.getTemplateMap()[name]
 	if !exists {
 		w.WriteHeader(http.StatusNotFound)
 		json.NewEncoder(w).Encode(map[string]string{
@@ -81,7 +81,7 @@ func (s *Server) orderClaim(w http.ResponseWriter, r *http.Request) {
 	name := vars["name"]
 
 	// Look up template
-	tmpl, exists := s.templates[name]
+	tmpl, exists := s.getTemplateMap()[name]
 	if !exists {
 		w.WriteHeader(http.StatusNotFound)
 		json.NewEncoder(w).Encode(map[string]string{

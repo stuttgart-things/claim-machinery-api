@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sync"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -19,6 +20,7 @@ import (
 type Server struct {
 	router    *mux.Router
 	http      *http.Server
+	mu        sync.RWMutex
 	templates map[string]*claimtemplate.ClaimTemplate
 }
 
@@ -141,6 +143,25 @@ func (s *Server) Start() error {
 func (s *Server) Stop(ctx context.Context) error {
 	log.Println("⏹️  Shutting down HTTP server...")
 	return s.http.Shutdown(ctx)
+}
+
+// UpdateTemplates replaces the in-memory template map with the given templates.
+func (s *Server) UpdateTemplates(templates []*claimtemplate.ClaimTemplate) {
+	m := make(map[string]*claimtemplate.ClaimTemplate, len(templates))
+	for i, t := range templates {
+		m[t.Metadata.Name] = templates[i]
+	}
+	s.mu.Lock()
+	s.templates = m
+	s.mu.Unlock()
+}
+
+// getTemplateMap returns the current template map under a read lock.
+func (s *Server) getTemplateMap() map[string]*claimtemplate.ClaimTemplate {
+	s.mu.RLock()
+	t := s.templates
+	s.mu.RUnlock()
+	return t
 }
 
 // healthCheck returns server health status
