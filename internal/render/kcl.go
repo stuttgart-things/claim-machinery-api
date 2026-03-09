@@ -3,7 +3,6 @@ package render
 import (
 	"bytes"
 	"fmt"
-	"log"
 	"os"
 	"os/exec"
 	"regexp"
@@ -14,12 +13,12 @@ import (
 
 func RenderKCL(
 	kclFile string,
-	allAnswers map[string]interface{}) string {
+	allAnswers map[string]interface{}) (string, error) {
 
 	// READ MAIN KCL FILE
 	content, err := os.ReadFile(kclFile)
 	if err != nil {
-		log.Fatalf("Error reading KCL file: %v", err)
+		return "", fmt.Errorf("error reading KCL file: %w", err)
 	}
 
 	// OUTPUT ALL ANSWERS + MODIFY
@@ -29,7 +28,7 @@ func RenderKCL(
 
 	values := convertToOptionStrings(allAnswers)
 
-	// // Prepare KCL options with explicit key-value pairs
+	// Prepare KCL options with explicit key-value pairs
 	opts := []kcl.Option{
 		kcl.WithCode(string(content)),
 		kcl.WithOptions(values...),
@@ -38,11 +37,11 @@ func RenderKCL(
 	// Execute KCL
 	result, err := kcl.Run(kclFile, opts...)
 	if err != nil {
-		log.Fatalf("KCL execution failed: %v", err)
+		return "", fmt.Errorf("KCL execution failed: %w", err)
 	}
 
 	// Output generated YAML
-	return replaceTripleQuotes(result.GetRawYamlResult())
+	return replaceTripleQuotes(result.GetRawYamlResult()), nil
 }
 
 // RenderKCLToFile renders KCL and writes output to both stdout and file
@@ -52,10 +51,13 @@ func RenderKCLToFile(
 	destination string) (string, error) {
 
 	// Get rendered YAML
-	yaml := RenderKCL(kclFile, allAnswers)
+	yaml, err := RenderKCL(kclFile, allAnswers)
+	if err != nil {
+		return "", fmt.Errorf("failed to render KCL: %w", err)
+	}
 
 	// Write to file
-	err := os.WriteFile(destination, []byte(yaml), 0644)
+	err = os.WriteFile(destination, []byte(yaml), 0644)
 	if err != nil {
 		return yaml, fmt.Errorf("failed to write YAML to file %s: %w", destination, err)
 	}
@@ -70,7 +72,7 @@ func RenderKCLToFile(
 func RenderKCLFromOCI(
 	ociSource string,
 	tag string,
-	allAnswers map[string]interface{}) string {
+	allAnswers map[string]interface{}) (string, error) {
 
 	// Build command: kcl run <oci-source> -D key=value ...
 	args := []string{"run", "--quiet"}
@@ -97,11 +99,11 @@ func RenderKCLFromOCI(
 	cmd.Stderr = &stderr
 
 	if err := cmd.Run(); err != nil {
-		log.Fatalf("KCL execution from OCI source failed: %v\nStderr: %s", err, stderr.String())
+		return "", fmt.Errorf("KCL execution from OCI source failed: %w\nStderr: %s", err, stderr.String())
 	}
 
 	// Output generated YAML
-	return replaceTripleQuotes(stdout.String())
+	return replaceTripleQuotes(stdout.String()), nil
 }
 
 // RenderKCLFromOCIToFile renders KCL from OCI source and writes output to both stdout and file
@@ -112,10 +114,13 @@ func RenderKCLFromOCIToFile(
 	destination string) (string, error) {
 
 	// Get rendered YAML
-	yaml := RenderKCLFromOCI(ociSource, tag, allAnswers)
+	yaml, err := RenderKCLFromOCI(ociSource, tag, allAnswers)
+	if err != nil {
+		return "", fmt.Errorf("failed to render KCL from OCI: %w", err)
+	}
 
 	// Write to file
-	err := os.WriteFile(destination, []byte(yaml), 0644)
+	err = os.WriteFile(destination, []byte(yaml), 0644)
 	if err != nil {
 		return yaml, fmt.Errorf("failed to write YAML to file %s: %w", destination, err)
 	}

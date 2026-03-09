@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net/http"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -143,8 +144,8 @@ func runServer(cmd *cobra.Command, args []string) error {
 		}
 	}()
 
-	// Start config auto-reload watcher if profile is a local file
-	if profilePath != "" && !strings.HasPrefix(profilePath, "http://") && !strings.HasPrefix(profilePath, "https://") {
+	// Start config auto-reload watcher for profile changes
+	if profilePath != "" {
 		go watchProfileForReload(stopCh, server, profilePath, enableTemplatesDir, templatesDir)
 	}
 
@@ -178,11 +179,14 @@ func runServer(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-// watchProfileForReload periodically checks the profile file for changes and
+// watchProfileForReload periodically checks the profile for changes and
 // reloads templates into the running server when a change is detected.
+// Supports both local file paths and remote HTTP/HTTPS URLs.
 func watchProfileForReload(stopCh <-chan struct{}, server *api.Server, profilePath string, enableTemplatesDir bool, templatesDir string) {
 	const pollInterval = 10 * time.Second
-	lastHash := fileHash(profilePath)
+	isRemote := strings.HasPrefix(profilePath, "http://") || strings.HasPrefix(profilePath, "https://")
+
+	lastHash := profileHash(profilePath, isRemote)
 
 	ticker := time.NewTicker(pollInterval)
 	defer ticker.Stop()
@@ -192,12 +196,12 @@ func watchProfileForReload(stopCh <-chan struct{}, server *api.Server, profilePa
 		case <-stopCh:
 			return
 		case <-ticker.C:
-			currentHash := fileHash(profilePath)
+			currentHash := profileHash(profilePath, isRemote)
 			if currentHash == lastHash {
 				continue
 			}
 			lastHash = currentHash
-			log.Println("Profile file changed, reloading templates...")
+			log.Printf("Profile changed, reloading templates... (source: %s)", profilePath)
 
 			templates, err := loadMergedTemplates(enableTemplatesDir, templatesDir, profilePath)
 			if err != nil {
@@ -243,7 +247,16 @@ func loadMergedTemplates(enableTemplatesDir bool, templatesDir, profilePath stri
 	return result, nil
 }
 
-// fileHash returns the SHA-256 hex digest of a file, or empty string on error.
+// profileHash returns the SHA-256 hex digest of a profile source (local file or remote URL).
+// Returns empty string on error.
+func profileHash(path string, isRemote bool) string {
+	if isRemote {
+		return remoteHash(path)
+	}
+	return fileHash(path)
+}
+
+// fileHash returns the SHA-256 hex digest of a local file, or empty string on error.
 func fileHash(path string) string {
 	f, err := os.Open(path)
 	if err != nil {
@@ -252,6 +265,27 @@ func fileHash(path string) string {
 	defer f.Close()
 	h := sha256.New()
 	if _, err := io.Copy(h, f); err != nil {
+		return ""
+	}
+	return fmt.Sprintf("%x", h.Sum(nil))
+}
+
+// remoteHash fetches a URL and returns the SHA-256 hex digest of the response body,
+// or empty string on error.
+func remoteHash(url string) string {
+	client := &http.Client{Timeout: 15 * time.Second}
+	resp, err := client.Get(url)
+	if err != nil {
+		log.Printf("Failed to fetch profile URL for hash check: %v", err)
+		return ""
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
+		log.Printf("Profile URL returned status %s during hash check", resp.Status)
+		return ""
+	}
+	h := sha256.New()
+	if _, err := io.Copy(h, resp.Body); err != nil {
 		return ""
 	}
 	return fmt.Sprintf("%x", h.Sum(nil))

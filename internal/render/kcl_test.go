@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestReplaceTripleQuotes(t *testing.T) {
@@ -170,7 +171,8 @@ result = {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := RenderKCL(kclFile, tt.answers)
+			result, err := RenderKCL(kclFile, tt.answers)
+			require.NoError(t, err)
 			assert.NotEmpty(t, result, "Expected non-empty YAML output")
 			assert.Contains(t, result, "result:", "Expected 'result:' in output")
 		})
@@ -245,7 +247,8 @@ func TestRenderKCLFromOCI(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// This test will execute KCL against actual OCI source
 			// Comment out if offline - it requires internet access
-			result := RenderKCLFromOCI(tt.oci, tt.tag, tt.answers)
+			result, err := RenderKCLFromOCI(tt.oci, tt.tag, tt.answers)
+			require.NoError(t, err)
 			assert.NotEmpty(t, result, "Expected non-empty YAML output from OCI source")
 		})
 	}
