@@ -1,3 +1,10 @@
+## [0.15.2](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.15.1...v0.15.2) (2026-03-09)
+
+
+### Bug Fixes
+
+* suppress health check logging to reduce noise ([31a2816](https://github.com/stuttgart-things/claim-machinery-api/commit/31a2816c6340f3634dcd62cb0b62a2bd1df8bfd8))
+
 ## [0.15.1](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.15.0...v0.15.1) (2026-03-09)
 
 
