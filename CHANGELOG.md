@@ -1,3 +1,10 @@
+# [0.15.0](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.14.0...v0.15.0) (2026-03-09)
+
+
+### Features
+
+* send homerun2 notification on successful template order ([d5c8cf0](https://github.com/stuttgart-things/claim-machinery-api/commit/d5c8cf0fff5d06fcec87f1b7c9b30e30e82cef23)), closes [#77](https://github.com/stuttgart-things/claim-machinery-api/issues/77)
+
 # [0.14.0](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.13.0...v0.14.0) (2026-03-09)
 
 
