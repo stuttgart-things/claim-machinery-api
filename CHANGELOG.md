@@ -1,3 +1,10 @@
+## [0.15.1](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.15.0...v0.15.1) (2026-03-09)
+
+
+### Bug Fixes
+
+* **deps:** update module github.com/charmbracelet/huh to v1 ([0ccc389](https://github.com/stuttgart-things/claim-machinery-api/commit/0ccc38906ae76bc758d083cedf75af9a619f0720))
+
 # [0.15.0](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.14.0...v0.15.0) (2026-03-09)
 
 
