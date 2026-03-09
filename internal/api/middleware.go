@@ -62,13 +62,18 @@ func requestIDMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-// loggingMiddleware logs all HTTP requests
+// loggingMiddleware logs all HTTP requests (skips /health to reduce noise)
 func loggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 		rec := &responseRecorder{ResponseWriter: w}
 
 		next.ServeHTTP(rec, r)
+
+		// Skip logging health checks unless they fail
+		if r.URL.Path == "/health" && rec.status == http.StatusOK {
+			return
+		}
 
 		duration := time.Since(start)
 		remote := r.RemoteAddr
