@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"strings"
@@ -63,7 +62,7 @@ func SendHomerunMessage(cfg HomerunConfig, msg HomerunMessage) {
 
 	body, err := json.Marshal(msg)
 	if err != nil {
-		log.Printf("homerun: failed to marshal message: %v", err)
+		fmt.Printf("homerun: failed to marshal message: %v\n", err)
 		return
 	}
 
@@ -71,7 +70,7 @@ func SendHomerunMessage(cfg HomerunConfig, msg HomerunMessage) {
 
 	req, err := http.NewRequest(http.MethodPost, pitchURL, bytes.NewReader(body))
 	if err != nil {
-		log.Printf("homerun: failed to create request: %v", err)
+		fmt.Printf("homerun: failed to create request: %v\n", err)
 		return
 	}
 	req.Header.Set("Content-Type", "application/json")
@@ -82,17 +81,17 @@ func SendHomerunMessage(cfg HomerunConfig, msg HomerunMessage) {
 	client := &http.Client{Timeout: 10 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Printf("homerun: failed to send message: %v", err)
+		fmt.Printf("homerun: failed to send message: %v\n", err)
 		return
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		log.Printf("homerun: pitcher returned status %s", resp.Status)
+		fmt.Printf("homerun: pitcher returned status %s\n", resp.Status)
 		return
 	}
 
-	log.Printf("homerun: notification sent (%s)", msg.Title)
+	fmt.Printf("homerun: notification sent (%s)\n", msg.Title)
 }
 
 // BuildOrderMessage constructs a HomerunMessage for a successful template order.
