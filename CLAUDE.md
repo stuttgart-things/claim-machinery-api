@@ -48,10 +48,11 @@ internal/
   app/                   Business logic: template loading, profile parsing, parameter merging, rendering orchestration
   render/                KCL execution engine (OCI-based via CLI, file-based via Go SDK)
   claimtemplate/         Domain model: ClaimTemplate struct, YAML deserialization
+  notify/                Homerun2 (omni-pitcher) notification sender
   version/               Build metadata (set via ldflags)
 ```
 
-**Request flow:** HTTP handler -> `app.BuildParameterValues` (merge defaults + request params) -> `app.RenderTemplate` -> `render.KCL` execution -> JSON response
+**Request flow:** HTTP handler -> `app.BuildParameterValues` (merge defaults + request params) -> `app.RenderTemplate` -> `render.KCL` execution -> JSON response -> (async) `notify.SendHomerunMessage`
 
 **Template loading:** Templates come from two sources merged at startup:
 1. Directory scan (`TEMPLATES_DIR` env var / `--templates-dir` flag) - loads all YAML files
@@ -76,6 +77,9 @@ Responses use Kubernetes-style format with `apiVersion: api.claim-machinery.io/v
 | `DEBUG` | Enable debug logging (`1`/`true`/`yes`) | off |
 | `ENABLE_TEST_ROUTES` | Enable `/__test/*` endpoints | off |
 | `LOG_FORMAT` | Log format (`json` or text) | text |
+| `ENABLE_HOMERUN` | Enable homerun2 notifications (`true`/`1`/`yes`) | off |
+| `HOMERUN_URL` | Omni-pitcher base URL (e.g. `https://pitcher.example.com`) | - |
+| `HOMERUN_AUTH_TOKEN` | Bearer token for pitcher `/pitch` endpoint | - |
 
 ## Testing Conventions
 
