@@ -1,3 +1,10 @@
+## [0.15.3](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.15.2...v0.15.3) (2026-03-09)
+
+
+### Bug Fixes
+
+* write homerun notification logs to stdout instead of stderr ([a6453dc](https://github.com/stuttgart-things/claim-machinery-api/commit/a6453dcab1f366e7548418ccd65ef8bd7d59a213)), closes [#80](https://github.com/stuttgart-things/claim-machinery-api/issues/80)
+
 ## [0.15.2](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.15.1...v0.15.2) (2026-03-09)
 
 
