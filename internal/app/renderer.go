@@ -63,7 +63,10 @@ func RenderTemplate(t *claimtemplate.ClaimTemplate, customParams ...map[string]i
 	}
 
 	// Render using KCL from OCI source
-	result := render.RenderKCLFromOCI(t.Spec.Source, t.Spec.Tag, params)
+	result, err := render.RenderKCLFromOCI(t.Spec.Source, t.Spec.Tag, params)
+	if err != nil {
+		return "", fmt.Errorf("rendering failed for template %s: %w", t.Metadata.Name, err)
+	}
 
 	if result == "" {
 		return "", fmt.Errorf("rendering produced empty result for template %s", t.Metadata.Name)

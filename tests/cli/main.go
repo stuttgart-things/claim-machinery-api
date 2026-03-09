@@ -225,7 +225,11 @@ func main() {
 		}
 	}
 
-	result := render.RenderKCLFromOCI(tmpl.Spec.Source, tmpl.Spec.Tag, stringParams)
+	result, err := render.RenderKCLFromOCI(tmpl.Spec.Source, tmpl.Spec.Tag, stringParams)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "\n❌ Rendering failed: %v\n", err)
+		os.Exit(1)
+	}
 
 	fmt.Println(successStyle.Render("\n✅ Rendered successfully!"))
 	fmt.Println(yamlStyle.Render(result))
