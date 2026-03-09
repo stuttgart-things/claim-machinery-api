@@ -18,6 +18,7 @@ import (
 	"github.com/stuttgart-things/claim-machinery-api/internal/api"
 	"github.com/stuttgart-things/claim-machinery-api/internal/app"
 	"github.com/stuttgart-things/claim-machinery-api/internal/claimtemplate"
+	"github.com/stuttgart-things/claim-machinery-api/internal/notify"
 )
 
 var serverCmd = &cobra.Command{
@@ -116,6 +117,15 @@ func runServer(cmd *cobra.Command, args []string) error {
 	}
 	if err != nil {
 		log.Fatalf("failed to create server: %v", err)
+	}
+
+	// Configure homerun2 notifications
+	homerunCfg := notify.LoadHomerunConfig()
+	server.SetHomerunConfig(homerunCfg)
+	if homerunCfg.Enabled {
+		fmt.Printf("📢 Homerun notifications enabled (URL: %s)\n", homerunCfg.URL)
+	} else {
+		fmt.Println("📢 Homerun notifications disabled")
 	}
 
 	// Start server with automatic restart on crash

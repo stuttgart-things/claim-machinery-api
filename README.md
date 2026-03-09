@@ -20,6 +20,7 @@ A Backstage-compatible API for discovering, managing, and rendering KCL-based Cr
 | Template Discovery | Browse and search KCL-based Crossplane claim templates |
 | Template Details | Get schema information including parameters, validation rules, and UI hints |
 | Claim Rendering | Render claims with custom parameters using KCL |
+| Homerun2 Notifications | Optional event notifications via homerun2 omni-pitcher on claim orders |
 | Backstage Integration | Native support for Backstage Software Catalog |
 | OCI Support | Load templates from OCI registries |
 | Parameter Schema | Exposes parameter metadata (types, enums, patterns, defaults) for client-side validation |
@@ -148,6 +149,14 @@ curl -s -X POST http://localhost:8080/api/v1/claim-templates/volumeclaim/order \
 
 Passing an empty body `{}` renders with all default values.
 
+The order request supports an optional `author` field for tracking who ordered the resource:
+
+```bash
+curl -X POST http://localhost:8080/api/v1/claim-templates/volumeclaim/order \
+  -H "Content-Type: application/json" \
+  -d '{"author": "jane.doe", "parameters": {"namespace": "production"}}'
+```
+
 <details>
 <summary><strong>More Examples (HarborProject)</strong></summary>
 
@@ -224,6 +233,11 @@ export TEMPLATE_PROFILE_PATH=https://example.com/profile.yaml  # or HTTP URL
 export ENABLE_TEMPLATES_DIR=true  # enable loading from templates directory
 export PORT=9090
 export LOG_FORMAT=json   # default: text
+
+# Homerun2 notifications (optional)
+export ENABLE_HOMERUN=true
+export HOMERUN_URL=https://pitcher.example.com
+export HOMERUN_AUTH_TOKEN=your-bearer-token
 ```
 
 **Priority:** Flag > Environment Variable > Default
@@ -291,6 +305,39 @@ Enable debug logging to see parameter processing:
 ```bash
 DEBUG=1 go run main.go
 ```
+
+</details>
+
+<details>
+<summary><strong>Homerun2 Notifications</strong></summary>
+
+When enabled, the API sends a notification to [homerun2 omni-pitcher](https://stuttgart-things.github.io/homerun2-omni-pitcher/) on every successful claim order. This provides visibility into who ordered which resource.
+
+**Enable:**
+
+```bash
+export ENABLE_HOMERUN=true
+export HOMERUN_URL=https://pitcher.example.com
+export HOMERUN_AUTH_TOKEN=your-bearer-token  # optional
+```
+
+Both `ENABLE_HOMERUN` and `HOMERUN_URL` must be set for notifications to fire. This lets you keep the URL configured while toggling notifications on/off.
+
+**Example notification sent to pitcher:**
+
+```json
+{
+  "title": "Claim Order: postgresql",
+  "message": "Template 'PostgreSQL Database Claim' ordered successfully.\n\nParameters:\n  instanceClass: db.t3.medium\n  namespace: production",
+  "severity": "success",
+  "author": "jane.doe",
+  "system": "claim-machinery-api",
+  "tags": "claim-order,database,crossplane,postgresql",
+  "artifacts": "oci://ghcr.io/stuttgart-things/claim-xplane-volumeclaim:0.1.1"
+}
+```
+
+Notifications are sent asynchronously and never block the API response. On failure, a warning is logged but the order still succeeds.
 
 </details>
 

@@ -8,11 +8,13 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/stuttgart-things/claim-machinery-api/internal/app"
 	"github.com/stuttgart-things/claim-machinery-api/internal/claimtemplate"
+	"github.com/stuttgart-things/claim-machinery-api/internal/notify"
 )
 
 // OrderRequest represents a claim order request
 type OrderRequest struct {
 	Parameters map[string]interface{} `json:"parameters"`
+	Author     string                 `json:"author,omitempty"`
 }
 
 // OrderResponse represents a rendered claim response
@@ -121,6 +123,21 @@ func (s *Server) orderClaim(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
+
+	// Send homerun notification asynchronously
+	go func() {
+		msg := notify.BuildOrderMessage(
+			tmpl.Metadata.Name,
+			tmpl.Metadata.Title,
+			tmpl.Spec.Type,
+			tmpl.Metadata.Tags,
+			tmpl.Spec.Source,
+			tmpl.Spec.Tag,
+			params,
+			req.Author,
+		)
+		notify.SendHomerunMessage(s.homerun, msg)
+	}()
 
 	// Return success response
 	response := OrderResponse{

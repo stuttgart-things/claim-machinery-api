@@ -13,6 +13,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/stuttgart-things/claim-machinery-api/internal/app"
 	"github.com/stuttgart-things/claim-machinery-api/internal/claimtemplate"
+	"github.com/stuttgart-things/claim-machinery-api/internal/notify"
 	"github.com/stuttgart-things/claim-machinery-api/internal/version"
 )
 
@@ -22,6 +23,7 @@ type Server struct {
 	http      *http.Server
 	mu        sync.RWMutex
 	templates map[string]*claimtemplate.ClaimTemplate
+	homerun   notify.HomerunConfig
 }
 
 // NewServer creates and initializes a new HTTP server
@@ -143,6 +145,11 @@ func (s *Server) Start() error {
 func (s *Server) Stop(ctx context.Context) error {
 	log.Println("⏹️  Shutting down HTTP server...")
 	return s.http.Shutdown(ctx)
+}
+
+// SetHomerunConfig sets the homerun notification configuration.
+func (s *Server) SetHomerunConfig(cfg notify.HomerunConfig) {
+	s.homerun = cfg
 }
 
 // UpdateTemplates replaces the in-memory template map with the given templates.
