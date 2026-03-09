@@ -1,3 +1,10 @@
+# [0.14.0](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.13.0...v0.14.0) (2026-03-09)
+
+
+### Features
+
+* return errors from KCL render functions and support remote profile hot reload ([cb06959](https://github.com/stuttgart-things/claim-machinery-api/commit/cb069596e6b56a00aa648fca4632da9900311d7b))
+
 # [0.13.0](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.12.0...v0.13.0) (2026-03-06)
 
 
