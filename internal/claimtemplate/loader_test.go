@@ -50,3 +50,32 @@ func TestLoadClaimTemplate_Multiselect(t *testing.T) {
 	require.Equal(t, "name", name.Name)
 	require.False(t, name.Multiselect)
 }
+
+func TestLoadClaimTemplate_WithSecrets(t *testing.T) {
+	tmpl, err := claimtemplate.LoadClaimTemplate("testdata/with-secrets.yaml")
+	require.NoError(t, err)
+
+	require.Equal(t, "ClaimTemplate", tmpl.Kind)
+	require.Equal(t, "app-with-secrets", tmpl.Metadata.Name)
+	require.Len(t, tmpl.Spec.Parameters, 2)
+
+	// Secrets should be parsed
+	require.Len(t, tmpl.Spec.Secrets, 1)
+
+	secret := tmpl.Spec.Secrets[0]
+	require.Equal(t, "{{.secretName}}", secret.Name)
+	require.Equal(t, "{{.secretNamespace}}", secret.Namespace)
+	require.Len(t, secret.Parameters, 2)
+
+	require.Equal(t, "API_TOKEN", secret.Parameters[0].Name)
+	require.True(t, secret.Parameters[0].Required)
+	require.Equal(t, "DB_PASSWORD", secret.Parameters[1].Name)
+	require.True(t, secret.Parameters[1].Required)
+}
+
+func TestLoadClaimTemplate_WithoutSecrets(t *testing.T) {
+	// Existing templates without secrets should still load fine
+	tmpl, err := claimtemplate.LoadClaimTemplate("testdata/volumeclaim.yaml")
+	require.NoError(t, err)
+	require.Nil(t, tmpl.Spec.Secrets)
+}
