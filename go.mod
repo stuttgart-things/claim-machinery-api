@@ -3,7 +3,7 @@ module github.com/stuttgart-things/claim-machinery-api
 go 1.25.5
 
 require (
-	github.com/charmbracelet/huh v1.0.0
+	github.com/charmbracelet/huh/v2 v2.0.3
 	github.com/charmbracelet/lipgloss v1.1.0
 	github.com/gorilla/mux v1.8.1
 	github.com/lucasb-eyer/go-colorful v1.3.0
