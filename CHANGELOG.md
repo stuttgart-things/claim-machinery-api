@@ -1,3 +1,11 @@
+# [0.16.0](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.15.3...v0.16.0) (2026-03-13)
+
+
+### Features
+
+* add clusterbook template to profile ([906fc0d](https://github.com/stuttgart-things/claim-machinery-api/commit/906fc0d0e46134a1356b11d1ecd3bf3d7408b358))
+* add secrets[] field to ClaimTemplate spec ([09d97d5](https://github.com/stuttgart-things/claim-machinery-api/commit/09d97d5c45e0cbcb7fa854c0ff972485e999676e)), closes [#82](https://github.com/stuttgart-things/claim-machinery-api/issues/82)
+
 ## [0.15.3](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.15.2...v0.15.3) (2026-03-09)
 
 
