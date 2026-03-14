@@ -164,7 +164,12 @@ func runServer(cmd *cobra.Command, args []string) error {
 	}
 
 	fmt.Println("✓ API server listening on http://localhost:8080")
-	fmt.Printf("📂 Using templates directory: %s\n", templatesDir)
+	if enableTemplatesDir {
+		fmt.Printf("📂 Using templates directory: %s\n", templatesDir)
+	}
+	if profilePath != "" {
+		fmt.Printf("🧾 Using template profile: %s\n", profilePath)
+	}
 	fmt.Println("\n📋 Available endpoints:")
 	fmt.Println("  GET  /health                                    - Health check")
 	fmt.Println("  GET  /api/v1/claim-templates                    - List templates")
