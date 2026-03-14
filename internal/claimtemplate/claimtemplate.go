@@ -38,6 +38,12 @@ type SecretTemplate struct {
 	Parameters []Parameter `yaml:"parameters" json:"parameters"` // secret key definitions
 }
 
+// ValueFromSpec references a profile function to dynamically resolve a parameter value.
+type ValueFromSpec struct {
+	Function string            `yaml:"function" json:"function"`
+	Args     map[string]string `yaml:"args" json:"args"`
+}
+
 type Parameter struct {
 	Name        string      `yaml:"name" json:"name"`
 	Title       string      `yaml:"title" json:"title"`
@@ -58,6 +64,10 @@ type Parameter struct {
 	// Multiselect allows selecting multiple values from enum options
 	// Only applies to parameters with enum values
 	Multiselect bool `yaml:"multiselect,omitempty" json:"multiselect,omitempty"`
+
+	// ValueFrom resolves this parameter's value by calling a function defined in the profile.
+	// The resolved value is used as the default; users can still override it interactively.
+	ValueFrom *ValueFromSpec `yaml:"valueFrom,omitempty" json:"valueFrom,omitempty"`
 
 	// Validation
 	Pattern   string `yaml:"pattern,omitempty" json:"pattern,omitempty"`

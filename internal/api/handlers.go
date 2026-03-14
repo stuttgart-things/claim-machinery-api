@@ -105,8 +105,8 @@ func (s *Server) orderClaim(w http.ResponseWriter, r *http.Request) {
 	// Debug: log received parameters
 	debugParams("Received from request", req.Parameters)
 
-	// Build parameter values (merge request params with defaults)
-	params := app.BuildParameterValues(tmpl)
+	// Build parameter values (merge request params with defaults + function calls)
+	params := app.BuildParameterValuesWithFunctions(tmpl, s.GetFunctions())
 	for key, value := range req.Parameters {
 		params[key] = value
 	}

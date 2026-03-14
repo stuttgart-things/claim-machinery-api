@@ -13,6 +13,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/stuttgart-things/claim-machinery-api/internal/app"
 	"github.com/stuttgart-things/claim-machinery-api/internal/claimtemplate"
+	"github.com/stuttgart-things/claim-machinery-api/internal/functions"
 	"github.com/stuttgart-things/claim-machinery-api/internal/notify"
 	"github.com/stuttgart-things/claim-machinery-api/internal/version"
 )
@@ -23,6 +24,7 @@ type Server struct {
 	http      *http.Server
 	mu        sync.RWMutex
 	templates map[string]*claimtemplate.ClaimTemplate
+	functions *functions.Registry
 	homerun   notify.HomerunConfig
 }
 
@@ -152,6 +154,21 @@ func (s *Server) SetHomerunConfig(cfg notify.HomerunConfig) {
 	s.homerun = cfg
 }
 
+// SetFunctions sets the function registry for dynamic parameter resolution.
+func (s *Server) SetFunctions(reg *functions.Registry) {
+	s.mu.Lock()
+	s.functions = reg
+	s.mu.Unlock()
+}
+
+// GetFunctions returns the current function registry.
+func (s *Server) GetFunctions() *functions.Registry {
+	s.mu.RLock()
+	r := s.functions
+	s.mu.RUnlock()
+	return r
+}
+
 // UpdateTemplates replaces the in-memory template map with the given templates.
 func (s *Server) UpdateTemplates(templates []*claimtemplate.ClaimTemplate) {
 	m := make(map[string]*claimtemplate.ClaimTemplate, len(templates))
@@ -160,6 +177,18 @@ func (s *Server) UpdateTemplates(templates []*claimtemplate.ClaimTemplate) {
 	}
 	s.mu.Lock()
 	s.templates = m
+	s.mu.Unlock()
+}
+
+// UpdateTemplatesAndFunctions replaces both templates and functions atomically.
+func (s *Server) UpdateTemplatesAndFunctions(templates []*claimtemplate.ClaimTemplate, reg *functions.Registry) {
+	m := make(map[string]*claimtemplate.ClaimTemplate, len(templates))
+	for i, t := range templates {
+		m[t.Metadata.Name] = templates[i]
+	}
+	s.mu.Lock()
+	s.templates = m
+	s.functions = reg
 	s.mu.Unlock()
 }
 

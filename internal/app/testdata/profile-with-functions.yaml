@@ -1,0 +1,10 @@
+functions:
+  - name: get-ip
+    type: http
+    method: GET
+    url: "${API_URL}/api/v1/networks/${networkKey}/available"
+    response:
+      extract: "ip"
+
+templates:
+  - testdata/simple-template.yaml

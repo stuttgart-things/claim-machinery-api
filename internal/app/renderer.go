@@ -5,15 +5,36 @@ import (
 	"log"
 
 	"github.com/stuttgart-things/claim-machinery-api/internal/claimtemplate"
+	"github.com/stuttgart-things/claim-machinery-api/internal/functions"
 	"github.com/stuttgart-things/claim-machinery-api/internal/render"
 )
 
-// BuildParameterValues creates a map of parameter values from a template
-// Uses default values where available
+// BuildParameterValues creates a map of parameter values from a template.
+// Uses default values where available.
 func BuildParameterValues(t *claimtemplate.ClaimTemplate) map[string]interface{} {
+	return BuildParameterValuesWithFunctions(t, nil)
+}
+
+// BuildParameterValuesWithFunctions creates a map of parameter values from a template.
+// Parameters with a valueFrom spec are resolved via the function registry.
+func BuildParameterValuesWithFunctions(t *claimtemplate.ClaimTemplate, reg *functions.Registry) map[string]interface{} {
 	params := make(map[string]interface{})
 
 	for _, p := range t.Spec.Parameters {
+		// Try resolving via valueFrom function first
+		if p.ValueFrom != nil && reg != nil {
+			val, err := reg.Resolve(&functions.ValueFromSpec{
+				Function: p.ValueFrom.Function,
+				Args:     p.ValueFrom.Args,
+			})
+			if err != nil {
+				log.Printf("⚠️  failed to resolve valueFrom for parameter %q (function %q): %v", p.Name, p.ValueFrom.Function, err)
+			} else {
+				params[p.Name] = val
+				continue
+			}
+		}
+
 		// Use default value if available, otherwise use a reasonable default
 		if p.Default != nil {
 			// For multiselect parameters, convert []interface{} defaults to []string
@@ -52,10 +73,15 @@ func BuildParameterValues(t *claimtemplate.ClaimTemplate) map[string]interface{}
 
 // RenderTemplate renders a claim template using KCL with optional custom parameters
 func RenderTemplate(t *claimtemplate.ClaimTemplate, customParams ...map[string]interface{}) (string, error) {
-	// Build parameter values from template defaults
-	params := BuildParameterValues(t)
+	return RenderTemplateWithFunctions(t, nil, customParams...)
+}
 
-	// Merge custom parameters if provided
+// RenderTemplateWithFunctions renders a claim template, resolving valueFrom parameters via the registry.
+func RenderTemplateWithFunctions(t *claimtemplate.ClaimTemplate, reg *functions.Registry, customParams ...map[string]interface{}) (string, error) {
+	// Build parameter values from template defaults + function calls
+	params := BuildParameterValuesWithFunctions(t, reg)
+
+	// Merge custom parameters if provided (user overrides take precedence)
 	if len(customParams) > 0 && customParams[0] != nil {
 		for key, value := range customParams[0] {
 			params[key] = value

@@ -80,3 +80,21 @@ func TestLoadTemplatesFromProfile_MissingFile(t *testing.T) {
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "open profile")
 }
+
+func TestLoadProfileWithFunctions_ParsesFunctions(t *testing.T) {
+	result, err := LoadProfileWithFunctions("testdata/profile-with-functions.yaml")
+	require.NoError(t, err)
+	require.Len(t, result.Templates, 1)
+	require.Equal(t, "test-simple", result.Templates[0].Metadata.Name)
+	require.NotNil(t, result.Functions)
+	require.True(t, result.Functions.Has("get-ip"))
+	require.False(t, result.Functions.Has("nonexistent"))
+}
+
+func TestLoadProfileWithFunctions_NoFunctions(t *testing.T) {
+	result, err := LoadProfileWithFunctions("testdata/profile.yaml")
+	require.NoError(t, err)
+	require.Len(t, result.Templates, 1)
+	require.NotNil(t, result.Functions)
+	require.False(t, result.Functions.Has("get-ip"))
+}

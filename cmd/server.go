@@ -18,6 +18,7 @@ import (
 	"github.com/stuttgart-things/claim-machinery-api/internal/api"
 	"github.com/stuttgart-things/claim-machinery-api/internal/app"
 	"github.com/stuttgart-things/claim-machinery-api/internal/claimtemplate"
+	"github.com/stuttgart-things/claim-machinery-api/internal/functions"
 	"github.com/stuttgart-things/claim-machinery-api/internal/notify"
 )
 
@@ -86,7 +87,7 @@ func runServer(cmd *cobra.Command, args []string) error {
 	if profilePath == "" {
 		server, err = api.NewServerWithTemplates(dirTemplates)
 	} else {
-		profileTemplates, sources, err2 := app.LoadTemplatesFromProfile(profilePath)
+		profileResult, err2 := app.LoadProfileWithFunctions(profilePath)
 		if err2 != nil {
 			log.Fatalf("failed to load templates from profile: %v", err2)
 		}
@@ -96,7 +97,7 @@ func runServer(cmd *cobra.Command, args []string) error {
 		for _, t := range dirTemplates {
 			merged[t.Metadata.Name] = t
 		}
-		for _, t := range profileTemplates {
+		for _, t := range profileResult.Templates {
 			merged[t.Metadata.Name] = t
 		}
 		final := make([]*claimtemplate.ClaimTemplate, 0, len(merged))
@@ -104,8 +105,8 @@ func runServer(cmd *cobra.Command, args []string) error {
 			final = append(final, t)
 		}
 
-		fmt.Printf("🧾 Loaded %d templates from profile %s\n", len(profileTemplates), profilePath)
-		for _, s := range sources {
+		fmt.Printf("🧾 Loaded %d templates from profile %s\n", len(profileResult.Templates), profilePath)
+		for _, s := range profileResult.Sources {
 			fmt.Printf("   • source: %s\n", s)
 		}
 		fmt.Printf("🧾 Templates in use (%d):\n", len(final))
@@ -114,6 +115,9 @@ func runServer(cmd *cobra.Command, args []string) error {
 		}
 
 		server, err = api.NewServerWithTemplates(final)
+		if err == nil {
+			server.SetFunctions(profileResult.Functions)
+		}
 	}
 	if err != nil {
 		log.Fatalf("failed to create server: %v", err)
@@ -213,40 +217,40 @@ func watchProfileForReload(stopCh <-chan struct{}, server *api.Server, profilePa
 			lastHash = currentHash
 			log.Printf("Profile changed, reloading templates... (source: %s)", profilePath)
 
-			templates, err := loadMergedTemplates(enableTemplatesDir, templatesDir, profilePath)
+			templates, reg, err := loadMergedTemplates(enableTemplatesDir, templatesDir, profilePath)
 			if err != nil {
 				log.Printf("Failed to reload templates: %v (keeping previous)", err)
 				continue
 			}
 
-			server.UpdateTemplates(templates)
+			server.UpdateTemplatesAndFunctions(templates, reg)
 			log.Printf("Templates reloaded successfully (%d templates)", len(templates))
 		}
 	}
 }
 
 // loadMergedTemplates loads and merges templates from directory and profile,
-// replicating the startup merge logic.
-func loadMergedTemplates(enableTemplatesDir bool, templatesDir, profilePath string) ([]*claimtemplate.ClaimTemplate, error) {
+// replicating the startup merge logic. Also returns the function registry.
+func loadMergedTemplates(enableTemplatesDir bool, templatesDir, profilePath string) ([]*claimtemplate.ClaimTemplate, *functions.Registry, error) {
 	var dirTemplates []*claimtemplate.ClaimTemplate
 	if enableTemplatesDir {
 		var err error
 		dirTemplates, err = app.LoadAllTemplates(templatesDir)
 		if err != nil {
-			return nil, fmt.Errorf("load templates from dir: %w", err)
+			return nil, nil, fmt.Errorf("load templates from dir: %w", err)
 		}
 	}
 
-	profileTemplates, _, err := app.LoadTemplatesFromProfile(profilePath)
+	profileResult, err := app.LoadProfileWithFunctions(profilePath)
 	if err != nil {
-		return nil, fmt.Errorf("load templates from profile: %w", err)
+		return nil, nil, fmt.Errorf("load templates from profile: %w", err)
 	}
 
 	merged := make(map[string]*claimtemplate.ClaimTemplate)
 	for _, t := range dirTemplates {
 		merged[t.Metadata.Name] = t
 	}
-	for _, t := range profileTemplates {
+	for _, t := range profileResult.Templates {
 		merged[t.Metadata.Name] = t
 	}
 
@@ -254,7 +258,7 @@ func loadMergedTemplates(enableTemplatesDir bool, templatesDir, profilePath stri
 	for _, t := range merged {
 		result = append(result, t)
 	}
-	return result, nil
+	return result, profileResult.Functions, nil
 }
 
 // profileHash returns the SHA-256 hex digest of a profile source (local file or remote URL).
