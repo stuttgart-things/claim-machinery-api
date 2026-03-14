@@ -40,8 +40,9 @@ type SecretTemplate struct {
 
 // ValueFromSpec references a profile function to dynamically resolve a parameter value.
 type ValueFromSpec struct {
-	Function string            `yaml:"function" json:"function"`
-	Args     map[string]string `yaml:"args" json:"args"`
+	Function  string            `yaml:"function" json:"function"`
+	Args      map[string]string `yaml:"args" json:"args"`
+	Condition string            `yaml:"condition,omitempty" json:"condition,omitempty"` // parameter name that must be "true" for this function to execute
 }
 
 type Parameter struct {

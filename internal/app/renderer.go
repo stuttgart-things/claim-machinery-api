@@ -3,6 +3,7 @@ package app
 import (
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/stuttgart-things/claim-machinery-api/internal/claimtemplate"
 	"github.com/stuttgart-things/claim-machinery-api/internal/functions"
@@ -23,9 +24,28 @@ func BuildParameterValuesWithFunctions(t *claimtemplate.ClaimTemplate, reg *func
 	for _, p := range t.Spec.Parameters {
 		// Try resolving via valueFrom function first
 		if p.ValueFrom != nil && reg != nil {
+			// Check condition: skip if the referenced parameter is not "true"
+			if p.ValueFrom.Condition != "" {
+				condVal := fmt.Sprintf("%v", params[p.ValueFrom.Condition])
+				if condVal != "true" {
+					log.Printf("ℹ️  skipping valueFrom for %q: condition %q is %q", p.Name, p.ValueFrom.Condition, condVal)
+					goto fallback
+				}
+			}
+
+			// Resolve {{.paramName}} references in args from already-resolved params
+			resolvedArgs := make(map[string]string, len(p.ValueFrom.Args))
+			for k, v := range p.ValueFrom.Args {
+				resolved := v
+				for paramName, paramVal := range params {
+					resolved = strings.ReplaceAll(resolved, "{{."+paramName+"}}", fmt.Sprintf("%v", paramVal))
+				}
+				resolvedArgs[k] = resolved
+			}
+
 			val, err := reg.Resolve(&functions.ValueFromSpec{
 				Function: p.ValueFrom.Function,
-				Args:     p.ValueFrom.Args,
+				Args:     resolvedArgs,
 			})
 			if err != nil {
 				log.Printf("⚠️  failed to resolve valueFrom for parameter %q (function %q): %v", p.Name, p.ValueFrom.Function, err)
@@ -34,6 +54,7 @@ func BuildParameterValuesWithFunctions(t *claimtemplate.ClaimTemplate, reg *func
 				continue
 			}
 		}
+	fallback:
 
 		// Use default value if available, otherwise use a reasonable default
 		if p.Default != nil {
