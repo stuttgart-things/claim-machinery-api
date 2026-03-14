@@ -1,3 +1,10 @@
+# [0.17.0](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.16.0...v0.17.0) (2026-03-14)
+
+
+### Features
+
+* add function calls in profile for dynamic parameter value resolution ([81864f8](https://github.com/stuttgart-things/claim-machinery-api/commit/81864f8eaaf7d2feda7c68f762ecbc5eab32f84b)), closes [#85](https://github.com/stuttgart-things/claim-machinery-api/issues/85)
+
 # [0.16.0](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.15.3...v0.16.0) (2026-03-13)
 
 
