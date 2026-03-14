@@ -1,3 +1,10 @@
+# [0.18.0](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.17.0...v0.18.0) (2026-03-14)
+
+
+### Features
+
+* add condition field and cross-parameter references for valueFrom ([b24bef7](https://github.com/stuttgart-things/claim-machinery-api/commit/b24bef78308b7a4db2eb830b8b72b1f64f508f36)), closes [#85](https://github.com/stuttgart-things/claim-machinery-api/issues/85)
+
 # [0.17.0](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.16.0...v0.17.0) (2026-03-14)
 
 
