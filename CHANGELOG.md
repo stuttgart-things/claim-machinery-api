@@ -1,3 +1,10 @@
+## [0.18.1](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.18.0...v0.18.1) (2026-03-14)
+
+
+### Bug Fixes
+
+* show profile path instead of templates dir in startup log ([87500de](https://github.com/stuttgart-things/claim-machinery-api/commit/87500deacd4fe580f5f868d82c779fe0f3058856))
+
 # [0.18.0](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.17.0...v0.18.0) (2026-03-14)
 
 
