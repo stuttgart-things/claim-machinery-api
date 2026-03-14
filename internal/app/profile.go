@@ -11,37 +11,73 @@ import (
 	"time"
 
 	"github.com/stuttgart-things/claim-machinery-api/internal/claimtemplate"
+	"github.com/stuttgart-things/claim-machinery-api/internal/functions"
 	"gopkg.in/yaml.v3"
 )
 
 // profileYAML represents the structure of the profile file.
 // Support both "templates" and the common misspelling "tenplates".
 type profileYAML struct {
-	Templates []string `yaml:"templates"`
-	Tenplates []string `yaml:"tenplates"`
+	Templates []string               `yaml:"templates"`
+	Tenplates []string               `yaml:"tenplates"`
+	Functions []functions.FunctionDef `yaml:"functions,omitempty"`
+}
+
+// ProfileResult holds everything loaded from a profile file.
+type ProfileResult struct {
+	Templates []*claimtemplate.ClaimTemplate
+	Sources   []string
+	Functions *functions.Registry
+}
+
+// LoadProfileWithFunctions loads templates and functions from a profile file.
+func LoadProfileWithFunctions(profilePath string) (*ProfileResult, error) {
+	p, err := parseProfile(profilePath)
+	if err != nil {
+		return nil, err
+	}
+
+	templates, sources := loadTemplateEntries(p)
+
+	return &ProfileResult{
+		Templates: templates,
+		Sources:   sources,
+		Functions: functions.NewRegistry(p.Functions),
+	}, nil
 }
 
 // LoadTemplatesFromProfile loads claim templates from a YAML profile file.
 // profilePath can be a local file path or an HTTP/HTTPS URL. Individual
 // entries inside the profile can also be local paths or URLs.
 func LoadTemplatesFromProfile(profilePath string) ([]*claimtemplate.ClaimTemplate, []string, error) {
+	p, err := parseProfile(profilePath)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	templates, sources := loadTemplateEntries(p)
+	return templates, sources, nil
+}
+
+// parseProfile reads and parses a profile YAML from a local path or URL.
+func parseProfile(profilePath string) (*profileYAML, error) {
 	var reader io.ReadCloser
 
 	if strings.HasPrefix(profilePath, "http://") || strings.HasPrefix(profilePath, "https://") {
 		tmpPath, err := downloadToTemp(profilePath)
 		if err != nil {
-			return nil, nil, fmt.Errorf("download profile from %s: %w", profilePath, err)
+			return nil, fmt.Errorf("download profile from %s: %w", profilePath, err)
 		}
 		defer os.Remove(tmpPath)
 		f, err := os.Open(tmpPath)
 		if err != nil {
-			return nil, nil, fmt.Errorf("open downloaded profile: %w", err)
+			return nil, fmt.Errorf("open downloaded profile: %w", err)
 		}
 		reader = f
 	} else {
 		f, err := os.Open(profilePath)
 		if err != nil {
-			return nil, nil, fmt.Errorf("open profile: %w", err)
+			return nil, fmt.Errorf("open profile: %w", err)
 		}
 		reader = f
 	}
@@ -49,9 +85,13 @@ func LoadTemplatesFromProfile(profilePath string) ([]*claimtemplate.ClaimTemplat
 
 	var p profileYAML
 	if err := yaml.NewDecoder(reader).Decode(&p); err != nil {
-		return nil, nil, fmt.Errorf("parse profile yaml: %w", err)
+		return nil, fmt.Errorf("parse profile yaml: %w", err)
 	}
+	return &p, nil
+}
 
+// loadTemplateEntries resolves template entries (local or remote) from a parsed profile.
+func loadTemplateEntries(p *profileYAML) ([]*claimtemplate.ClaimTemplate, []string) {
 	entries := append([]string{}, p.Templates...)
 	if len(p.Tenplates) > 0 {
 		entries = append(entries, p.Tenplates...)
@@ -98,7 +138,7 @@ func LoadTemplatesFromProfile(profilePath string) ([]*claimtemplate.ClaimTemplat
 		sources = append(sources, e)
 	}
 
-	return out, sources, nil
+	return out, sources
 }
 
 func validateURL(u string) error {
