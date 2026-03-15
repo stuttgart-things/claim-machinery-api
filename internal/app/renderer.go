@@ -86,7 +86,7 @@ func BuildParameterValuesWithFunctionsAndUserParams(t *claimtemplate.ClaimTempla
 					params[p.Name] = p.Default
 				}
 			} else {
-				params[p.Name] = p.Default
+				params[p.Name] = resolveDefaultRefs(p.Default, params)
 			}
 		} else {
 			// Provide reasonable defaults based on type
@@ -106,6 +106,18 @@ func BuildParameterValuesWithFunctionsAndUserParams(t *claimtemplate.ClaimTempla
 	}
 
 	return params
+}
+
+// resolveDefaultRefs interpolates {{.paramName}} references in a default value string.
+func resolveDefaultRefs(defaultVal interface{}, params map[string]interface{}) interface{} {
+	s, ok := defaultVal.(string)
+	if !ok || !strings.Contains(s, "{{.") {
+		return defaultVal
+	}
+	for paramName, paramVal := range params {
+		s = strings.ReplaceAll(s, "{{."+paramName+"}}", fmt.Sprintf("%v", paramVal))
+	}
+	return s
 }
 
 // RenderTemplate renders a claim template using KCL with optional custom parameters
