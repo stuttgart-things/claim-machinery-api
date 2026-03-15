@@ -1,3 +1,10 @@
+# [0.19.0](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.18.2...v0.19.0) (2026-03-15)
+
+
+### Features
+
+* interpolate {{.paramName}} references in parameter defaults ([e275a3f](https://github.com/stuttgart-things/claim-machinery-api/commit/e275a3ff532e40bf2bd4b52dee16cbfa152d1650))
+
 ## [0.18.2](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.18.1...v0.18.2) (2026-03-15)
 
 
