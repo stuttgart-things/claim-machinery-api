@@ -105,17 +105,20 @@ func (s *Server) orderClaim(w http.ResponseWriter, r *http.Request) {
 	// Debug: log received parameters
 	debugParams("Received from request", req.Parameters)
 
-	// Build parameter values (merge request params with defaults + function calls)
-	params := app.BuildParameterValuesWithFunctions(tmpl, s.GetFunctions())
-	for key, value := range req.Parameters {
-		params[key] = value
+	// Pre-seed user-provided params so valueFrom arg references (e.g. {{.networkKey}}) resolve correctly
+	userParams := make(map[string]interface{}, len(req.Parameters))
+	for k, v := range req.Parameters {
+		userParams[k] = v
 	}
+
+	// Build parameter values (merge request params with defaults + function calls)
+	params := app.BuildParameterValuesWithFunctionsAndUserParams(tmpl, s.GetFunctions(), userParams)
 
 	// Debug: log merged parameters
 	debugParams("After merge", params)
 
-	// Render template with custom parameters
-	rendered, err := app.RenderTemplate(tmpl, params)
+	// Render template directly with pre-built params (skip BuildParameterValues rebuild)
+	rendered, err := app.RenderTemplateFromParams(tmpl, params)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(map[string]string{

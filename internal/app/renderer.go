@@ -19,7 +19,18 @@ func BuildParameterValues(t *claimtemplate.ClaimTemplate) map[string]interface{}
 // BuildParameterValuesWithFunctions creates a map of parameter values from a template.
 // Parameters with a valueFrom spec are resolved via the function registry.
 func BuildParameterValuesWithFunctions(t *claimtemplate.ClaimTemplate, reg *functions.Registry) map[string]interface{} {
+	return BuildParameterValuesWithFunctionsAndUserParams(t, reg, nil)
+}
+
+// BuildParameterValuesWithFunctionsAndUserParams creates a map of parameter values from a template.
+// User-provided params are pre-seeded so that valueFrom arg references (e.g. {{.networkKey}}) resolve correctly.
+func BuildParameterValuesWithFunctionsAndUserParams(t *claimtemplate.ClaimTemplate, reg *functions.Registry, userParams map[string]interface{}) map[string]interface{} {
 	params := make(map[string]interface{})
+
+	// Pre-seed with user-provided values so valueFrom references can resolve them
+	for k, v := range userParams {
+		params[k] = v
+	}
 
 	for _, p := range t.Spec.Parameters {
 		// Try resolving via valueFrom function first
@@ -55,6 +66,11 @@ func BuildParameterValuesWithFunctions(t *claimtemplate.ClaimTemplate, reg *func
 			}
 		}
 	fallback:
+
+		// Skip if user already provided a value for this parameter
+		if _, hasUser := userParams[p.Name]; hasUser {
+			continue
+		}
 
 		// Use default value if available, otherwise use a reasonable default
 		if p.Default != nil {
@@ -110,6 +126,21 @@ func RenderTemplateWithFunctions(t *claimtemplate.ClaimTemplate, reg *functions.
 	}
 
 	// Render using KCL from OCI source
+	result, err := render.RenderKCLFromOCI(t.Spec.Source, t.Spec.Tag, params)
+	if err != nil {
+		return "", fmt.Errorf("rendering failed for template %s: %w", t.Metadata.Name, err)
+	}
+
+	if result == "" {
+		return "", fmt.Errorf("rendering produced empty result for template %s", t.Metadata.Name)
+	}
+
+	return result, nil
+}
+
+// RenderTemplateFromParams renders a claim template using pre-built parameter values.
+// Unlike RenderTemplate, this does not rebuild parameters from the template definition.
+func RenderTemplateFromParams(t *claimtemplate.ClaimTemplate, params map[string]interface{}) (string, error) {
 	result, err := render.RenderKCLFromOCI(t.Spec.Source, t.Spec.Tag, params)
 	if err != nil {
 		return "", fmt.Errorf("rendering failed for template %s: %w", t.Metadata.Name, err)

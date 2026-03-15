@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"strings"
@@ -83,6 +84,8 @@ func executeHTTP(fn *FunctionDef, args map[string]string) (string, error) {
 		method = http.MethodGet
 	}
 
+	log.Printf("function %q: %s %s", fn.Name, method, url)
+
 	var bodyReader io.Reader
 	if fn.Body != nil && method == http.MethodPost {
 		resolved := substituteBodyVars(fn.Body, args)
@@ -108,7 +111,13 @@ func executeHTTP(fn *FunctionDef, args map[string]string) (string, error) {
 		req.Header.Set(k, substituteVars(v, args))
 	}
 
-	client := &http.Client{Timeout: 30 * time.Second}
+	client := &http.Client{
+		Timeout: 30 * time.Second,
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			// Prevent redirects from changing POST to GET (301/302 behavior)
+			return http.ErrUseLastResponse
+		},
+	}
 	resp, err := client.Do(req)
 	if err != nil {
 		return "", fmt.Errorf("execute function %q: %w", fn.Name, err)
