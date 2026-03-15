@@ -1,3 +1,10 @@
+## [0.18.2](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.18.1...v0.18.2) (2026-03-15)
+
+
+### Bug Fixes
+
+* pre-seed user params for valueFrom arg resolution ([f4c6129](https://github.com/stuttgart-things/claim-machinery-api/commit/f4c612928f3280201db3e6a246ee721594e750a6))
+
 ## [0.18.1](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.18.0...v0.18.1) (2026-03-14)
 
 
