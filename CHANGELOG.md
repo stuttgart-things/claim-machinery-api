@@ -1,3 +1,11 @@
+## [0.20.1](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.20.0...v0.20.1) (2026-03-18)
+
+
+### Bug Fixes
+
+* **deps:** update module dagger.io/dagger to v0.20.1 ([45ec582](https://github.com/stuttgart-things/claim-machinery-api/commit/45ec58245a330e9d389a6d46a7b0840b3f9d374a))
+* **deps:** update opentelemetry-go monorepo ([f249053](https://github.com/stuttgart-things/claim-machinery-api/commit/f2490534438c2d7cd6f66354401b4a6b7df228e5))
+
 # [0.20.0](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.19.0...v0.20.0) (2026-03-18)
 
 
