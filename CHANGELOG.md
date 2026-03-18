@@ -1,3 +1,11 @@
+## [0.20.2](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.20.1...v0.20.2) (2026-03-18)
+
+
+### Bug Fixes
+
+* add concurrency group to release workflow ([2ae70c0](https://github.com/stuttgart-things/claim-machinery-api/commit/2ae70c0a749712bd6220e9622bba83b497304c2c))
+* correct goreleaser ldflags variable casing ([323c1e5](https://github.com/stuttgart-things/claim-machinery-api/commit/323c1e584615b3a553b77751a0542f60591de07e))
+
 ## [0.20.1](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.20.0...v0.20.1) (2026-03-18)
 
 
