@@ -1,3 +1,10 @@
+# [0.20.0](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.19.0...v0.20.0) (2026-03-18)
+
+
+### Features
+
+* styled startup output with env table, template details, and auto-reload logging ([3de3f60](https://github.com/stuttgart-things/claim-machinery-api/commit/3de3f6018d76f2373150e2d9a0b072218e3e8ea5))
+
 # [0.19.0](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.18.2...v0.19.0) (2026-03-15)
 
 
