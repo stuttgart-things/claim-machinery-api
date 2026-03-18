@@ -19,9 +19,9 @@ builds:
       - -s
       - -w
       - -extldflags=-static
-      - -X github.com/stuttgart-things/claim-machinery-api/cmd.version={{.Version}}
-      - -X github.com/stuttgart-things/claim-machinery-api/cmd.commit={{.Commit}}
-      - -X github.com/stuttgart-things/claim-machinery-api/cmd.date={{.Date}}
+      - -X github.com/stuttgart-things/claim-machinery-api/cmd.Version={{.Version}}
+      - -X github.com/stuttgart-things/claim-machinery-api/cmd.Commit={{.Commit}}
+      - -X github.com/stuttgart-things/claim-machinery-api/cmd.Date={{.Date}}
     goos:
       - linux
       - darwin
