@@ -10,7 +10,8 @@ Claim Machinery API is a Go REST API and interactive CLI for managing Crossplane
 
 **Run locally:**
 ```bash
-go run main.go server                                    # Start API server (default port 8080)
+go run main.go                                           # Start API server (default, port 8080)
+go run main.go server                                    # Start API server (explicit)
 go run main.go render                                    # Start interactive TUI for template rendering
 go run main.go --templates-dir internal/claimtemplate/testdata --template-profile-path tests/profile.yaml
 ```
@@ -80,6 +81,7 @@ Responses use Kubernetes-style format with `apiVersion: api.claim-machinery.io/v
 | `ENABLE_HOMERUN` | Enable homerun2 notifications (`true`/`1`/`yes`) | off |
 | `HOMERUN_URL` | Omni-pitcher base URL (e.g. `https://pitcher.example.com`) | - |
 | `HOMERUN_AUTH_TOKEN` | Bearer token for pitcher `/pitch` endpoint | - |
+| `RELOAD_INTERVAL` | Profile auto-reload interval (e.g. `2m`, `30s`, `0` to disable) | `2m` |
 
 ## Testing Conventions
 

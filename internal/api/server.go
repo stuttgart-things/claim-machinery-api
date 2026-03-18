@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sort"
 	"sync"
 	"time"
 
@@ -20,12 +21,13 @@ import (
 
 // Server represents the HTTP API server
 type Server struct {
-	router    *mux.Router
-	http      *http.Server
-	mu        sync.RWMutex
-	templates map[string]*claimtemplate.ClaimTemplate
-	functions *functions.Registry
-	homerun   notify.HomerunConfig
+	router        *mux.Router
+	http          *http.Server
+	mu            sync.RWMutex
+	templates     map[string]*claimtemplate.ClaimTemplate
+	importSources map[string]string // template name -> import path (file or URL)
+	functions     *functions.Registry
+	homerun       notify.HomerunConfig
 }
 
 // NewServer creates and initializes a new HTTP server
@@ -136,16 +138,12 @@ func (s *Server) applyMiddleware() {
 
 // Start starts the HTTP server
 func (s *Server) Start() error {
-	if IsDebugEnabled() {
-		log.Println("🐛 Debug mode enabled (DEBUG=1)")
-	}
-	log.Printf("🚀 HTTP API server starting on %s", s.http.Addr)
 	return s.http.ListenAndServe()
 }
 
 // Stop gracefully stops the HTTP server
 func (s *Server) Stop(ctx context.Context) error {
-	log.Println("⏹️  Shutting down HTTP server...")
+	log.Println("[server] graceful shutdown initiated")
 	return s.http.Shutdown(ctx)
 }
 
@@ -190,6 +188,38 @@ func (s *Server) UpdateTemplatesAndFunctions(templates []*claimtemplate.ClaimTem
 	s.templates = m
 	s.functions = reg
 	s.mu.Unlock()
+}
+
+// TemplateNames returns the sorted names of all loaded templates.
+func (s *Server) TemplateNames() []string {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	names := make([]string, 0, len(s.templates))
+	for name := range s.templates {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	return names
+}
+
+// SetImportSources records where each template was imported from (file path or URL).
+func (s *Server) SetImportSources(sources map[string]string) {
+	s.mu.Lock()
+	s.importSources = sources
+	s.mu.Unlock()
+}
+
+// TemplateSources returns sorted (name, ociSource, importPath) triples for all loaded templates.
+func (s *Server) TemplateSources() [][3]string {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	triples := make([][3]string, 0, len(s.templates))
+	for _, t := range s.templates {
+		importPath := s.importSources[t.Metadata.Name]
+		triples = append(triples, [3]string{t.Metadata.Name, t.Spec.Source, importPath})
+	}
+	sort.Slice(triples, func(i, j int) bool { return triples[i][0] < triples[j][0] })
+	return triples
 }
 
 // getTemplateMap returns the current template map under a read lock.

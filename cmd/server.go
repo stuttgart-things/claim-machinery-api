@@ -10,10 +10,12 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"sort"
 	"strings"
 	"syscall"
 	"time"
 
+	"github.com/charmbracelet/lipgloss"
 	"github.com/spf13/cobra"
 	"github.com/stuttgart-things/claim-machinery-api/internal/api"
 	"github.com/stuttgart-things/claim-machinery-api/internal/app"
@@ -35,9 +37,26 @@ func init() {
 
 func runServer(cmd *cobra.Command, args []string) error {
 	fmt.Println(logo)
-	fmt.Printf("Version:    %s\n", Version)
-	fmt.Printf("Commit:     %s\n", Commit)
-	fmt.Printf("Build Date: %s\n\n", Date)
+	fmt.Println(renderVersionBadge(Version, Commit, Date))
+
+	// --- Environment variables ---------------------------------------------------
+	printSection("🔧 Environment")
+	envVars := []struct {
+		name, desc, fallback string
+	}{
+		{"PORT", "HTTP server port", "8080"},
+		{"TEMPLATES_DIR", "Local template directory", "-"},
+		{"TEMPLATE_PROFILE_PATH", "Profile YAML path", "-"},
+		{"ENABLE_TEMPLATES_DIR", "Enable template dir loading", "false"},
+		{"RELOAD_INTERVAL", "Profile auto-reload interval", "2m"},
+		{"DEBUG", "Enable debug logging", "off"},
+		{"LOG_FORMAT", "Log format (json/text)", "text"},
+		{"ENABLE_HOMERUN", "Enable homerun notifications", "off"},
+		{"HOMERUN_URL", "Omni-pitcher base URL", "-"},
+		{"HOMERUN_AUTH_TOKEN", "Bearer token for pitcher", "-"},
+		{"ENABLE_TEST_ROUTES", "Enable test endpoints", "off"},
+	}
+	printEnvTable(envVars)
 
 	// Resolve enableTemplatesDir from flag or env var
 	if !enableTemplatesDir {
@@ -66,6 +85,27 @@ func runServer(cmd *cobra.Command, args []string) error {
 		profilePath = "tests/profile.yaml"
 	}
 
+	// --- Endpoints ---------------------------------------------------------------
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+	printSection("🌐 Endpoints")
+	printEndpoint("GET ", "/health", "Health check")
+	printEndpoint("GET ", "/api/v1/claim-templates", "List templates")
+	printEndpoint("GET ", "/api/v1/claim-templates/{name}", "Get template details")
+	printEndpoint("POST", "/api/v1/claim-templates/{name}/order", "Render template")
+
+	// --- Configuration -----------------------------------------------------------
+	printSection("⚙️  Configuration")
+	if enableTemplatesDir {
+		printKV("templates-dir", templatesDir)
+	}
+	if profilePath != "" {
+		printKV("profile", profilePath)
+	}
+
+	// --- Load templates ----------------------------------------------------------
 	var dirTemplates []*claimtemplate.ClaimTemplate
 	if enableTemplatesDir {
 		var err error
@@ -73,19 +113,17 @@ func runServer(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			log.Fatalf("failed to load templates from dir: %v", err)
 		}
-		fmt.Printf("📂 Using templates directory: %s\n", templatesDir)
-		fmt.Printf("🧾 Loaded %d templates from directory\n", len(dirTemplates))
-		for _, t := range dirTemplates {
-			fmt.Printf("   • %s\n", t.Metadata.Name)
-		}
-	} else {
-		fmt.Println("📂 Templates directory loading disabled")
 	}
 
 	var server *api.Server
 	var err error
+	importSources := make(map[string]string) // template name -> import path
+
 	if profilePath == "" {
 		server, err = api.NewServerWithTemplates(dirTemplates)
+		for _, t := range dirTemplates {
+			importSources[t.Metadata.Name] = templatesDir
+		}
 	} else {
 		profileResult, err2 := app.LoadProfileWithFunctions(profilePath)
 		if err2 != nil {
@@ -96,22 +134,17 @@ func runServer(cmd *cobra.Command, args []string) error {
 		merged := make(map[string]*claimtemplate.ClaimTemplate)
 		for _, t := range dirTemplates {
 			merged[t.Metadata.Name] = t
+			importSources[t.Metadata.Name] = templatesDir
 		}
-		for _, t := range profileResult.Templates {
+		for i, t := range profileResult.Templates {
 			merged[t.Metadata.Name] = t
+			if i < len(profileResult.Sources) {
+				importSources[t.Metadata.Name] = profileResult.Sources[i]
+			}
 		}
 		final := make([]*claimtemplate.ClaimTemplate, 0, len(merged))
 		for _, t := range merged {
 			final = append(final, t)
-		}
-
-		fmt.Printf("🧾 Loaded %d templates from profile %s\n", len(profileResult.Templates), profilePath)
-		for _, s := range profileResult.Sources {
-			fmt.Printf("   • source: %s\n", s)
-		}
-		fmt.Printf("🧾 Templates in use (%d):\n", len(final))
-		for _, t := range final {
-			fmt.Printf("   • %s\n", t.Metadata.Name)
 		}
 
 		server, err = api.NewServerWithTemplates(final)
@@ -119,20 +152,43 @@ func runServer(cmd *cobra.Command, args []string) error {
 			server.SetFunctions(profileResult.Functions)
 		}
 	}
+	if err == nil {
+		server.SetImportSources(importSources)
+	}
 	if err != nil {
 		log.Fatalf("failed to create server: %v", err)
 	}
 
-	// Configure homerun2 notifications
+	// --- Templates summary -------------------------------------------------------
+	tplSources := server.TemplateSources()
+	printSection(fmt.Sprintf("📦 Templates (%d loaded)", len(tplSources)))
+	printTemplateTable(tplSources)
+
+	// --- Notifications -----------------------------------------------------------
 	homerunCfg := notify.LoadHomerunConfig()
 	server.SetHomerunConfig(homerunCfg)
+	printSection("🔔 Notifications")
 	if homerunCfg.Enabled {
-		fmt.Printf("📢 Homerun notifications enabled (URL: %s)\n", homerunCfg.URL)
+		printKV("homerun", fmt.Sprintf("✅ enabled (%s)", homerunCfg.URL))
 	} else {
-		fmt.Println("📢 Homerun notifications disabled")
+		printKV("homerun", "⏸️  disabled")
 	}
 
-	// Start server with automatic restart on crash
+	// --- Auto-reload ------------------------------------------------------------
+	pollInterval := resolveReloadInterval()
+	printSection("🔄 Auto-Reload")
+	if profilePath != "" && pollInterval > 0 {
+		printKV("profile watch", fmt.Sprintf("✅ enabled (every %s)", pollInterval))
+	} else if profilePath != "" {
+		printKV("profile watch", "⏸️  disabled (interval set to 0)")
+	} else {
+		printKV("profile watch", "⏸️  disabled (no profile configured)")
+	}
+
+	// --- Start server ------------------------------------------------------------
+	fmt.Println()
+	fmt.Printf("  🚀 Server listening on :%s\n\n", port)
+
 	stopCh := make(chan struct{})
 	go func() {
 		backoff := time.Second
@@ -159,29 +215,16 @@ func runServer(cmd *cobra.Command, args []string) error {
 	}()
 
 	// Start config auto-reload watcher for profile changes
-	if profilePath != "" {
-		go watchProfileForReload(stopCh, server, profilePath, enableTemplatesDir, templatesDir)
+	if profilePath != "" && pollInterval > 0 {
+		go watchProfileForReload(stopCh, server, profilePath, enableTemplatesDir, templatesDir, pollInterval)
 	}
-
-	fmt.Println("✓ API server listening on http://localhost:8080")
-	if enableTemplatesDir {
-		fmt.Printf("📂 Using templates directory: %s\n", templatesDir)
-	}
-	if profilePath != "" {
-		fmt.Printf("🧾 Using template profile: %s\n", profilePath)
-	}
-	fmt.Println("\n📋 Available endpoints:")
-	fmt.Println("  GET  /health                                    - Health check")
-	fmt.Println("  GET  /api/v1/claim-templates                    - List templates")
-	fmt.Println("  GET  /api/v1/claim-templates/{name}             - Get template details")
-	fmt.Println("  POST /api/v1/claim-templates/{name}/order       - Render template")
 
 	// Wait for interrupt signal
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
 	sig := <-sigChan
-	fmt.Printf("\n📮 Received signal: %v\n", sig)
+	fmt.Printf("\n[server] received signal: %v, shutting down...\n", sig)
 
 	// Signal watcher and restart loop to stop
 	close(stopCh)
@@ -191,21 +234,42 @@ func runServer(cmd *cobra.Command, args []string) error {
 	defer cancel()
 
 	if err := server.Stop(ctx); err != nil {
-		log.Printf("error during shutdown: %v", err)
+		log.Printf("[server] shutdown error: %v", err)
 	}
 
-	fmt.Println("✓ Server stopped gracefully")
+	fmt.Println("[server] stopped")
 	return nil
+}
+
+// resolveReloadInterval returns the reload interval from flag, env, or default (2m).
+// Returns 0 to disable auto-reload.
+func resolveReloadInterval() time.Duration {
+	raw := reloadInterval
+	if raw == "" {
+		raw = os.Getenv("RELOAD_INTERVAL")
+	}
+	if raw == "" {
+		return 2 * time.Minute
+	}
+	if raw == "0" {
+		return 0
+	}
+	d, err := time.ParseDuration(raw)
+	if err != nil {
+		log.Printf("[auto-reload] invalid interval %q, using default 2m", raw)
+		return 2 * time.Minute
+	}
+	return d
 }
 
 // watchProfileForReload periodically checks the profile for changes and
 // reloads templates into the running server when a change is detected.
 // Supports both local file paths and remote HTTP/HTTPS URLs.
-func watchProfileForReload(stopCh <-chan struct{}, server *api.Server, profilePath string, enableTemplatesDir bool, templatesDir string) {
-	const pollInterval = 10 * time.Second
+func watchProfileForReload(stopCh <-chan struct{}, server *api.Server, profilePath string, enableTemplatesDir bool, templatesDir string, pollInterval time.Duration) {
 	isRemote := strings.HasPrefix(profilePath, "http://") || strings.HasPrefix(profilePath, "https://")
 
 	lastHash := profileHash(profilePath, isRemote)
+	previousNames := server.TemplateNames()
 
 	ticker := time.NewTicker(pollInterval)
 	defer ticker.Stop()
@@ -220,50 +284,99 @@ func watchProfileForReload(stopCh <-chan struct{}, server *api.Server, profilePa
 				continue
 			}
 			lastHash = currentHash
-			log.Printf("Profile changed, reloading templates... (source: %s)", profilePath)
+			log.Printf("[auto-reload] profile change detected, reloading...")
 
-			templates, reg, err := loadMergedTemplates(enableTemplatesDir, templatesDir, profilePath)
+			templates, reg, sources, err := loadMergedTemplates(enableTemplatesDir, templatesDir, profilePath)
 			if err != nil {
-				log.Printf("Failed to reload templates: %v (keeping previous)", err)
+				log.Printf("[auto-reload] reload failed: %v (keeping previous)", err)
 				continue
 			}
 
 			server.UpdateTemplatesAndFunctions(templates, reg)
-			log.Printf("Templates reloaded successfully (%d templates)", len(templates))
+			server.SetImportSources(sources)
+
+			// Build new name set for diff
+			newNames := make([]string, 0, len(templates))
+			for _, t := range templates {
+				newNames = append(newNames, t.Metadata.Name)
+			}
+			sort.Strings(newNames)
+
+			// Compute added / removed
+			oldSet := make(map[string]bool, len(previousNames))
+			for _, n := range previousNames {
+				oldSet[n] = true
+			}
+			newSet := make(map[string]bool, len(newNames))
+			for _, n := range newNames {
+				newSet[n] = true
+			}
+
+			var added, removed []string
+			for _, n := range newNames {
+				if !oldSet[n] {
+					added = append(added, n)
+				}
+			}
+			for _, n := range previousNames {
+				if !newSet[n] {
+					removed = append(removed, n)
+				}
+			}
+
+			// Styled reload summary
+			printSection(fmt.Sprintf("🔄 Auto-Reload (%d templates)", len(templates)))
+			for _, n := range added {
+				fmt.Printf("  │ %s %s\n", lipgloss.NewStyle().Foreground(lipgloss.Color("#00ff00")).Render("+"), n)
+			}
+			for _, n := range removed {
+				fmt.Printf("  │ %s %s\n", lipgloss.NewStyle().Foreground(lipgloss.Color("#ff0000")).Render("−"), n)
+			}
+			if len(added) == 0 && len(removed) == 0 {
+				fmt.Println(dimStyle.Render("  │ templates unchanged (profile content updated)"))
+			}
+			printTemplateTable(server.TemplateSources())
+
+			previousNames = newNames
 		}
 	}
 }
 
 // loadMergedTemplates loads and merges templates from directory and profile,
-// replicating the startup merge logic. Also returns the function registry.
-func loadMergedTemplates(enableTemplatesDir bool, templatesDir, profilePath string) ([]*claimtemplate.ClaimTemplate, *functions.Registry, error) {
+// replicating the startup merge logic. Also returns the function registry and import sources.
+func loadMergedTemplates(enableTemplatesDir bool, templatesDir, profilePath string) ([]*claimtemplate.ClaimTemplate, *functions.Registry, map[string]string, error) {
 	var dirTemplates []*claimtemplate.ClaimTemplate
 	if enableTemplatesDir {
 		var err error
 		dirTemplates, err = app.LoadAllTemplates(templatesDir)
 		if err != nil {
-			return nil, nil, fmt.Errorf("load templates from dir: %w", err)
+			return nil, nil, nil, fmt.Errorf("load templates from dir: %w", err)
 		}
 	}
 
 	profileResult, err := app.LoadProfileWithFunctions(profilePath)
 	if err != nil {
-		return nil, nil, fmt.Errorf("load templates from profile: %w", err)
+		return nil, nil, nil, fmt.Errorf("load templates from profile: %w", err)
 	}
 
 	merged := make(map[string]*claimtemplate.ClaimTemplate)
+	importSources := make(map[string]string)
 	for _, t := range dirTemplates {
 		merged[t.Metadata.Name] = t
+		importSources[t.Metadata.Name] = templatesDir
 	}
-	for _, t := range profileResult.Templates {
+	for i, t := range profileResult.Templates {
 		merged[t.Metadata.Name] = t
+		if i < len(profileResult.Sources) {
+			importSources[t.Metadata.Name] = profileResult.Sources[i]
+		}
 	}
 
 	result := make([]*claimtemplate.ClaimTemplate, 0, len(merged))
 	for _, t := range merged {
 		result = append(result, t)
 	}
-	return result, profileResult.Functions, nil
+	return result, profileResult.Functions, importSources, nil
 }
 
 // profileHash returns the SHA-256 hex digest of a profile source (local file or remote URL).

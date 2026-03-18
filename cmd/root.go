@@ -17,6 +17,7 @@ var (
 	templatesDir      string
 	profilePath       string
 	enableTemplatesDir bool
+	reloadInterval     string
 )
 
 var rootCmd = &cobra.Command{
@@ -25,10 +26,10 @@ var rootCmd = &cobra.Command{
 	Long: `Claim Machinery API provides a service for rendering claim templates
 using KCL (KusionStack Configuration Language) from OCI registries.
 
-By default, it launches the interactive template renderer. Use 'server' subcommand to start the API server.`,
-	// Default behavior: run render
+By default, it starts the API server. Use 'render' subcommand for the interactive template renderer.`,
+	// Default behavior: run server
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return renderCmd.RunE(cmd, args)
+		return runServer(cmd, args)
 	},
 }
 
@@ -36,6 +37,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&templatesDir, "templates-dir", "", "Path to templates directory")
 	rootCmd.PersistentFlags().StringVar(&profilePath, "template-profile-path", "", "Path to template profile YAML")
 	rootCmd.PersistentFlags().BoolVar(&enableTemplatesDir, "enable-templates-dir", false, "Enable loading templates from templates directory")
+	rootCmd.PersistentFlags().StringVar(&reloadInterval, "reload-interval", "", "Profile auto-reload interval (e.g. 2m, 30s, 0 to disable)")
 }
 
 func Execute() {

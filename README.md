@@ -60,10 +60,13 @@ git clone https://github.com/stuttgart-things/claim-machinery-api.git
 cd claim-machinery-api
 go mod download
 
-# Run API server
+# Run API server (default when no subcommand is given)
+go run main.go
+
+# Or explicitly
 go run main.go server
 
-# Or interactive CLI (default when no subcommand is given)
+# Interactive CLI
 go run main.go render
 ```
 
@@ -194,19 +197,19 @@ curl http://localhost:8080/version
 
 ## Usage
 
-### API Server
-
-```bash
-claim-machinery-api server
-```
-
-### Interactive CLI (Default)
+### API Server (Default)
 
 ```bash
 # Default when no subcommand is given
 claim-machinery-api
 
 # Or explicitly
+claim-machinery-api server
+```
+
+### Interactive CLI
+
+```bash
 claim-machinery-api render
 ```
 
@@ -231,6 +234,7 @@ export TEMPLATES_DIR=/path/to/templates
 export TEMPLATE_PROFILE_PATH=/path/to/profile.yaml        # local file
 export TEMPLATE_PROFILE_PATH=https://example.com/profile.yaml  # or HTTP URL
 export ENABLE_TEMPLATES_DIR=true  # enable loading from templates directory
+export RELOAD_INTERVAL=2m         # profile auto-reload interval (0 to disable)
 export PORT=9090
 export LOG_FORMAT=json   # default: text
 
@@ -374,7 +378,7 @@ Connects to the running API server - no local KCL required.
 
 ```bash
 # Start API first
-go run main.go
+go run main.go server
 
 # Then run CLI
 go build -o tests/cli-api/claim-cli-api ./tests/cli-api/

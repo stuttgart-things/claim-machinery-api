@@ -16,7 +16,7 @@ The Claim Machinery API provides a REST interface for working with Crossplane cl
 ### Running the API
 
 ```bash
-# Start the API server
+# Start the API server (default command)
 go run main.go
 
 # API available at
