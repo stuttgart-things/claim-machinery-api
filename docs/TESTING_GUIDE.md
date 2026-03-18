@@ -4,7 +4,7 @@
 
 ### 1. Start the Server
 ```bash
-go run main.go
+go run main.go  # or: go run main.go server
 ```
 
 Expected output:
