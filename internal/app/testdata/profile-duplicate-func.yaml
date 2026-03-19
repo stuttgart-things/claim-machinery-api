@@ -1,0 +1,10 @@
+name: Duplicate Functions
+functions:
+  - name: get-ip
+    type: http
+    method: GET
+    url: "${API_URL}/api/v1/other"
+    response:
+      extract: "ip"
+templates:
+  - testdata/simple-template-2.yaml

@@ -18,6 +18,7 @@ import (
 // profileYAML represents the structure of the profile file.
 // Support both "templates" and the common misspelling "tenplates".
 type profileYAML struct {
+	Name      string                 `yaml:"name,omitempty"`
 	Templates []string               `yaml:"templates"`
 	Tenplates []string               `yaml:"tenplates"`
 	Functions []functions.FunctionDef `yaml:"functions,omitempty"`
@@ -25,6 +26,7 @@ type profileYAML struct {
 
 // ProfileResult holds everything loaded from a profile file.
 type ProfileResult struct {
+	Name      string // profile name (from YAML or derived from filename)
 	Templates []*claimtemplate.ClaimTemplate
 	Sources   []string
 	Functions *functions.Registry
@@ -37,13 +39,130 @@ func LoadProfileWithFunctions(profilePath string) (*ProfileResult, error) {
 		return nil, err
 	}
 
+	profileName := resolveProfileName(p, profilePath)
 	templates, sources := loadTemplateEntries(p)
 
+	// Tag every template with the profile name
+	for _, t := range templates {
+		t.Metadata.Profile = profileName
+	}
+
 	return &ProfileResult{
+		Name:      profileName,
 		Templates: templates,
 		Sources:   sources,
 		Functions: functions.NewRegistry(p.Functions),
 	}, nil
+}
+
+// LoadMultipleProfiles loads templates and functions from multiple colon-separated profile paths.
+// Templates are merged by metadata.name (later profiles override earlier ones on conflict).
+// Functions from all profiles are merged; duplicate function names cause an error.
+func LoadMultipleProfiles(profilePaths string) ([]*ProfileResult, error) {
+	paths := SplitProfilePaths(profilePaths)
+	var results []*ProfileResult
+
+	for _, p := range paths {
+		result, err := LoadProfileWithFunctions(p)
+		if err != nil {
+			return nil, fmt.Errorf("load profile %s: %w", p, err)
+		}
+		results = append(results, result)
+	}
+
+	return results, nil
+}
+
+// MergeProfileResults merges multiple ProfileResults into consolidated templates, sources, and functions.
+// Duplicate function names across profiles cause an error.
+func MergeProfileResults(results []*ProfileResult) ([]*claimtemplate.ClaimTemplate, *functions.Registry, map[string]string, error) {
+	merged := make(map[string]*claimtemplate.ClaimTemplate)
+	importSources := make(map[string]string)
+	var allFuncDefs []functions.FunctionDef
+	seenFuncs := make(map[string]string) // func name -> profile name
+
+	for _, r := range results {
+		for i, t := range r.Templates {
+			merged[t.Metadata.Name] = t
+			if i < len(r.Sources) {
+				importSources[t.Metadata.Name] = r.Sources[i]
+			}
+		}
+
+		// Collect functions, checking for duplicates
+		for _, fd := range r.Functions.Defs() {
+			if existingProfile, exists := seenFuncs[fd.Name]; exists {
+				return nil, nil, nil, fmt.Errorf("duplicate function %q in profiles %q and %q", fd.Name, existingProfile, r.Name)
+			}
+			seenFuncs[fd.Name] = r.Name
+			allFuncDefs = append(allFuncDefs, fd)
+		}
+	}
+
+	templates := make([]*claimtemplate.ClaimTemplate, 0, len(merged))
+	for _, t := range merged {
+		templates = append(templates, t)
+	}
+
+	return templates, functions.NewRegistry(allFuncDefs), importSources, nil
+}
+
+// splitProfilePaths splits a colon-separated list of profile paths.
+// Supports both local paths and URLs (colons in http:// and https:// are preserved).
+func SplitProfilePaths(raw string) []string {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return nil
+	}
+
+	var paths []string
+	remaining := raw
+	for remaining != "" {
+		// Check for URL prefix
+		if strings.HasPrefix(remaining, "http://") || strings.HasPrefix(remaining, "https://") {
+			// Find the next colon that is NOT part of the URL scheme
+			scheme := "http://"
+			if strings.HasPrefix(remaining, "https://") {
+				scheme = "https://"
+			}
+			rest := remaining[len(scheme):]
+			idx := strings.Index(rest, ":")
+			if idx == -1 {
+				paths = append(paths, remaining)
+				break
+			}
+			paths = append(paths, remaining[:len(scheme)+idx])
+			remaining = rest[idx+1:]
+		} else {
+			idx := strings.Index(remaining, ":")
+			if idx == -1 {
+				paths = append(paths, remaining)
+				break
+			}
+			paths = append(paths, remaining[:idx])
+			remaining = remaining[idx+1:]
+		}
+	}
+
+	// Trim whitespace from each path
+	var cleaned []string
+	for _, p := range paths {
+		p = strings.TrimSpace(p)
+		if p != "" {
+			cleaned = append(cleaned, p)
+		}
+	}
+	return cleaned
+}
+
+// resolveProfileName returns the profile name from the YAML or derives it from the file path.
+func resolveProfileName(p *profileYAML, profilePath string) string {
+	if p.Name != "" {
+		return p.Name
+	}
+	// Derive from filename: /path/to/flux-profiles.yaml -> "flux-profiles"
+	base := filepath.Base(profilePath)
+	return strings.TrimSuffix(base, filepath.Ext(base))
 }
 
 // LoadTemplatesFromProfile loads claim templates from a YAML profile file.

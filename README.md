@@ -231,7 +231,8 @@ claim-machinery-api --template-profile-path https://example.com/profile.yaml
 
 # Environment variables
 export TEMPLATES_DIR=/path/to/templates
-export TEMPLATE_PROFILE_PATH=/path/to/profile.yaml        # local file
+export TEMPLATE_PROFILE_PATH=/path/to/profile.yaml        # single profile
+export TEMPLATE_PROFILE_PATH=flux.yaml:crossplane.yaml    # multiple profiles (colon-separated)
 export TEMPLATE_PROFILE_PATH=https://example.com/profile.yaml  # or HTTP URL
 export ENABLE_TEMPLATES_DIR=true  # enable loading from templates directory
 export RELOAD_INTERVAL=2m         # profile auto-reload interval (0 to disable)
@@ -256,11 +257,14 @@ Add additional templates via a profile file (merged with the templates directory
 ```bash
 cat <<EOF > profile.yaml
 ---
+name: Crossplane Claims
 templates:
   - https://raw.githubusercontent.com/stuttgart-things/kcl/refs/heads/main/crossplane/claim-xplane-volumeclaim/templates/volumeclaim-simple.yaml
   - /tmp/template123.yaml
 EOF
 ```
+
+The optional `name` field identifies the profile. If omitted, the filename is used (e.g. `profile` for `profile.yaml`).
 
 ```bash
 export TEMPLATE_PROFILE_PATH=/absolute/path/to/profile.yaml
@@ -288,6 +292,69 @@ docker run --rm \
 - Profile entries (URLs/paths) are validated; unreachable entries trigger a warning and are skipped
 - Templates from the profile and directory are merged; duplicates are deduplicated based on `metadata.name` (profile takes precedence)
 - On startup, the API displays loaded sources and final template names
+- Each template is tagged with its profile name in `metadata.profile` (visible in API responses)
+
+</details>
+
+<details>
+<summary><strong>Multiple Template Profiles</strong></summary>
+
+Organize templates by domain using multiple profile files. Separate profiles with colons (`:`) — similar to `PATH`:
+
+```bash
+export TEMPLATE_PROFILE_PATH=profiles/flux.yaml:profiles/crossplane.yaml:profiles/harvester.yaml
+```
+
+Each profile has its own `name`, `templates`, and optional `functions`:
+
+```yaml
+# profiles/flux.yaml
+---
+name: Flux Kustomizations
+functions:
+  - name: clusterbook-assign-ip
+    type: http
+    method: POST
+    url: "${CLUSTERBOOK_URL}/api/v1/networks/${networkKey}/reserve"
+    response:
+      extract: "ip"
+templates:
+  - /path/to/flux-kustomization-clusterbook-app.yaml
+  - /path/to/flux-kustomization-cert-manager-install.yaml
+```
+
+```yaml
+# profiles/crossplane.yaml
+---
+name: Crossplane Claims
+templates:
+  - https://raw.githubusercontent.com/.../volumeclaim-simple.yaml
+  - https://raw.githubusercontent.com/.../harborproject-simple.yaml
+```
+
+**Behavior:**
+- All profiles are loaded and merged into a single template list
+- Each template's API response includes `metadata.profile` (e.g. `"Flux Kustomizations"`)
+- Templates with the same `metadata.name` across profiles: later profile wins
+- Functions are merged across all profiles; duplicate function names cause a startup error
+- Auto-reload watches all profile files for changes
+- URLs in the path are handled correctly (`https://` colons are not treated as separators)
+
+**API response with profile field:**
+
+```json
+{
+  "metadata": {
+    "name": "flux-kustomization-cert-manager-install",
+    "title": "Flux Kustomization Cert-Manager",
+    "tags": ["flux", "kustomization", "cert-manager"],
+    "profile": "Flux Kustomizations"
+  },
+  "spec": { ... }
+}
+```
+
+The `claims` CLI uses the `profile` field to group templates in interactive mode — users first select a profile, then a template within it.
 
 </details>
 

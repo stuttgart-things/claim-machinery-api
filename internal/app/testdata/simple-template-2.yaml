@@ -1,0 +1,16 @@
+---
+apiVersion: resources.stuttgart-things.com/v1alpha1
+kind: ClaimTemplate
+metadata:
+  name: test-second
+  title: Second Test Template
+  description: A second test template for multi-profile testing
+  tags:
+    - test
+spec:
+  source: oci://ghcr.io/stuttgart-things/test-template-2
+  parameters:
+    - name: claimName
+      type: string
+      description: Name of the claim
+      required: true
