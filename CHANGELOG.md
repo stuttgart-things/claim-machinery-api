@@ -1,3 +1,10 @@
+# [0.21.0](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.20.2...v0.21.0) (2026-03-19)
+
+
+### Features
+
+* support multiple template profiles via colon-separated TEMPLATE_PROFILE_PATH ([204808e](https://github.com/stuttgart-things/claim-machinery-api/commit/204808e2743e79876d7c51749f4203430c8d35bd)), closes [#94](https://github.com/stuttgart-things/claim-machinery-api/issues/94)
+
 ## [0.20.2](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.20.1...v0.20.2) (2026-03-18)
 
 
