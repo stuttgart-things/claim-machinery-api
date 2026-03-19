@@ -77,6 +77,18 @@ func (r *Registry) Has(name string) bool {
 	return ok
 }
 
+// Defs returns all function definitions in the registry.
+func (r *Registry) Defs() []FunctionDef {
+	if r == nil {
+		return nil
+	}
+	defs := make([]FunctionDef, 0, len(r.funcs))
+	for _, fn := range r.funcs {
+		defs = append(defs, *fn)
+	}
+	return defs
+}
+
 func executeHTTP(fn *FunctionDef, args map[string]string) (string, error) {
 	url := substituteVars(fn.URL, args)
 	method := strings.ToUpper(fn.Method)

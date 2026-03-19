@@ -77,7 +77,8 @@ func runServer(cmd *cobra.Command, args []string) error {
 		)
 	}
 
-	// Optionally load additional templates from YAML profile
+	// Optionally load additional templates from YAML profile(s).
+	// TEMPLATE_PROFILE_PATH supports colon-separated multiple paths.
 	if profilePath == "" {
 		profilePath = os.Getenv("TEMPLATE_PROFILE_PATH")
 	}
@@ -101,8 +102,9 @@ func runServer(cmd *cobra.Command, args []string) error {
 	if enableTemplatesDir {
 		printKV("templates-dir", templatesDir)
 	}
-	if profilePath != "" {
-		printKV("profile", profilePath)
+	profilePaths := app.SplitProfilePaths(profilePath)
+	for i, p := range profilePaths {
+		printKV(fmt.Sprintf("profile[%d]", i), p)
 	}
 
 	// --- Load templates ----------------------------------------------------------
@@ -119,29 +121,35 @@ func runServer(cmd *cobra.Command, args []string) error {
 	var err error
 	importSources := make(map[string]string) // template name -> import path
 
-	if profilePath == "" {
+	if len(profilePaths) == 0 {
 		server, err = api.NewServerWithTemplates(dirTemplates)
 		for _, t := range dirTemplates {
 			importSources[t.Metadata.Name] = templatesDir
 		}
 	} else {
-		profileResult, err2 := app.LoadProfileWithFunctions(profilePath)
+		profileResults, err2 := app.LoadMultipleProfiles(profilePath)
 		if err2 != nil {
-			log.Fatalf("failed to load templates from profile: %v", err2)
+			log.Fatalf("failed to load templates from profiles: %v", err2)
 		}
 
-		// Merge, de-duplicate by metadata.name (profile overrides directory on conflict)
+		// Merge dir templates + all profile results
 		merged := make(map[string]*claimtemplate.ClaimTemplate)
 		for _, t := range dirTemplates {
 			merged[t.Metadata.Name] = t
 			importSources[t.Metadata.Name] = templatesDir
 		}
-		for i, t := range profileResult.Templates {
+
+		profileTemplates, mergedReg, profileSources, err2 := app.MergeProfileResults(profileResults)
+		if err2 != nil {
+			log.Fatalf("failed to merge profile results: %v", err2)
+		}
+		for _, t := range profileTemplates {
 			merged[t.Metadata.Name] = t
-			if i < len(profileResult.Sources) {
-				importSources[t.Metadata.Name] = profileResult.Sources[i]
+			if src, ok := profileSources[t.Metadata.Name]; ok {
+				importSources[t.Metadata.Name] = src
 			}
 		}
+
 		final := make([]*claimtemplate.ClaimTemplate, 0, len(merged))
 		for _, t := range merged {
 			final = append(final, t)
@@ -149,7 +157,7 @@ func runServer(cmd *cobra.Command, args []string) error {
 
 		server, err = api.NewServerWithTemplates(final)
 		if err == nil {
-			server.SetFunctions(profileResult.Functions)
+			server.SetFunctions(mergedReg)
 		}
 	}
 	if err == nil {
@@ -177,9 +185,9 @@ func runServer(cmd *cobra.Command, args []string) error {
 	// --- Auto-reload ------------------------------------------------------------
 	pollInterval := resolveReloadInterval()
 	printSection("🔄 Auto-Reload")
-	if profilePath != "" && pollInterval > 0 {
-		printKV("profile watch", fmt.Sprintf("✅ enabled (every %s)", pollInterval))
-	} else if profilePath != "" {
+	if len(profilePaths) > 0 && pollInterval > 0 {
+		printKV("profile watch", fmt.Sprintf("✅ enabled (every %s, %d profiles)", pollInterval, len(profilePaths)))
+	} else if len(profilePaths) > 0 {
 		printKV("profile watch", "⏸️  disabled (interval set to 0)")
 	} else {
 		printKV("profile watch", "⏸️  disabled (no profile configured)")
@@ -215,8 +223,8 @@ func runServer(cmd *cobra.Command, args []string) error {
 	}()
 
 	// Start config auto-reload watcher for profile changes
-	if profilePath != "" && pollInterval > 0 {
-		go watchProfileForReload(stopCh, server, profilePath, enableTemplatesDir, templatesDir, pollInterval)
+	if len(profilePaths) > 0 && pollInterval > 0 {
+		go watchProfilesForReload(stopCh, server, profilePath, enableTemplatesDir, templatesDir, pollInterval)
 	}
 
 	// Wait for interrupt signal
@@ -262,13 +270,18 @@ func resolveReloadInterval() time.Duration {
 	return d
 }
 
-// watchProfileForReload periodically checks the profile for changes and
+// watchProfilesForReload periodically checks all profiles for changes and
 // reloads templates into the running server when a change is detected.
 // Supports both local file paths and remote HTTP/HTTPS URLs.
-func watchProfileForReload(stopCh <-chan struct{}, server *api.Server, profilePath string, enableTemplatesDir bool, templatesDir string, pollInterval time.Duration) {
-	isRemote := strings.HasPrefix(profilePath, "http://") || strings.HasPrefix(profilePath, "https://")
+func watchProfilesForReload(stopCh <-chan struct{}, server *api.Server, profilePath string, enableTemplatesDir bool, templatesDir string, pollInterval time.Duration) {
+	paths := app.SplitProfilePaths(profilePath)
 
-	lastHash := profileHash(profilePath, isRemote)
+	// Build initial hash map for all profiles
+	lastHashes := make(map[string]string, len(paths))
+	for _, p := range paths {
+		isRemote := strings.HasPrefix(p, "http://") || strings.HasPrefix(p, "https://")
+		lastHashes[p] = profileHash(p, isRemote)
+	}
 	previousNames := server.TemplateNames()
 
 	ticker := time.NewTicker(pollInterval)
@@ -279,11 +292,18 @@ func watchProfileForReload(stopCh <-chan struct{}, server *api.Server, profilePa
 		case <-stopCh:
 			return
 		case <-ticker.C:
-			currentHash := profileHash(profilePath, isRemote)
-			if currentHash == lastHash {
+			changed := false
+			for _, p := range paths {
+				isRemote := strings.HasPrefix(p, "http://") || strings.HasPrefix(p, "https://")
+				currentHash := profileHash(p, isRemote)
+				if currentHash != lastHashes[p] {
+					lastHashes[p] = currentHash
+					changed = true
+				}
+			}
+			if !changed {
 				continue
 			}
-			lastHash = currentHash
 			log.Printf("[auto-reload] profile change detected, reloading...")
 
 			templates, reg, sources, err := loadMergedTemplates(enableTemplatesDir, templatesDir, profilePath)
@@ -342,7 +362,7 @@ func watchProfileForReload(stopCh <-chan struct{}, server *api.Server, profilePa
 	}
 }
 
-// loadMergedTemplates loads and merges templates from directory and profile,
+// loadMergedTemplates loads and merges templates from directory and multiple profiles,
 // replicating the startup merge logic. Also returns the function registry and import sources.
 func loadMergedTemplates(enableTemplatesDir bool, templatesDir, profilePath string) ([]*claimtemplate.ClaimTemplate, *functions.Registry, map[string]string, error) {
 	var dirTemplates []*claimtemplate.ClaimTemplate
@@ -354,9 +374,14 @@ func loadMergedTemplates(enableTemplatesDir bool, templatesDir, profilePath stri
 		}
 	}
 
-	profileResult, err := app.LoadProfileWithFunctions(profilePath)
+	profileResults, err := app.LoadMultipleProfiles(profilePath)
 	if err != nil {
-		return nil, nil, nil, fmt.Errorf("load templates from profile: %w", err)
+		return nil, nil, nil, fmt.Errorf("load templates from profiles: %w", err)
+	}
+
+	profileTemplates, mergedReg, profileSources, err := app.MergeProfileResults(profileResults)
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("merge profiles: %w", err)
 	}
 
 	merged := make(map[string]*claimtemplate.ClaimTemplate)
@@ -365,10 +390,10 @@ func loadMergedTemplates(enableTemplatesDir bool, templatesDir, profilePath stri
 		merged[t.Metadata.Name] = t
 		importSources[t.Metadata.Name] = templatesDir
 	}
-	for i, t := range profileResult.Templates {
+	for _, t := range profileTemplates {
 		merged[t.Metadata.Name] = t
-		if i < len(profileResult.Sources) {
-			importSources[t.Metadata.Name] = profileResult.Sources[i]
+		if src, ok := profileSources[t.Metadata.Name]; ok {
+			importSources[t.Metadata.Name] = src
 		}
 	}
 
@@ -376,7 +401,7 @@ func loadMergedTemplates(enableTemplatesDir bool, templatesDir, profilePath stri
 	for _, t := range merged {
 		result = append(result, t)
 	}
-	return result, profileResult.Functions, importSources, nil
+	return result, mergedReg, importSources, nil
 }
 
 // profileHash returns the SHA-256 hex digest of a profile source (local file or remote URL).

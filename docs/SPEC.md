@@ -302,6 +302,7 @@ type ClaimTemplateMetadata struct {
     Title       string            `json:"title,omitempty"`
     Description string            `json:"description,omitempty"`
     Tags        []string          `json:"tags,omitempty"`
+    Profile     string            `json:"profile,omitempty"` // injected at load time from profile name
     Labels      map[string]string `json:"labels,omitempty"`
 }
 
@@ -446,8 +447,7 @@ Access-Control-Allow-Headers: Content-Type, Authorization
 
 ```env
 # Server
-SERVER_PORT=8080
-SERVER_ADDR=0.0.0.0
+PORT=8080
 ENV=production
 
 # KCL
@@ -455,12 +455,15 @@ KCL_TIMEOUT=30s
 KCL_PATH=/usr/local/bin/kcl
 
 # Template Loading
-TEMPLATE_PATH=./templates
-TEMPLATE_CACHE_TTL=5m
+TEMPLATES_DIR=./templates
+ENABLE_TEMPLATES_DIR=true
+TEMPLATE_PROFILE_PATH=/path/to/profile.yaml           # single profile
+TEMPLATE_PROFILE_PATH=flux.yaml:crossplane.yaml        # multiple profiles (colon-separated)
+RELOAD_INTERVAL=2m                                     # auto-reload interval (0 to disable)
 
 # Logging
-LOG_LEVEL=info
-LOG_FORMAT=json
+LOG_FORMAT=json   # text or json
+DEBUG=1           # enable debug logging
 ```
 
 ### 8.2 Configuration File (config.yaml)
@@ -625,6 +628,7 @@ spec:
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.1.0 | 2026-03-19 | Multiple template profiles, `metadata.profile` field |
 | 1.0.0 | 2026-01-09 | Initial specification |
 
 ---

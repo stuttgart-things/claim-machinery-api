@@ -30,6 +30,7 @@ spec:
 | `title` | string | ❌ | Human-readable template title |
 | `description` | string | ❌ | Template purpose and functionality description |
 | `tags` | array[string] | ❌ | Categorization and search tags |
+| `profile` | string | ❌ | Profile name (injected at load time, not set in YAML). Indicates which profile file the template was loaded from. |
 
 ## Spec Fields
 
@@ -411,5 +412,6 @@ Always add:
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 0.3.0 | 2026-03-19 | Added `profile` metadata field for multi-profile support |
 | 0.2.0 | 2026-01-25 | Added `hidden` and `allowRandom` fields |
 | 0.1.0 | 2026-01-09 | Initial specification |

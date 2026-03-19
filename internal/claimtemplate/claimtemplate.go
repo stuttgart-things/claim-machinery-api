@@ -20,6 +20,7 @@ type ClaimTemplateMetadata struct {
 	Title       string   `yaml:"title,omitempty" json:"title,omitempty"`
 	Description string   `yaml:"description,omitempty" json:"description,omitempty"`
 	Tags        []string `yaml:"tags,omitempty" json:"tags,omitempty"`
+	Profile     string   `yaml:"-" json:"profile,omitempty"` // injected at load time from profile name
 }
 
 type ClaimTemplateSpec struct {

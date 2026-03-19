@@ -1,0 +1,3 @@
+name: Crossplane Claims
+templates:
+  - testdata/simple-template-2.yaml
