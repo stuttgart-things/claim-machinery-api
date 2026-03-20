@@ -209,17 +209,17 @@ func (s *Server) SetImportSources(sources map[string]string) {
 	s.mu.Unlock()
 }
 
-// TemplateSources returns sorted (name, ociSource, importPath) triples for all loaded templates.
-func (s *Server) TemplateSources() [][3]string {
+// TemplateSources returns sorted (name, ociSource, importPath, tag) tuples for all loaded templates.
+func (s *Server) TemplateSources() [][4]string {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	triples := make([][3]string, 0, len(s.templates))
+	tuples := make([][4]string, 0, len(s.templates))
 	for _, t := range s.templates {
 		importPath := s.importSources[t.Metadata.Name]
-		triples = append(triples, [3]string{t.Metadata.Name, t.Spec.Source, importPath})
+		tuples = append(tuples, [4]string{t.Metadata.Name, t.Spec.Source, importPath, t.Spec.Tag})
 	}
-	sort.Slice(triples, func(i, j int) bool { return triples[i][0] < triples[j][0] })
-	return triples
+	sort.Slice(tuples, func(i, j int) bool { return tuples[i][0] < tuples[j][0] })
+	return tuples
 }
 
 // getTemplateMap returns the current template map under a read lock.
