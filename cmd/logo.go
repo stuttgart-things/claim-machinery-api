@@ -150,15 +150,19 @@ func printEnvTable(vars []struct{ name, desc, fallback string }) {
 	}
 }
 
-func printTemplateTable(templates [][3]string) {
+func printTemplateTable(templates [][4]string) {
 	nameStyle := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#ffffff"))
 	labelImport := dimStyle.Render("import")
 	labelOCI := dimStyle.Render("oci")
+	labelTag := dimStyle.Render("tag")
 
 	for i, t := range templates {
 		fmt.Printf("  %s\n", nameStyle.Render(t[0]))
 		fmt.Printf("    %s  %s\n", labelImport, dimStyle.Render(t[2]))
 		fmt.Printf("    %s     %s\n", labelOCI, pathStyle.Render(t[1]))
+		if t[3] != "" {
+			fmt.Printf("    %s     %s\n", labelTag, pathStyle.Render(t[3]))
+		}
 		if i < len(templates)-1 {
 			fmt.Println()
 		}
