@@ -10,7 +10,7 @@ func (m *Dagger) Build(
 	ctx context.Context,
 	src *dagger.Directory,
 	// +optional
-	// +default="1.25.5"
+	// +default="1.26.0"
 	goVersion string,
 	// +optional
 	// +default="linux"

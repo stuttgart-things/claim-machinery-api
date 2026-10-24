@@ -12,7 +12,7 @@ func (m *Dagger) BuildAndTest(
 	ctx context.Context,
 	src *dagger.Directory,
 	// +optional
-	// +default="1.25.5"
+	// +default="1.26.0"
 	goVersion string,
 	// +optional
 	// +default="linux"
@@ -196,7 +196,7 @@ func (m *Dagger) Test(
 	src *dagger.Directory,
 	// Go version to use for testing
 	// +optional
-	// +default="1.25.5"
+	// +default="1.26.0"
 	goVersion string,
 	// Test arguments to pass to `go test`
 	// +optional
@@ -215,7 +215,7 @@ func (m *Dagger) TestReport(
 	ctx context.Context,
 	src *dagger.Directory,
 	// +optional
-	// +default="1.25.5"
+	// +default="1.26.0"
 	goVersion string,
 	// +optional
 	// +default="./..."
