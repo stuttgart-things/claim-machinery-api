@@ -1,3 +1,10 @@
+## [0.22.1](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.22.0...v0.22.1) (2026-10-24)
+
+
+### Bug Fixes
+
+* auto-reload on changes to templates referenced by a profile ([#114](https://github.com/stuttgart-things/claim-machinery-api/issues/114)) ([ad17521](https://github.com/stuttgart-things/claim-machinery-api/commit/ad175219363b68020d2be857c4b3d6e909ba52fb))
+
 # [0.22.0](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.21.3...v0.22.0) (2026-10-24)
 
 
