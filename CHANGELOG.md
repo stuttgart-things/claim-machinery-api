@@ -1,3 +1,10 @@
+# [0.22.0](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.21.3...v0.22.0) (2026-10-24)
+
+
+### Features
+
+* **profiles:** native VM templates in labul-vsphere, drop dead templates ([#113](https://github.com/stuttgart-things/claim-machinery-api/issues/113)) ([be7d289](https://github.com/stuttgart-things/claim-machinery-api/commit/be7d2899cad76675c8d3773319becc895bea6195))
+
 ## [0.21.3](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.21.2...v0.21.3) (2026-10-24)
 
 
