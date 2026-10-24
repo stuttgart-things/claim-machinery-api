@@ -2,5 +2,13 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "config:recommended"
+  ],
+  "packageRules": [
+    {
+      "description": "Dagger module deps are pinned by dagger codegen (dagger develop), not Renovate",
+      "matchFileNames": [".dagger/go.mod"],
+      "matchPackageNames": ["go.opentelemetry.io/**"],
+      "enabled": false
+    }
   ]
 }

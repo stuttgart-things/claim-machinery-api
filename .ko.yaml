@@ -9,3 +9,9 @@ builds:
     ldflags:
       - -s
       - -w
+      - -X github.com/stuttgart-things/claim-machinery-api/cmd.Version={{.Env.VERSION}}
+      - -X github.com/stuttgart-things/claim-machinery-api/cmd.Commit={{.Env.COMMIT}}
+      - -X github.com/stuttgart-things/claim-machinery-api/cmd.Date={{.Env.BUILD_DATE}}
+      - -X github.com/stuttgart-things/claim-machinery-api/internal/version.Version={{.Env.VERSION}}
+      - -X github.com/stuttgart-things/claim-machinery-api/internal/version.Commit={{.Env.COMMIT}}
+      - -X github.com/stuttgart-things/claim-machinery-api/internal/version.BuildDate={{.Env.BUILD_DATE}}
