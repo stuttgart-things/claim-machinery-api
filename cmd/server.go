@@ -279,8 +279,7 @@ func watchProfilesForReload(stopCh <-chan struct{}, server *api.Server, profileP
 	// Build initial hash map for all profiles
 	lastHashes := make(map[string]string, len(paths))
 	for _, p := range paths {
-		isRemote := strings.HasPrefix(p, "http://") || strings.HasPrefix(p, "https://")
-		lastHashes[p] = profileHash(p, isRemote)
+		lastHashes[p], _ = profileHash(p)
 	}
 	previousNames := server.TemplateNames()
 
@@ -294,8 +293,12 @@ func watchProfilesForReload(stopCh <-chan struct{}, server *api.Server, profileP
 		case <-ticker.C:
 			changed := false
 			for _, p := range paths {
-				isRemote := strings.HasPrefix(p, "http://") || strings.HasPrefix(p, "https://")
-				currentHash := profileHash(p, isRemote)
+				currentHash, ok := profileHash(p)
+				if !ok {
+					// A fetch failed: treat it as "no change" rather than reloading
+					// and dropping the templates that could not be fetched.
+					continue
+				}
 				if currentHash != lastHashes[p] {
 					lastHashes[p] = currentHash
 					changed = true
@@ -404,10 +407,34 @@ func loadMergedTemplates(enableTemplatesDir bool, templatesDir, profilePath stri
 	return result, mergedReg, importSources, nil
 }
 
-// profileHash returns the SHA-256 hex digest of a profile source (local file or remote URL).
+// profileHash returns a SHA-256 hex digest over a profile and every template
+// it lists, so editing a referenced template triggers a reload just like
+// editing the profile itself. ok is false when any source could not be read.
+func profileHash(path string) (string, bool) {
+	ph := sourceHash(path)
+	if ph == "" {
+		return "", false
+	}
+	entries, err := app.ProfileTemplateEntries(path)
+	if err != nil {
+		return "", false
+	}
+	h := sha256.New()
+	_, _ = fmt.Fprintf(h, "profile=%s\n", ph)
+	for _, e := range entries {
+		eh := sourceHash(e)
+		if eh == "" {
+			return "", false
+		}
+		_, _ = fmt.Fprintf(h, "%s=%s\n", e, eh)
+	}
+	return fmt.Sprintf("%x", h.Sum(nil)), true
+}
+
+// sourceHash returns the SHA-256 hex digest of a local file or remote URL.
 // Returns empty string on error.
-func profileHash(path string, isRemote bool) string {
-	if isRemote {
+func sourceHash(path string) string {
+	if strings.HasPrefix(path, "http://") || strings.HasPrefix(path, "https://") {
 		return remoteHash(path)
 	}
 	return fileHash(path)
@@ -433,12 +460,12 @@ func remoteHash(url string) string {
 	client := &http.Client{Timeout: 15 * time.Second}
 	resp, err := client.Get(url)
 	if err != nil {
-		log.Printf("Failed to fetch profile URL for hash check: %v", err)
+		log.Printf("Failed to fetch %s for hash check: %v", url, err)
 		return ""
 	}
 	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
-		log.Printf("Profile URL returned status %s during hash check", resp.Status)
+		log.Printf("%s returned status %s during hash check", url, resp.Status)
 		return ""
 	}
 	h := sha256.New()
