@@ -1,3 +1,10 @@
+## [0.21.3](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.21.2...v0.21.3) (2026-10-24)
+
+
+### Bug Fixes
+
+* inject version info into ko image and API version endpoint ([#111](https://github.com/stuttgart-things/claim-machinery-api/issues/111)) ([5beb6d5](https://github.com/stuttgart-things/claim-machinery-api/commit/5beb6d5d0cce82f24c632f099635e0cd9108ba55))
+
 ## [0.21.2](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.21.1...v0.21.2) (2026-10-24)
 
 
