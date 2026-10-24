@@ -27,7 +27,7 @@ func TestLoadTemplatesFromProfile_HTTPProfile(t *testing.T) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/template.yaml", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/yaml")
-		w.Write(templateData)
+		_, _ = w.Write(templateData)
 	})
 	srv := httptest.NewServer(mux)
 	defer srv.Close()
@@ -38,7 +38,7 @@ func TestLoadTemplatesFromProfile_HTTPProfile(t *testing.T) {
 	require.NoError(t, err)
 	_, err = profileFile.WriteString(profileContent)
 	require.NoError(t, err)
-	profileFile.Close()
+	_ = profileFile.Close()
 
 	templates, sources, err := LoadTemplatesFromProfile(profileFile.Name())
 	require.NoError(t, err)
@@ -56,13 +56,13 @@ func TestLoadTemplatesFromProfile_HTTPProfilePath(t *testing.T) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/template.yaml", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/yaml")
-		w.Write(templateData)
+		_, _ = w.Write(templateData)
 	})
 
 	var srv *httptest.Server
 	mux.HandleFunc("/profile.yaml", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/yaml")
-		fmt.Fprintf(w, "templates:\n  - %s/template.yaml\n", srv.URL)
+		_, _ = fmt.Fprintf(w, "templates:\n  - %s/template.yaml\n", srv.URL)
 	})
 	srv = httptest.NewServer(mux)
 	defer srv.Close()

@@ -169,9 +169,7 @@ func main() {
 			multiSelectValues[p.Name] = &defaults
 
 			field := createMultiSelectField(p, multiSelectValues[p.Name])
-			if field != nil {
-				currentFields = append(currentFields, field)
-			}
+			currentFields = append(currentFields, field)
 		} else {
 			// Create a string pointer to hold the value (including hidden params)
 			defaultVal := ""
@@ -181,9 +179,7 @@ func main() {
 			paramValues[p.Name] = &defaultVal
 
 			field := createField(p, paramValues[p.Name])
-			if field != nil {
-				currentFields = append(currentFields, field)
-			}
+			currentFields = append(currentFields, field)
 		}
 
 		// Group fields (max 5 per group for better UX)
@@ -208,7 +204,6 @@ func main() {
 	}
 
 	// Resolve random selections and collect non-empty values
-	rand.Seed(time.Now().UnixNano())
 	for _, p := range tmpl.Spec.Parameters {
 		// Handle multiselect values
 		if p.Multiselect && len(p.Enum) > 0 {
@@ -303,7 +298,7 @@ func fetchTemplates(client *http.Client, apiURL string) ([]ClaimTemplate, error)
 	if err != nil {
 		return nil, fmt.Errorf("HTTP request failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
@@ -331,7 +326,7 @@ func renderTemplate(client *http.Client, apiURL, templateName string, params map
 	if err != nil {
 		return "", fmt.Errorf("HTTP request failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)

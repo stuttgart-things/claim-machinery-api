@@ -84,7 +84,7 @@ func SendHomerunMessage(cfg HomerunConfig, msg HomerunMessage) {
 		fmt.Printf("homerun: failed to send message: %v\n", err)
 		return
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		fmt.Printf("homerun: pitcher returned status %s\n", resp.Status)
@@ -139,12 +139,12 @@ func BuildOrderMessage(
 	}
 
 	return HomerunMessage{
-		Title:    "Claim Order: " + templateName,
-		Message:  msgBody,
-		Severity: "success",
-		Author:   author,
-		System:   "claim-machinery-api",
-		Tags:     strings.Join(tagParts, ","),
+		Title:     "Claim Order: " + templateName,
+		Message:   msgBody,
+		Severity:  "success",
+		Author:    author,
+		System:    "claim-machinery-api",
+		Tags:      strings.Join(tagParts, ","),
 		Artifacts: artifacts,
 	}
 }

@@ -8,7 +8,7 @@ import (
 // BuildBaseImage creates a base image with KCL pre-installed
 func (m *Dagger) BuildBaseImage(ctx context.Context, platform dagger.Platform) (*dagger.Container, error) {
 	return dag.Container(dagger.ContainerOpts{Platform: platform}).
-			From("ghcr.io/kcl-lang/kcl:v0.12.3").
+			From("ghcr.io/kcl-lang/kcl:v0.13.2").
 			WithExec([]string{"kcl", "--version"}), // Verify KCL is available
 		nil
 }
@@ -31,7 +31,7 @@ func (m *Dagger) BuildImageWithKCL(
 
 	// Build the Go binary as a static binary using glibc-based image (compatible with Wolfi/KCL base)
 	builder := dag.Container(dagger.ContainerOpts{Platform: platform}).
-		From("golang:1.25-bookworm").
+		From("golang:1.26-bookworm").
 		WithEnvVariable("CGO_ENABLED", "0").
 		WithEnvVariable("GOOS", "linux").
 		WithEnvVariable("GOARCH", "amd64").

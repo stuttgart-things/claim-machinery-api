@@ -1,6 +1,6 @@
 ---
 #defaultBaseImage: cgr.dev/chainguard/glibc-dynamic:latest
-defaultBaseImage: ghcr.io/kcl-lang/kcl:v0.12.3
+defaultBaseImage: ghcr.io/kcl-lang/kcl:v0.13.2
 builds:
   - id: claim-machinery-api
     main: .
