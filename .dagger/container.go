@@ -31,7 +31,7 @@ func (m *Dagger) BuildImageWithKCL(
 
 	// Build the Go binary as a static binary using glibc-based image (compatible with Wolfi/KCL base)
 	builder := dag.Container(dagger.ContainerOpts{Platform: platform}).
-		From("golang:1.26-bookworm").
+		From("golang:1.27-bookworm").
 		WithEnvVariable("CGO_ENABLED", "0").
 		WithEnvVariable("GOOS", "linux").
 		WithEnvVariable("GOARCH", "amd64").
