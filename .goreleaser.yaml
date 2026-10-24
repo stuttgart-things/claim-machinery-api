@@ -22,6 +22,9 @@ builds:
       - -X github.com/stuttgart-things/claim-machinery-api/cmd.Version={{.Version}}
       - -X github.com/stuttgart-things/claim-machinery-api/cmd.Commit={{.Commit}}
       - -X github.com/stuttgart-things/claim-machinery-api/cmd.Date={{.Date}}
+      - -X github.com/stuttgart-things/claim-machinery-api/internal/version.Version={{.Version}}
+      - -X github.com/stuttgart-things/claim-machinery-api/internal/version.Commit={{.Commit}}
+      - -X github.com/stuttgart-things/claim-machinery-api/internal/version.BuildDate={{.Date}}
     goos:
       - linux
       - darwin
