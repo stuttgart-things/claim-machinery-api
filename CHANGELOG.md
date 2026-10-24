@@ -1,3 +1,14 @@
+## [0.21.2](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.21.1...v0.21.2) (2026-10-24)
+
+
+### Bug Fixes
+
+* **deps:** update dependency conventional-changelog-conventionalcommits to v10 ([#103](https://github.com/stuttgart-things/claim-machinery-api/issues/103)) ([f8762ce](https://github.com/stuttgart-things/claim-machinery-api/commit/f8762cef0c9770dbcad3ea653d33e55234ee2f93))
+* **deps:** update module dagger.io/dagger to v0.21.11 ([#96](https://github.com/stuttgart-things/claim-machinery-api/issues/96)) ([3d1340e](https://github.com/stuttgart-things/claim-machinery-api/commit/3d1340ec65ccff6e8aff5d3c2ae83a1d0ebca252))
+* **deps:** update module github.com/lucasb-eyer/go-colorful to v1.4.1 ([#106](https://github.com/stuttgart-things/claim-machinery-api/issues/106)) ([f9ff7f9](https://github.com/stuttgart-things/claim-machinery-api/commit/f9ff7f9500b8356d792ba2229be6850f8777feeb))
+* **deps:** update module github.com/vektah/gqlparser/v2 to v2.5.64 ([#101](https://github.com/stuttgart-things/claim-machinery-api/issues/101)) ([3b02085](https://github.com/stuttgart-things/claim-machinery-api/commit/3b02085197d6d5133cfda1136e0c1a5404637f4a))
+* **deps:** update module kcl-lang.io/kcl-go to v0.13.2 ([#104](https://github.com/stuttgart-things/claim-machinery-api/issues/104)) ([e2f7c98](https://github.com/stuttgart-things/claim-machinery-api/commit/e2f7c9886e9a57641debd251db70a196b6ea2275))
+
 # [0.21.0](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.20.2...v0.21.0) (2026-03-19)
 
 
