@@ -209,12 +209,30 @@ func parseProfile(profilePath string) (*profileYAML, error) {
 	return &p, nil
 }
 
+// ProfileTemplateEntries returns the template entries (local paths or URLs)
+// listed in a profile, without loading them.
+func ProfileTemplateEntries(profilePath string) ([]string, error) {
+	p, err := parseProfile(profilePath)
+	if err != nil {
+		return nil, err
+	}
+	return profileEntries(p), nil
+}
+
+// profileEntries returns the non-empty template entries of a parsed profile.
+func profileEntries(p *profileYAML) []string {
+	var entries []string
+	for _, e := range append(append([]string{}, p.Templates...), p.Tenplates...) {
+		if e = strings.TrimSpace(e); e != "" {
+			entries = append(entries, e)
+		}
+	}
+	return entries
+}
+
 // loadTemplateEntries resolves template entries (local or remote) from a parsed profile.
 func loadTemplateEntries(p *profileYAML) ([]*claimtemplate.ClaimTemplate, []string) {
-	entries := append([]string{}, p.Templates...)
-	if len(p.Tenplates) > 0 {
-		entries = append(entries, p.Tenplates...)
-	}
+	entries := profileEntries(p)
 
 	var (
 		out     []*claimtemplate.ClaimTemplate
@@ -222,11 +240,6 @@ func loadTemplateEntries(p *profileYAML) ([]*claimtemplate.ClaimTemplate, []stri
 	)
 
 	for _, e := range entries {
-		e = strings.TrimSpace(e)
-		if e == "" {
-			continue
-		}
-
 		localPath := e
 		if strings.HasPrefix(e, "http://") || strings.HasPrefix(e, "https://") {
 			// Validate URL via HEAD (fallback to GET), then download
