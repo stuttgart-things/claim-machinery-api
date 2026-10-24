@@ -1,8 +1,9 @@
 ---
+# VM templates render NativeVsphereVM / NativeProxmoxVM (xr-native-vm), the
+# kinds machinery runs. Dropped: vspherevm-simple / vspherevm-labul (VsphereVM
+# via OpenTofu, no instances), harborproject and storageplatform-nfs/-openebs
+# (no XRD on machinery).
 templates:
+  - https://raw.githubusercontent.com/stuttgart-things/kcl/refs/heads/main/crossplane/xr-native-vm/templates/native-vm-labda-vsphere.yaml
+  - https://raw.githubusercontent.com/stuttgart-things/kcl/refs/heads/main/crossplane/xr-native-vm/templates/native-vm-labul-proxmox.yaml
   - https://raw.githubusercontent.com/stuttgart-things/kcl/refs/heads/main/crossplane/claim-xplane-volumeclaim/templates/volumeclaim-simple.yaml
-  - https://raw.githubusercontent.com/stuttgart-things/kcl/refs/heads/main/crossplane/claim-xplane-harborproject/templates/harborproject-simple.yaml
-  - https://raw.githubusercontent.com/stuttgart-things/kcl/refs/heads/main/crossplane/claim-xplane-vspherevm/templates/vspherevm-simple.yaml
-  - https://raw.githubusercontent.com/stuttgart-things/kcl/refs/heads/main/crossplane/claim-xplane-vspherevm/templates/vspherevm-labul.yaml
-  - https://raw.githubusercontent.com/stuttgart-things/kcl/refs/heads/main/crossplane/claim-xplane-storageplatform/templates/storageplatform-nfs.yaml
-  - https://raw.githubusercontent.com/stuttgart-things/kcl/refs/heads/main/crossplane/claim-xplane-storageplatform/templates/storageplatform-openebs.yaml
