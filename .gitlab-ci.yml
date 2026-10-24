@@ -2,7 +2,7 @@ stages:
   - pages
 
 pages:
-  image: python:3.14-slim
+  image: python:3.15-slim
   stage: pages
   script:
     - pip install mkdocs-material
