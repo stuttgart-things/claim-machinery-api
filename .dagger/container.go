@@ -8,7 +8,7 @@ import (
 // BuildBaseImage creates a base image with KCL pre-installed
 func (m *Dagger) BuildBaseImage(ctx context.Context, platform dagger.Platform) (*dagger.Container, error) {
 	return dag.Container(dagger.ContainerOpts{Platform: platform}).
-			From("ghcr.io/kcl-lang/kcl:v0.12.3").
+			From("ghcr.io/kcl-lang/kcl:v0.13.2").
 			WithExec([]string{"kcl", "--version"}), // Verify KCL is available
 		nil
 }
