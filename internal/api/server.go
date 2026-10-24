@@ -234,14 +234,14 @@ func (s *Server) getTemplateMap() map[string]*claimtemplate.ClaimTemplate {
 func (s *Server) healthCheck(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	fmt.Fprintf(w, `{"status":"healthy","timestamp":"%s"}`, time.Now().Format(time.RFC3339))
+	_, _ = fmt.Fprintf(w, `{"status":"healthy","timestamp":"%s"}`, time.Now().Format(time.RFC3339))
 }
 
 // rootInfo returns a minimal service index with useful links
 func (s *Server) rootInfo(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	fmt.Fprintf(w, `{
+	_, _ = fmt.Fprintf(w, `{
 			"service": "claim-machinery-api",
 			"version": "%s",
 			"endpoints": [
@@ -260,7 +260,7 @@ func (s *Server) rootInfo(w http.ResponseWriter, r *http.Request) {
 func (s *Server) versionInfo(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	fmt.Fprintf(w, `{
+	_, _ = fmt.Fprintf(w, `{
 		"version": "%s",
 		"commit": "%s",
 		"buildDate": "%s"
@@ -278,14 +278,14 @@ func (s *Server) serveOpenAPI(w http.ResponseWriter, r *http.Request) {
 	// Fallback: minimal inline doc
 	w.Header().Set("Content-Type", "application/yaml")
 	w.WriteHeader(http.StatusOK)
-	fmt.Fprintf(w, "openapi: 3.0.3\ninfo:\n  title: Claim Machinery API\n  version: 0.0.0\npaths:\n  /health:\n    get:\n      summary: Health check\n      responses:\n        '200':\n          description: OK\n  /api/v1/claim-templates:\n    get:\n      summary: List claim templates\n      responses:\n        '200':\n          description: OK\n  /api/v1/claim-templates/{name}:\n    get:\n      summary: Get template\n      parameters:\n        - in: path\n          name: name\n          required: true\n          schema:\n            type: string\n      responses:\n        '200':\n          description: OK\n  /api/v1/claim-templates/{name}/order:\n    post:\n      summary: Render template\n      parameters:\n        - in: path\n          name: name\n          required: true\n          schema:\n            type: string\n      requestBody:\n        content:\n          application/json:\n            schema:\n              type: object\n      responses:\n        '200':\n          description: OK\n")
+	_, _ = fmt.Fprintf(w, "openapi: 3.0.3\ninfo:\n  title: Claim Machinery API\n  version: 0.0.0\npaths:\n  /health:\n    get:\n      summary: Health check\n      responses:\n        '200':\n          description: OK\n  /api/v1/claim-templates:\n    get:\n      summary: List claim templates\n      responses:\n        '200':\n          description: OK\n  /api/v1/claim-templates/{name}:\n    get:\n      summary: Get template\n      parameters:\n        - in: path\n          name: name\n          required: true\n          schema:\n            type: string\n      responses:\n        '200':\n          description: OK\n  /api/v1/claim-templates/{name}/order:\n    post:\n      summary: Render template\n      parameters:\n        - in: path\n          name: name\n          required: true\n          schema:\n            type: string\n      requestBody:\n        content:\n          application/json:\n            schema:\n              type: object\n      responses:\n        '200':\n          description: OK\n")
 }
 
 // serveDocs serves a simple Redoc viewer for the OpenAPI spec
 func (s *Server) serveDocs(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
-	fmt.Fprintf(w, `<!doctype html>
+	_, _ = fmt.Fprintf(w, `<!doctype html>
 <html>
 	<head>
 		<meta charset="utf-8"/>

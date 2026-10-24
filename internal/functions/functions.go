@@ -15,9 +15,9 @@ import (
 // FunctionDef defines a reusable function that can be called to resolve parameter values.
 type FunctionDef struct {
 	Name     string            `yaml:"name" json:"name"`
-	Type     string            `yaml:"type" json:"type"`       // "http"
-	Method   string            `yaml:"method" json:"method"`   // GET, POST
-	URL      string            `yaml:"url" json:"url"`         // supports ${var} placeholders
+	Type     string            `yaml:"type" json:"type"`     // "http"
+	Method   string            `yaml:"method" json:"method"` // GET, POST
+	URL      string            `yaml:"url" json:"url"`       // supports ${var} placeholders
 	Headers  map[string]string `yaml:"headers,omitempty" json:"headers,omitempty"`
 	Body     map[string]any    `yaml:"body,omitempty" json:"body,omitempty"`
 	Response ResponseExtract   `yaml:"response" json:"response"`
@@ -134,7 +134,7 @@ func executeHTTP(fn *FunctionDef, args map[string]string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("execute function %q: %w", fn.Name, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
 		body, _ := io.ReadAll(resp.Body)
@@ -181,11 +181,12 @@ func substituteBodyVars(body map[string]any, args map[string]string) map[string]
 		case string:
 			resolved := substituteVars(val, args)
 			// Convert pure boolean/numeric strings to native types
-			if resolved == "true" {
+			switch resolved {
+			case "true":
 				out[k] = true
-			} else if resolved == "false" {
+			case "false":
 				out[k] = false
-			} else {
+			default:
 				out[k] = resolved
 			}
 		case map[string]any:
@@ -196,11 +197,12 @@ func substituteBodyVars(body map[string]any, args map[string]string) map[string]
 			if strings.Contains(s, "${") {
 				resolved := substituteVars(s, args)
 				// Try to preserve original type
-				if resolved == "true" {
+				switch resolved {
+				case "true":
 					out[k] = true
-				} else if resolved == "false" {
+				case "false":
 					out[k] = false
-				} else {
+				default:
 					out[k] = resolved
 				}
 			} else {

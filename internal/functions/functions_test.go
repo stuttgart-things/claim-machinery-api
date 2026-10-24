@@ -79,7 +79,7 @@ func TestRegistry_Resolve_GET(t *testing.T) {
 		require.Equal(t, "/api/v1/networks/10.31.103/ips", r.URL.Path)
 
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode([]map[string]string{
+		_ = json.NewEncoder(w).Encode([]map[string]string{
 			{"ip": "10.31.103.6", "digit": "6", "status": "", "cluster": ""},
 		})
 	}))
@@ -111,12 +111,12 @@ func TestRegistry_Resolve_POST(t *testing.T) {
 		require.Equal(t, "/api/v1/networks/192.168.10/assign", r.URL.Path)
 
 		var body map[string]any
-		json.NewDecoder(r.Body).Decode(&body)
+		_ = json.NewDecoder(r.Body).Decode(&body)
 		require.Equal(t, "infra", body["cluster"])
 		require.Equal(t, "ASSIGNED", body["status"])
 
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]string{
+		_ = json.NewEncoder(w).Encode(map[string]string{
 			"ip":      "192.168.10.150",
 			"cluster": "infra",
 			"status":  "ASSIGNED",

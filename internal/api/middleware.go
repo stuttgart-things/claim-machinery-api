@@ -154,7 +154,7 @@ func errorHandlerMiddleware(next http.Handler) http.Handler {
 					w.Header().Set("X-Request-ID", rid)
 				}
 				w.WriteHeader(http.StatusInternalServerError)
-				fmt.Fprintf(w, `{"error":"internal server error","requestId":"%s"}`, rid)
+				_, _ = fmt.Fprintf(w, `{"error":"internal server error","requestId":"%s"}`, rid)
 			}
 		}()
 

@@ -5,7 +5,6 @@ import (
 	"math/rand"
 	"os"
 	"strconv"
-	"time"
 
 	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"
@@ -112,9 +111,7 @@ func main() {
 
 			visibleCount++
 			field := createMultiSelectField(p, multiSelectValues[p.Name])
-			if field != nil {
-				currentFields = append(currentFields, field)
-			}
+			currentFields = append(currentFields, field)
 		} else {
 			// Create a string pointer to hold the value (including hidden params)
 			defaultVal := ""
@@ -125,9 +122,7 @@ func main() {
 
 			visibleCount++
 			field := createField(p, paramValues[p.Name])
-			if field != nil {
-				currentFields = append(currentFields, field)
-			}
+			currentFields = append(currentFields, field)
 		}
 
 		// Group fields (max 5 per group for better UX)
@@ -152,7 +147,6 @@ func main() {
 	}
 
 	// Resolve random selections and pass all values as strings
-	rand.Seed(time.Now().UnixNano())
 	for _, p := range tmpl.Spec.Parameters {
 		// Handle multiselect values
 		if p.Multiselect && len(p.Enum) > 0 {
@@ -369,13 +363,6 @@ func createField(p claimtemplate.Parameter, value *string) huh.Field {
 			Description(description).
 			Placeholder(fmt.Sprintf("default: %v", p.Default)).
 			Value(value)
-
-		// Add pattern validation if specified
-		if p.Pattern != "" {
-			// Note: For MVP, we skip regex validation to keep it simple
-			// In production, add regexp validation here
-		}
-
 		return input
 	}
 }

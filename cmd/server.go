@@ -419,7 +419,7 @@ func fileHash(path string) string {
 	if err != nil {
 		return ""
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 	h := sha256.New()
 	if _, err := io.Copy(h, f); err != nil {
 		return ""
@@ -436,7 +436,7 @@ func remoteHash(url string) string {
 		log.Printf("Failed to fetch profile URL for hash check: %v", err)
 		return ""
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
 		log.Printf("Profile URL returned status %s during hash check", resp.Status)
 		return ""

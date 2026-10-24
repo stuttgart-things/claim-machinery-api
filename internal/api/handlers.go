@@ -49,7 +49,7 @@ func (s *Server) listTemplates(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(response)
+	_ = json.NewEncoder(w).Encode(response)
 }
 
 // getTemplate returns a specific claim template by name
@@ -64,14 +64,14 @@ func (s *Server) getTemplate(w http.ResponseWriter, r *http.Request) {
 	tmpl, exists := s.getTemplateMap()[name]
 	if !exists {
 		w.WriteHeader(http.StatusNotFound)
-		json.NewEncoder(w).Encode(map[string]string{
+		_ = json.NewEncoder(w).Encode(map[string]string{
 			"error": "template not found",
 		})
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(tmpl)
+	_ = json.NewEncoder(w).Encode(tmpl)
 }
 
 // orderClaim renders a claim template with provided parameters
@@ -86,7 +86,7 @@ func (s *Server) orderClaim(w http.ResponseWriter, r *http.Request) {
 	tmpl, exists := s.getTemplateMap()[name]
 	if !exists {
 		w.WriteHeader(http.StatusNotFound)
-		json.NewEncoder(w).Encode(map[string]string{
+		_ = json.NewEncoder(w).Encode(map[string]string{
 			"error": "template not found",
 		})
 		return
@@ -96,7 +96,7 @@ func (s *Server) orderClaim(w http.ResponseWriter, r *http.Request) {
 	var req OrderRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(map[string]string{
+		_ = json.NewEncoder(w).Encode(map[string]string{
 			"error": "invalid request body",
 		})
 		return
@@ -121,7 +121,7 @@ func (s *Server) orderClaim(w http.ResponseWriter, r *http.Request) {
 	rendered, err := app.RenderTemplateFromParams(tmpl, params)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{
+		_ = json.NewEncoder(w).Encode(map[string]string{
 			"error": err.Error(),
 		})
 		return
@@ -154,5 +154,5 @@ func (s *Server) orderClaim(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(response)
+	_ = json.NewEncoder(w).Encode(response)
 }

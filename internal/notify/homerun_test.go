@@ -83,7 +83,7 @@ func TestSendHomerunMessage(t *testing.T) {
 			require.NoError(t, err)
 
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(`{"status":"success"}`))
+			_, _ = w.Write([]byte(`{"status":"success"}`))
 		}))
 		defer srv.Close()
 

@@ -18,9 +18,9 @@ import (
 // profileYAML represents the structure of the profile file.
 // Support both "templates" and the common misspelling "tenplates".
 type profileYAML struct {
-	Name      string                 `yaml:"name,omitempty"`
-	Templates []string               `yaml:"templates"`
-	Tenplates []string               `yaml:"tenplates"`
+	Name      string                  `yaml:"name,omitempty"`
+	Templates []string                `yaml:"templates"`
+	Tenplates []string                `yaml:"tenplates"`
 	Functions []functions.FunctionDef `yaml:"functions,omitempty"`
 }
 
@@ -187,7 +187,7 @@ func parseProfile(profilePath string) (*profileYAML, error) {
 		if err != nil {
 			return nil, fmt.Errorf("download profile from %s: %w", profilePath, err)
 		}
-		defer os.Remove(tmpPath)
+		defer func() { _ = os.Remove(tmpPath) }()
 		f, err := os.Open(tmpPath)
 		if err != nil {
 			return nil, fmt.Errorf("open downloaded profile: %w", err)
@@ -200,7 +200,7 @@ func parseProfile(profilePath string) (*profileYAML, error) {
 		}
 		reader = f
 	}
-	defer reader.Close()
+	defer func() { _ = reader.Close() }()
 
 	var p profileYAML
 	if err := yaml.NewDecoder(reader).Decode(&p); err != nil {
@@ -266,7 +266,7 @@ func validateURL(u string) error {
 	req, _ := http.NewRequest(http.MethodHead, u, nil)
 	resp, err := client.Do(req)
 	if err == nil && resp != nil {
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 		if resp.StatusCode >= 200 && resp.StatusCode < 400 {
 			return nil
 		}
@@ -276,7 +276,7 @@ func validateURL(u string) error {
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
 		return fmt.Errorf("unexpected status: %s", resp.Status)
 	}
@@ -289,7 +289,7 @@ func downloadToTemp(u string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
 		return "", fmt.Errorf("download status: %s", resp.Status)
 	}
@@ -300,7 +300,7 @@ func downloadToTemp(u string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 	if _, err := io.Copy(f, resp.Body); err != nil {
 		return "", err
 	}

@@ -14,8 +14,8 @@ var (
 	Date    = "unknown"
 
 	// Flags
-	templatesDir      string
-	profilePath       string
+	templatesDir       string
+	profilePath        string
 	enableTemplatesDir bool
 	reloadInterval     string
 )
