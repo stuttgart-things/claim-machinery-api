@@ -116,7 +116,7 @@ tasks:
       - |
         dagger call -m github.com/stuttgart-things/dagger/go@v0.82.0 build-binary \
           --src "." \
-          --go-version "1.26.0" \
+          --go-version "1.27.3" \
           --os {{ .OS }} \
           --arch {{ .ARCH }} \
            --package-name github.com/stuttgart-things/claim-machinery-api \
