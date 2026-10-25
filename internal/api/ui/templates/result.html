@@ -1,0 +1,11 @@
+{{if .Error}}
+<div class="error" role="alert"><strong>Render failed</strong><p>{{.Error}}</p></div>
+{{else}}
+<div class="result">
+    <div class="actions">
+        <button type="button" data-copy>copy</button>
+        <button type="button" data-download="{{.Name}}">download</button>
+    </div>
+    <pre><code>{{.Rendered}}</code></pre>
+</div>
+{{end}}

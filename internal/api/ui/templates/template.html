@@ -1,0 +1,72 @@
+{{template "head" .}}
+{{template "nav" .}}
+<main>
+    <p class="crumbs"><a href="{{.Base}}/ui/">templates</a> / {{.Template.Metadata.Name}}</p>
+    <h1>{{if .Template.Metadata.Title}}{{.Template.Metadata.Title}}{{else}}{{.Template.Metadata.Name}}{{end}}</h1>
+    {{if .Template.Metadata.Description}}<p class="lead">{{.Template.Metadata.Description}}</p>{{end}}
+    <p class="meta"><code>{{.Template.Spec.Source}}{{if .Template.Spec.Tag}}:{{.Template.Spec.Tag}}{{end}}</code></p>
+
+    <form class="order" hx-post="{{.Base}}/ui/templates/{{.Template.Metadata.Name}}/render" hx-target="#result" hx-indicator="#rendering">
+        {{range .Fields}}
+        <div class="field">
+            <label for="p-{{.Name}}">{{if .Title}}{{.Title}}{{else}}{{.Name}}{{end}}{{if .Required}} <span class="req">*</span>{{end}}</label>
+            {{if eq .Widget "multiselect"}}
+            <div class="choices" id="p-{{.Name}}">
+                {{$f := .}}{{range .Enum}}
+                <label class="choice"><input type="checkbox" name="{{$f.Name}}" value="{{.}}"{{if index $f.Selected .}} checked{{end}}> {{.}}</label>
+                {{end}}
+            </div>
+            {{else if eq .Widget "select"}}
+            <select id="p-{{.Name}}" name="{{.Name}}">
+                {{$f := .}}{{if not .Value}}<option value="">(default)</option>{{end}}
+                {{range .Enum}}<option value="{{.}}"{{if eq . $f.Value}} selected{{end}}>{{.}}</option>{{end}}
+                {{if .AllowRandom}}<option value="__random__">🎲 random</option>{{end}}
+            </select>
+            {{else if eq .Widget "boolean"}}
+            <select id="p-{{.Name}}" name="{{.Name}}">
+                <option value="true"{{if eq .Value "true"}} selected{{end}}>true</option>
+                <option value="false"{{if ne .Value "true"}} selected{{end}}>false</option>
+            </select>
+            {{else}}
+            <input id="p-{{.Name}}" name="{{.Name}}" type="text" value="{{.Value}}"
+                {{- if .FromFunction}} placeholder="from {{.FromFunction}}"{{end}}
+                {{- if .Pattern}} pattern="{{.Pattern}}"{{end}}
+                {{- if .MinLength}} minlength="{{.MinLength}}"{{end}}
+                {{- if .MaxLength}} maxlength="{{.MaxLength}}"{{end}}
+                {{- if and .Required (not .FromFunction)}} required{{end}}>
+            {{end}}
+            {{if .Description}}<small>{{.Description}}</small>{{end}}
+            {{if .FromFunction}}<small>Empty: resolved by profile function <code>{{.FromFunction}}</code>.</small>{{end}}
+        </div>
+        {{end}}
+        {{with .Template.Spec.Secrets}}<p class="note">This template also creates {{len .}} secret{{if gt (len .) 1}}s{{end}}. Secret values are encrypted on the client (SOPS) and never pass through the API, so they are not part of this form.</p>{{end}}
+        {{if .Hidden}}<p class="note">{{.Hidden}} platform parameter{{if gt .Hidden 1}}s{{end}} use{{if eq .Hidden 1}}s{{end}} {{if gt .Hidden 1}}their{{else}}its{{end}} default.</p>{{end}}
+        <div class="field">
+            <label for="p-_author">Author <span class="hint">(optional, for the notification)</span></label>
+            <input id="p-_author" name="_author" type="text">
+        </div>
+        <div class="actions">
+            <button type="submit">Render</button>
+            <span id="rendering" class="htmx-indicator">rendering…</span>
+        </div>
+    </form>
+
+    <section id="result" aria-live="polite"></section>
+</main>
+<script>
+    // Copy and download act on the rendered YAML in #result.
+    document.addEventListener('click', e => {
+        const pre = document.querySelector('#result pre');
+        if (!pre) return;
+        if (e.target.matches('[data-copy]')) {
+            navigator.clipboard.writeText(pre.textContent).then(() => { e.target.textContent = 'copied'; });
+        } else if (e.target.matches('[data-download]')) {
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(new Blob([pre.textContent], { type: 'application/yaml' }));
+            a.download = e.target.dataset.download + '.yaml';
+            a.click();
+            URL.revokeObjectURL(a.href);
+        }
+    });
+</script>
+{{template "footer" .}}

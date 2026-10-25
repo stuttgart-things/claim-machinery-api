@@ -1,0 +1,55 @@
+{{template "head" .}}
+{{template "nav" .}}
+<main>
+    <div class="filters">
+        <input id="search" type="search" placeholder="search templates" autocomplete="off">
+        {{if .Tags}}
+        <div class="tags" id="tag-filter">
+            {{range .Tags}}<button type="button" class="tag" data-tag="{{.}}">{{.}}</button>{{end}}
+        </div>
+        {{end}}
+    </div>
+
+    {{if not .Templates}}
+    <p class="empty">No templates loaded. Check TEMPLATE_PROFILE_PATH.</p>
+    {{end}}
+    <ul class="cards" id="templates">
+        {{range .Templates}}
+        <li class="card" data-text="{{.Metadata.Name}} {{.Metadata.Title}} {{.Metadata.Description}}" data-tags="{{join .Metadata.Tags " "}}">
+            <a href="{{$.Base}}/ui/templates/{{.Metadata.Name}}">
+                <h2>{{if .Metadata.Title}}{{.Metadata.Title}}{{else}}{{.Metadata.Name}}{{end}}</h2>
+                <code>{{.Metadata.Name}}</code>
+                {{if .Metadata.Description}}<p>{{.Metadata.Description}}</p>{{end}}
+                <div class="tags">
+                    {{range .Metadata.Tags}}<span class="tag">{{.}}</span>{{end}}
+                    {{if .Metadata.Profile}}<span class="tag profile">{{.Metadata.Profile}}</span>{{end}}
+                </div>
+            </a>
+        </li>
+        {{end}}
+    </ul>
+</main>
+<script>
+    // Filter the cards by text and by the selected tags (all must match).
+    (function () {
+        const search = document.getElementById('search');
+        const active = new Set();
+        function apply() {
+            const q = search.value.trim().toLowerCase();
+            document.querySelectorAll('#templates .card').forEach(card => {
+                const tags = card.dataset.tags.split(' ');
+                const text = card.dataset.text.toLowerCase();
+                const ok = (!q || text.includes(q)) && [...active].every(t => tags.includes(t));
+                card.hidden = !ok;
+            });
+        }
+        search.addEventListener('input', apply);
+        document.querySelectorAll('#tag-filter .tag').forEach(btn => btn.addEventListener('click', () => {
+            const t = btn.dataset.tag;
+            if (active.has(t)) { active.delete(t); btn.classList.remove('active'); }
+            else { active.add(t); btn.classList.add('active'); }
+            apply();
+        }));
+    })();
+</script>
+{{template "footer" .}}

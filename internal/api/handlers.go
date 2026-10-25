@@ -102,23 +102,7 @@ func (s *Server) orderClaim(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Debug: log received parameters
-	debugParams("Received from request", req.Parameters)
-
-	// Pre-seed user-provided params so valueFrom arg references (e.g. {{.networkKey}}) resolve correctly
-	userParams := make(map[string]interface{}, len(req.Parameters))
-	for k, v := range req.Parameters {
-		userParams[k] = v
-	}
-
-	// Build parameter values (merge request params with defaults + function calls)
-	params := app.BuildParameterValuesWithFunctionsAndUserParams(tmpl, s.GetFunctions(), userParams)
-
-	// Debug: log merged parameters
-	debugParams("After merge", params)
-
-	// Render template directly with pre-built params (skip BuildParameterValues rebuild)
-	rendered, err := app.RenderTemplateFromParams(tmpl, params)
+	rendered, err := s.order(tmpl, req.Parameters, req.Author)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		_ = json.NewEncoder(w).Encode(map[string]string{
@@ -126,21 +110,6 @@ func (s *Server) orderClaim(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
-
-	// Send homerun notification asynchronously
-	go func() {
-		msg := notify.BuildOrderMessage(
-			tmpl.Metadata.Name,
-			tmpl.Metadata.Title,
-			tmpl.Spec.Type,
-			tmpl.Metadata.Tags,
-			tmpl.Spec.Source,
-			tmpl.Spec.Tag,
-			params,
-			req.Author,
-		)
-		notify.SendHomerunMessage(s.homerun, msg)
-	}()
 
 	// Return success response
 	response := OrderResponse{
@@ -155,4 +124,46 @@ func (s *Server) orderClaim(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	_ = json.NewEncoder(w).Encode(response)
+}
+
+// order renders a template with the user's parameters and sends the homerun
+// notification. The API's order endpoint and the web UI both go through it.
+func (s *Server) order(tmpl *claimtemplate.ClaimTemplate, userInput map[string]interface{}, author string) (string, error) {
+	// Debug: log received parameters
+	debugParams("Received from request", userInput)
+
+	// Pre-seed user-provided params so valueFrom arg references (e.g. {{.networkKey}}) resolve correctly
+	userParams := make(map[string]interface{}, len(userInput))
+	for k, v := range userInput {
+		userParams[k] = v
+	}
+
+	// Build parameter values (merge request params with defaults + function calls)
+	params := app.BuildParameterValuesWithFunctionsAndUserParams(tmpl, s.GetFunctions(), userParams)
+
+	// Debug: log merged parameters
+	debugParams("After merge", params)
+
+	// Render template directly with pre-built params (skip BuildParameterValues rebuild)
+	rendered, err := s.render(tmpl, params)
+	if err != nil {
+		return "", err
+	}
+
+	// Send homerun notification asynchronously
+	go func() {
+		msg := notify.BuildOrderMessage(
+			tmpl.Metadata.Name,
+			tmpl.Metadata.Title,
+			tmpl.Spec.Type,
+			tmpl.Metadata.Tags,
+			tmpl.Spec.Source,
+			tmpl.Spec.Tag,
+			params,
+			author,
+		)
+		notify.SendHomerunMessage(s.homerun, msg)
+	}()
+
+	return rendered, nil
 }

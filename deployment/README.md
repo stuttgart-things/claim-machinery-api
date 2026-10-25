@@ -141,6 +141,7 @@ kcl run main.k | kubectl delete -f -
 | `config.templateProfilePath` | string | `/app/config/profile.yaml` | Template profile path or HTTP URL (TEMPLATE_PROFILE_PATH env var) |
 | `config.templateProfile` | string | `` | Template profile YAML content (mounted as file) |
 | `config.port` | string | `8080` | Application port (PORT env var) |
+| `config.basePath` | string | `` | Prefix of web UI, docs and API behind sthings-portal, e.g. `/claims` (BASE_PATH env var) |
 | `config.logFormat` | string | `text` | Log format (LOG_FORMAT env var: text/json) |
 | `config.debug` | bool | `False` | Enable debug mode (DEBUG env var) |
 | `config.extraEnvVars` | {str:str} | `{}` | Extra environment variables for ConfigMap |

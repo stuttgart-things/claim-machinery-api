@@ -3,11 +3,13 @@ package api
 import (
 	"context"
 	"fmt"
+	"html"
 	"log"
 	"net/http"
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -28,6 +30,14 @@ type Server struct {
 	importSources map[string]string // template name -> import path (file or URL)
 	functions     *functions.Registry
 	homerun       notify.HomerunConfig
+	// loadedAt is when the current template set was loaded (start or reload).
+	loadedAt time.Time
+	// basePath is the prefix the UI answers under behind sthings-portal
+	// ("" or e.g. "/claims"), see ParseBasePath and SetBasePath.
+	basePath string
+	// render turns a template and its merged parameters into YAML. It is
+	// app.RenderTemplateFromParams (KCL from OCI); tests replace it.
+	render func(*claimtemplate.ClaimTemplate, map[string]interface{}) (string, error)
 }
 
 // NewServer creates and initializes a new HTTP server
@@ -47,6 +57,8 @@ func NewServer(templatesDir string) (*Server, error) {
 	s := &Server{
 		router:    mux.NewRouter(),
 		templates: templateMap,
+		loadedAt:  time.Now(),
+		render:    app.RenderTemplateFromParams,
 	}
 
 	// Register routes
@@ -79,6 +91,8 @@ func NewServerWithTemplates(templates []*claimtemplate.ClaimTemplate) (*Server, 
 	s := &Server{
 		router:    mux.NewRouter(),
 		templates: templateMap,
+		loadedAt:  time.Now(),
+		render:    app.RenderTemplateFromParams,
 	}
 
 	// Register routes
@@ -103,27 +117,64 @@ func NewServerWithTemplates(templates []*claimtemplate.ClaimTemplate) (*Server, 
 	return s, nil
 }
 
-// registerRoutes sets up all API routes
-func (s *Server) registerRoutes() {
-	// Health check endpoint
-	s.router.HandleFunc("/health", s.healthCheck).Methods(http.MethodGet)
+// SetBasePath serves the web UI and docs under prefix (already checked by
+// ParseBasePath) and rebuilds the routes. Call it before Start.
+func (s *Server) SetBasePath(prefix string) {
+	s.basePath = prefix
+	s.router = mux.NewRouter()
+	s.registerRoutes()
+	s.applyMiddleware()
+	s.http.Handler = s.router
+}
 
-	// Service metadata and docs
-	s.router.HandleFunc("/", s.rootInfo).Methods(http.MethodGet)
-	s.router.HandleFunc("/version", s.versionInfo).Methods(http.MethodGet)
-	s.router.HandleFunc("/openapi", s.serveOpenAPI).Methods(http.MethodGet)
-	s.router.HandleFunc("/openapi.yaml", s.serveOpenAPI).Methods(http.MethodGet)
-	s.router.HandleFunc("/docs", s.serveDocs).Methods(http.MethodGet)
+// registerRoutes sets up all routes. Without a base path everything answers
+// at the root, as before. With one, the portal forwards /<prefix>/... to the
+// service unchanged, so the UI, docs and API answer under the prefix; /health
+// and the API stay at the root too, for the portal's health check and for
+// in-cluster clients such as Backstage.
+func (s *Server) registerRoutes() {
+	s.registerServiceRoutes(s.router)
+	if s.basePath == "" {
+		s.registerUIRoutes(s.router)
+		return
+	}
+	prefixed := s.router.PathPrefix(s.basePath).Subrouter()
+	s.registerServiceRoutes(prefixed)
+	s.registerUIRoutes(prefixed)
+	s.router.Handle(s.basePath, http.RedirectHandler(s.basePath+"/", http.StatusMovedPermanently))
+}
+
+// registerServiceRoutes registers health, metadata and API endpoints.
+func (s *Server) registerServiceRoutes(r *mux.Router) {
+	// Health check endpoint
+	r.HandleFunc("/health", s.healthCheck).Methods(http.MethodGet)
+
+	// Service metadata
+	r.HandleFunc("/", s.rootInfo).Methods(http.MethodGet)
+	r.HandleFunc("/version", s.versionInfo).Methods(http.MethodGet)
+	r.HandleFunc("/openapi", s.serveOpenAPI).Methods(http.MethodGet)
+	r.HandleFunc("/openapi.yaml", s.serveOpenAPI).Methods(http.MethodGet)
 
 	// API endpoints
-	s.router.HandleFunc("/api/v1/claim-templates", s.listTemplates).Methods(http.MethodGet)
-	s.router.HandleFunc("/api/v1/claim-templates/{name}", s.getTemplate).Methods(http.MethodGet)
-	s.router.HandleFunc("/api/v1/claim-templates/{name}/order", s.orderClaim).Methods(http.MethodPost)
+	r.HandleFunc("/api/v1/claim-templates", s.listTemplates).Methods(http.MethodGet)
+	r.HandleFunc("/api/v1/claim-templates/{name}", s.getTemplate).Methods(http.MethodGet)
+	r.HandleFunc("/api/v1/claim-templates/{name}/order", s.orderClaim).Methods(http.MethodPost)
 
 	// Optional test-only routes (enable with ENABLE_TEST_ROUTES=1)
 	if os.Getenv("ENABLE_TEST_ROUTES") == "1" || os.Getenv("ENABLE_TEST_ROUTES") == "true" {
-		s.router.HandleFunc("/__test/panic", s.panicTest).Methods(http.MethodGet)
+		r.HandleFunc("/__test/panic", s.panicTest).Methods(http.MethodGet)
 	}
+}
+
+// registerUIRoutes registers the browser-facing pages: docs and the web UI.
+// Their URLs carry the base path, so they only answer under it.
+func (s *Server) registerUIRoutes(r *mux.Router) {
+	r.HandleFunc("/docs", s.serveDocs).Methods(http.MethodGet)
+	r.Handle("/ui", http.RedirectHandler(s.basePath+"/ui/", http.StatusMovedPermanently))
+	r.HandleFunc("/ui/", s.uiIndex).Methods(http.MethodGet)
+	r.HandleFunc("/ui/templates/{name}", s.uiTemplate).Methods(http.MethodGet)
+	r.HandleFunc("/ui/templates/{name}/render", s.uiRender).Methods(http.MethodPost)
+	r.PathPrefix("/ui/static/").Handler(http.StripPrefix(s.basePath+"/ui/", http.FileServerFS(uiStatic)))
 }
 
 // applyMiddleware applies middleware to all routes
@@ -175,6 +226,7 @@ func (s *Server) UpdateTemplates(templates []*claimtemplate.ClaimTemplate) {
 	}
 	s.mu.Lock()
 	s.templates = m
+	s.loadedAt = time.Now()
 	s.mu.Unlock()
 }
 
@@ -187,6 +239,7 @@ func (s *Server) UpdateTemplatesAndFunctions(templates []*claimtemplate.ClaimTem
 	s.mu.Lock()
 	s.templates = m
 	s.functions = reg
+	s.loadedAt = time.Now()
 	s.mu.Unlock()
 }
 
@@ -237,8 +290,13 @@ func (s *Server) healthCheck(w http.ResponseWriter, r *http.Request) {
 	_, _ = fmt.Fprintf(w, `{"status":"healthy","timestamp":"%s"}`, time.Now().Format(time.RFC3339))
 }
 
-// rootInfo returns a minimal service index with useful links
+// rootInfo returns a minimal service index with useful links. A browser
+// (Accept: text/html) is sent to the web UI instead.
 func (s *Server) rootInfo(w http.ResponseWriter, r *http.Request) {
+	if strings.Contains(r.Header.Get("Accept"), "text/html") {
+		http.Redirect(w, r, s.basePath+"/ui/", http.StatusFound)
+		return
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	_, _ = fmt.Fprintf(w, `{
@@ -251,7 +309,8 @@ func (s *Server) rootInfo(w http.ResponseWriter, r *http.Request) {
 				"/api/v1/claim-templates/{name}",
 				"/api/v1/claim-templates/{name}/order",
 				"/openapi.yaml",
-				"/docs"
+				"/docs",
+				"/ui/"
 			]
 		}`, version.Version)
 }
@@ -293,9 +352,9 @@ func (s *Server) serveDocs(w http.ResponseWriter, r *http.Request) {
 		<script src="https://cdn.jsdelivr.net/npm/redoc@next/bundles/redoc.standalone.js"></script>
 	</head>
 	<body>
-		<redoc spec-url="/openapi.yaml"></redoc>
+		<redoc spec-url="%s/openapi.yaml"></redoc>
 	</body>
-</html>`)
+</html>`, html.EscapeString(s.basePath))
 }
 
 // panicTest intentionally panics to test error handler and logging

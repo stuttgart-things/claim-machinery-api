@@ -19,11 +19,14 @@ _httpRouteAnnotations = option("config.httpRouteAnnotations") or {}
 _templateProfile = option("config.templateProfile")
 _templateProfiles = option("config.templateProfiles") or []
 _extraEnvVars = option("config.extraEnvVars") or {}
+_basePath = option("config.basePath")
 
 # Config instance with command-line overrides
 config: schema.ClaimMachineryAPI = schema.ClaimMachineryAPI {
     if _image:
         image = _image
+    if _basePath:
+        basePath = _basePath
     if _namespace:
         namespace = _namespace
     if _ingressEnabled:
