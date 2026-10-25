@@ -1,3 +1,10 @@
+# [0.24.0](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.23.0...v0.24.0) (2026-10-25)
+
+
+### Features
+
+* **ui:** preview without notification; compact header inside sthings-portal ([#118](https://github.com/stuttgart-things/claim-machinery-api/issues/118)) ([949df49](https://github.com/stuttgart-things/claim-machinery-api/commit/949df491973822c3af7da26f1dec8d5cdc6c91c2))
+
 # [0.23.0](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.22.1...v0.23.0) (2026-10-25)
 
 
