@@ -41,11 +41,14 @@ const randomValue = "__random__"
 
 // uiPage is what every UI page gets: the prefix for its URLs and the footer.
 type uiPage struct {
-	Title    string
-	Base     string
-	Version  string
-	LoadedAt string
-	Count    int
+	Title string
+	Base  string
+	// PortalTheme links the portal's design tokens: the request came
+	// through sthings-portal (X-Forwarded-Prefix).
+	PortalTheme bool
+	Version     string
+	LoadedAt    string
+	Count       int
 }
 
 type uiIndexData struct {
@@ -85,15 +88,16 @@ type uiResultData struct {
 	Notified bool
 }
 
-func (s *Server) page(title string) uiPage {
+func (s *Server) page(r *http.Request, title string) uiPage {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return uiPage{
-		Title:    title,
-		Base:     s.basePath,
-		Version:  version.Version,
-		LoadedAt: s.loadedAt.Format(time.RFC3339),
-		Count:    len(s.templates),
+		PortalTheme: r.Header.Get("X-Forwarded-Prefix") != "",
+		Title:       title,
+		Base:        s.basePath,
+		Version:     version.Version,
+		LoadedAt:    s.loadedAt.Format(time.RFC3339),
+		Count:       len(s.templates),
 	}
 }
 
@@ -106,7 +110,7 @@ func (s *Server) renderUI(w http.ResponseWriter, name string, data any) {
 
 // uiIndex lists the templates, filterable by text and tag in the browser.
 func (s *Server) uiIndex(w http.ResponseWriter, r *http.Request) {
-	data := uiIndexData{uiPage: s.page("Templates")}
+	data := uiIndexData{uiPage: s.page(r, "Templates")}
 	tags := map[string]bool{}
 	for _, t := range s.getTemplateMap() {
 		data.Templates = append(data.Templates, t)
@@ -132,7 +136,7 @@ func (s *Server) uiTemplate(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	data := uiTemplateData{uiPage: s.page(tmpl.Metadata.Name), Template: tmpl}
+	data := uiTemplateData{uiPage: s.page(r, tmpl.Metadata.Name), Template: tmpl}
 	for _, p := range tmpl.Spec.Parameters {
 		if p.Hidden {
 			data.Hidden++

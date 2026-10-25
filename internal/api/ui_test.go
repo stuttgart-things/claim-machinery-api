@@ -283,3 +283,20 @@ func TestAPIOrderNotifies(t *testing.T) {
 		t.Fatal("the order endpoint sent no notification")
 	}
 }
+
+func TestUIPortalEmbedding(t *testing.T) {
+	s, _ := newUITestServer(t, "/claims")
+
+	for _, path := range []string{"/claims/ui/", "/claims/ui/templates/vm"} {
+		plain := serve(s, http.MethodGet, path, nil).Body.String()
+		assert.Contains(t, plain, `classList.add('hr-embedded')`, path)
+		assert.Contains(t, plain, `class="embedded-sub"`, path)
+		assert.NotContains(t, plain, "homerun2-tokens.css", "%s: tokens only through the portal", path)
+
+		portal := serve(s, http.MethodGet, path, nil, "X-Forwarded-Prefix", "/claims").Body.String()
+		assert.Contains(t, portal, `<link rel="stylesheet" href="/static/homerun2-tokens.css">`, path)
+	}
+	css := serve(s, http.MethodGet, "/claims/ui/static/ui.css", nil).Body.String()
+	assert.Contains(t, css, ":where(:root)")
+	assert.Contains(t, css, ".hr-embedded .bar")
+}

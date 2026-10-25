@@ -215,6 +215,10 @@ set `BASE_PATH` (e.g. `/claims`, KCL `config.basePath`): UI, docs and API
 then answer under the prefix, which the portal forwards unchanged.
 `/health` and `/api/v1/…` stay at the root as well, so in-cluster clients
 such as Backstage keep their URL.
+Inside the portal's frame the UI drops its brand and footer and shows one
+compact line (the portal names the service); a request through the portal
+(`X-Forwarded-Prefix`) links the portal's design tokens
+(`/static/homerun2-tokens.css`), which the UI's colours are built on.
 
 ## Usage
 
