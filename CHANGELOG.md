@@ -1,3 +1,10 @@
+# [0.23.0](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.22.1...v0.23.0) (2026-10-25)
+
+
+### Features
+
+* web UI and BASE_PATH for sthings-portal ([#117](https://github.com/stuttgart-things/claim-machinery-api/issues/117)) ([0ce5326](https://github.com/stuttgart-things/claim-machinery-api/commit/0ce5326f1336b78525f6792819657a23c31ac74a))
+
 ## [0.22.1](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.22.0...v0.22.1) (2026-10-24)
 
 
