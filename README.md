@@ -83,6 +83,7 @@ The server loads templates from `tests/profile.yaml` by default and listens on p
 | `/version` | GET | Build version metadata |
 | `/openapi.yaml` | GET | OpenAPI specification |
 | `/docs` | GET | OpenAPI documentation (Redoc UI) |
+| `/ui/` | GET | Web UI: browse templates, fill in the generated form, render (a browser opening `/` lands here) |
 
 ### List Templates
 
@@ -194,6 +195,25 @@ curl http://localhost:8080/health
 curl http://localhost:8080/version
 # {"version":"dev","commit":"none","buildDate":"unknown"}
 ```
+
+### Web UI
+
+`/ui/` lists the templates (search and tag filter) and generates an order
+form from each template's `spec.parameters`: `enum` → select (plus
+"random" with `allowRandom`), `multiselect` → checkboxes, `boolean` →
+true/false, everything else a text field with `pattern`/`minLength`/`maxLength`
+checks. `hidden` parameters keep their defaults, an empty field falls back to
+the default or the profile function (`valueFrom`). **Render** goes through
+the same code path as `POST …/order` (including the homerun notification) and
+shows the YAML with copy and download. Values are passed as strings, like
+the interactive CLI. Secrets are not part of the form — they are encrypted
+client-side and never pass through the API.
+
+Behind [sthings-portal](https://github.com/stuttgart-things/sthings-portal/issues/23)
+set `BASE_PATH` (e.g. `/claims`, KCL `config.basePath`): UI, docs and API
+then answer under the prefix, which the portal forwards unchanged.
+`/health` and `/api/v1/…` stay at the root as well, so in-cluster clients
+such as Backstage keep their URL.
 
 ## Usage
 

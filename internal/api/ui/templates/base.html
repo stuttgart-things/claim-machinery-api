@@ -1,0 +1,30 @@
+{{define "head"}}<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{.Title}} · claim machinery</title>
+    <link rel="stylesheet" href="{{.Base}}/ui/static/ui.css">
+    <script src="{{.Base}}/ui/static/htmx.min.js"></script>
+</head>
+<body>
+{{end}}
+
+{{define "nav"}}
+<header class="bar">
+    <a class="brand" href="{{.Base}}/ui/">claim machinery</a>
+    <nav>
+        <a href="{{.Base}}/ui/">templates</a>
+        <a href="{{.Base}}/docs">api docs</a>
+    </nav>
+</header>
+{{end}}
+
+{{define "footer"}}
+<footer>
+    <span>version {{.Version}}</span>
+    <span>{{.Count}} templates · loaded {{.LoadedAt}}</span>
+</footer>
+</body>
+</html>
+{{end}}

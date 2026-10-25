@@ -2,6 +2,8 @@
 Schema definition for claim-machinery-api deployment configuration
 """
 
+import regex
+
 schema ClaimMachineryAPI:
     """Configuration for claim-machinery-api Kubernetes deployment"""
 
@@ -45,6 +47,10 @@ schema ClaimMachineryAPI:
     templateProfilePath: str = "/app/config/profile.yaml"
     templateProfile: str = ""  # YAML content for template profile (mounted as file)
     port: str = "8080"
+    # Prefix of the web UI, docs and API behind sthings-portal, e.g. "/claims"
+    # (BASE_PATH). Empty serves them at the root; /health and /api/v1 stay at
+    # the root either way.
+    basePath: str = ""
     logFormat: str = "text"
     debug: bool = False
 
@@ -69,3 +75,4 @@ schema ClaimMachineryAPI:
         servicePort >= 1 and servicePort <= 65535, "servicePort must be valid"
         containerPort >= 1 and containerPort <= 65535, "containerPort must be valid"
         len(templateProfiles) > 0, "templateProfiles must contain at least one entry"
+        not basePath or regex.match(basePath, r"^(/[A-Za-z0-9._~-]+)+$"), "basePath must be empty or /segment[/segment...] without a trailing slash"

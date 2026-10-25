@@ -1,0 +1,54 @@
+/* claim-machinery-api web UI — dark, like the sthings-portal shell. */
+:root {
+    --bg: #0f1117;
+    --panel: #171a23;
+    --line: #2a2f3d;
+    --text: #e6e8ee;
+    --muted: #8b93a7;
+    --accent: #818cf8;
+    --error: #f87171;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.5 system-ui, sans-serif; }
+a { color: var(--accent); text-decoration: none; }
+code, pre { font-family: var(--mono); font-size: 13px; }
+.bar { display: flex; align-items: center; gap: 24px; padding: 12px 24px; border-bottom: 1px solid var(--line); background: var(--panel); }
+.brand { color: var(--text); font-weight: 600; letter-spacing: .02em; }
+.bar nav { display: flex; gap: 16px; }
+main { max-width: 960px; margin: 0 auto; padding: 24px 16px; }
+h1 { margin: 4px 0 8px; font-size: 24px; }
+.lead { color: var(--muted); margin: 0 0 8px; }
+.meta, .crumbs, .note, .hint, small { color: var(--muted); }
+small { display: block; margin-top: 4px; font-size: 13px; }
+.filters { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 16px; }
+input, select { width: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--text); font: inherit; }
+input:invalid:not(:placeholder-shown) { border-color: var(--error); }
+#search { max-width: 320px; }
+.tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.tag { padding: 2px 8px; border: 1px solid var(--line); border-radius: 999px; background: none; color: var(--muted); font-size: 12px; cursor: default; }
+button.tag { cursor: pointer; }
+.tag.active { border-color: var(--accent); color: var(--accent); }
+.tag.profile { border-style: dashed; }
+.cards { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+.card a { display: block; height: 100%; padding: 16px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); color: var(--text); }
+.card a:hover { border-color: var(--accent); }
+.card h2 { margin: 0 0 4px; font-size: 16px; }
+.card code { color: var(--muted); }
+.card p { color: var(--muted); margin: 8px 0; }
+.empty { color: var(--muted); }
+.order { display: grid; gap: 16px; margin: 24px 0; padding: 20px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); }
+.field > label { display: block; margin-bottom: 6px; font-weight: 500; }
+.req { color: var(--error); }
+.choices { display: flex; flex-wrap: wrap; gap: 12px; }
+.choice { display: flex; gap: 6px; align-items: center; }
+.choice input { width: auto; }
+.actions { display: flex; gap: 8px; align-items: center; }
+button { padding: 8px 16px; border: 1px solid var(--accent); border-radius: 6px; background: var(--accent); color: #0f1117; font: inherit; font-weight: 600; cursor: pointer; }
+.result button { background: none; color: var(--accent); }
+.htmx-indicator { display: none; color: var(--muted); }
+.htmx-request .htmx-indicator, .htmx-request.htmx-indicator { display: inline; }
+.result pre { margin: 12px 0 0; padding: 16px; overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); }
+.error { padding: 12px 16px; border: 1px solid var(--error); border-radius: 8px; color: var(--error); }
+.error p { margin: 4px 0 0; white-space: pre-wrap; }
+footer { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; max-width: 960px; margin: 0 auto; padding: 16px; color: var(--muted); font-size: 12px; }

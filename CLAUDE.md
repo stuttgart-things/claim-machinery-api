@@ -65,6 +65,7 @@ internal/
 - `GET /api/v1/claim-templates/{name}` - Get specific template
 - `POST /api/v1/claim-templates/{name}/order` - Render template with `{"parameters": {...}}` body
 - `GET /health`, `GET /version`, `GET /docs`, `GET /openapi.yaml`
+- `GET /ui/` - web UI (`internal/api/ui.go`, templates and vendored htmx embedded from `internal/api/ui/`); renders through `Server.order`, the same path as the order endpoint
 
 Responses use Kubernetes-style format with `apiVersion: api.claim-machinery.io/v1alpha1` and `kind` fields.
 
@@ -73,6 +74,7 @@ Responses use Kubernetes-style format with `apiVersion: api.claim-machinery.io/v
 | Variable | Purpose | Default |
 |---|---|---|
 | `PORT` | HTTP server port | `8080` |
+| `BASE_PATH` | Prefix of UI, docs and API behind sthings-portal (e.g. `/claims`); `/health` and `/api/v1` also stay at the root | - |
 | `TEMPLATES_DIR` | Local template directory | - |
 | `TEMPLATE_PROFILE_PATH` | Profile YAML path | - |
 | `DEBUG` | Enable debug logging (`1`/`true`/`yes`) | off |

@@ -19,6 +19,8 @@ configMap = {
         TEMPLATES_DIR: config.templatesDir
         PORT: config.port
         LOG_FORMAT: config.logFormat
+        if config.basePath:
+            BASE_PATH: config.basePath
         if len(config.templateProfiles) > 0:
             TEMPLATE_PROFILE_PATH: config.templateProfilePath
         if config.debug:

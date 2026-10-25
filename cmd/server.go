@@ -45,6 +45,7 @@ func runServer(cmd *cobra.Command, args []string) error {
 		name, desc, fallback string
 	}{
 		{"PORT", "HTTP server port", "8080"},
+		{"BASE_PATH", "Prefix of UI/docs/API behind sthings-portal", "-"},
 		{"TEMPLATES_DIR", "Local template directory", "-"},
 		{"TEMPLATE_PROFILE_PATH", "Profile YAML path", "-"},
 		{"ENABLE_TEMPLATES_DIR", "Enable template dir loading", "false"},
@@ -96,6 +97,11 @@ func runServer(cmd *cobra.Command, args []string) error {
 	printEndpoint("GET ", "/api/v1/claim-templates", "List templates")
 	printEndpoint("GET ", "/api/v1/claim-templates/{name}", "Get template details")
 	printEndpoint("POST", "/api/v1/claim-templates/{name}/order", "Render template")
+	basePath, err := api.ParseBasePath(os.Getenv("BASE_PATH"))
+	if err != nil {
+		log.Fatalf("invalid BASE_PATH: %v", err)
+	}
+	printEndpoint("GET ", basePath+"/ui/", "Web UI")
 
 	// --- Configuration -----------------------------------------------------------
 	printSection("⚙️  Configuration")
@@ -118,7 +124,6 @@ func runServer(cmd *cobra.Command, args []string) error {
 	}
 
 	var server *api.Server
-	var err error
 	importSources := make(map[string]string) // template name -> import path
 
 	if len(profilePaths) == 0 {
@@ -165,6 +170,10 @@ func runServer(cmd *cobra.Command, args []string) error {
 	}
 	if err != nil {
 		log.Fatalf("failed to create server: %v", err)
+	}
+	if basePath != "" {
+		server.SetBasePath(basePath)
+		printKV("base-path", basePath)
 	}
 
 	// --- Templates summary -------------------------------------------------------
