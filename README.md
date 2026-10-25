@@ -203,9 +203,10 @@ form from each template's `spec.parameters`: `enum` → select (plus
 "random" with `allowRandom`), `multiselect` → checkboxes, `boolean` →
 true/false, everything else a text field with `pattern`/`minLength`/`maxLength`
 checks. `hidden` parameters keep their defaults, an empty field falls back to
-the default or the profile function (`valueFrom`). **Render** goes through
-the same code path as `POST …/order` (including the homerun notification) and
-shows the YAML with copy and download. Values are passed as strings, like
+the default or the profile function (`valueFrom`). **Preview** only renders;
+**Order** goes through the same code path as `POST …/order`, including the
+homerun notification. Both show the YAML with copy and download; Enter in a
+field previews. Values are passed as strings, like
 the interactive CLI. Secrets are not part of the form — they are encrypted
 client-side and never pass through the API.
 

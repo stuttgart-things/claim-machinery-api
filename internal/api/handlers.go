@@ -8,7 +8,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/stuttgart-things/claim-machinery-api/internal/app"
 	"github.com/stuttgart-things/claim-machinery-api/internal/claimtemplate"
-	"github.com/stuttgart-things/claim-machinery-api/internal/notify"
+	notifypkg "github.com/stuttgart-things/claim-machinery-api/internal/notify"
 )
 
 // OrderRequest represents a claim order request
@@ -102,7 +102,7 @@ func (s *Server) orderClaim(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rendered, err := s.order(tmpl, req.Parameters, req.Author)
+	rendered, err := s.order(tmpl, req.Parameters, req.Author, true)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		_ = json.NewEncoder(w).Encode(map[string]string{
@@ -126,9 +126,10 @@ func (s *Server) orderClaim(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewEncoder(w).Encode(response)
 }
 
-// order renders a template with the user's parameters and sends the homerun
-// notification. The API's order endpoint and the web UI both go through it.
-func (s *Server) order(tmpl *claimtemplate.ClaimTemplate, userInput map[string]interface{}, author string) (string, error) {
+// order renders a template with the user's parameters and, when notify is
+// set, sends the homerun notification. The API's order endpoint and the web
+// UI both go through it; the UI's preview renders without notifying.
+func (s *Server) order(tmpl *claimtemplate.ClaimTemplate, userInput map[string]interface{}, author string, notify bool) (string, error) {
 	// Debug: log received parameters
 	debugParams("Received from request", userInput)
 
@@ -149,10 +150,13 @@ func (s *Server) order(tmpl *claimtemplate.ClaimTemplate, userInput map[string]i
 	if err != nil {
 		return "", err
 	}
+	if !notify {
+		return rendered, nil
+	}
 
 	// Send homerun notification asynchronously
 	go func() {
-		msg := notify.BuildOrderMessage(
+		msg := notifypkg.BuildOrderMessage(
 			tmpl.Metadata.Name,
 			tmpl.Metadata.Title,
 			tmpl.Spec.Type,
@@ -162,7 +166,7 @@ func (s *Server) order(tmpl *claimtemplate.ClaimTemplate, userInput map[string]i
 			params,
 			author,
 		)
-		notify.SendHomerunMessage(s.homerun, msg)
+		s.sendNotification(msg)
 	}()
 
 	return rendered, nil

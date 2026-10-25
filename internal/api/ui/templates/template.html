@@ -42,11 +42,13 @@
         {{with .Template.Spec.Secrets}}<p class="note">This template also creates {{len .}} secret{{if gt (len .) 1}}s{{end}}. Secret values are encrypted on the client (SOPS) and never pass through the API, so they are not part of this form.</p>{{end}}
         {{if .Hidden}}<p class="note">{{.Hidden}} platform parameter{{if gt .Hidden 1}}s{{end}} use{{if eq .Hidden 1}}s{{end}} {{if gt .Hidden 1}}their{{else}}its{{end}} default.</p>{{end}}
         <div class="field">
-            <label for="p-_author">Author <span class="hint">(optional, for the notification)</span></label>
+            <label for="p-_author">Author <span class="hint">(optional, named in the order notification)</span></label>
             <input id="p-_author" name="_author" type="text">
         </div>
         <div class="actions">
-            <button type="submit">Render</button>
+            <button type="submit" name="_action" value="preview" class="secondary">Preview</button>
+            <button type="submit" name="_action" value="order">Order</button>
+            <span class="hint">Preview only renders. Order renders and sends the homerun notification.</span>
             <span id="rendering" class="htmx-indicator">rendering…</span>
         </div>
     </form>

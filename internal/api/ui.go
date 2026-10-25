@@ -79,6 +79,10 @@ type uiResultData struct {
 	Name     string
 	Rendered string
 	Error    string
+	// Ordered is false for a preview. Notified tells whether the order
+	// went to homerun (notifications can be off).
+	Ordered  bool
+	Notified bool
 }
 
 func (s *Server) page(title string) uiPage {
@@ -173,8 +177,10 @@ func newUIField(p claimtemplate.Parameter) uiField {
 }
 
 // uiRender renders the template with the submitted form through the same
-// path as POST /api/v1/claim-templates/{name}/order. It answers with an HTML
-// fragment for htmx, the error included, so the form stays as it is.
+// path as POST /api/v1/claim-templates/{name}/order. The form's "order"
+// button orders (homerun notification included); "preview", and anything
+// else, only renders. It answers with an HTML fragment for htmx, the error
+// included, so the form stays as it is.
 func (s *Server) uiRender(w http.ResponseWriter, r *http.Request) {
 	tmpl, ok := s.getTemplateMap()[mux.Vars(r)["name"]]
 	if !ok {
@@ -187,10 +193,12 @@ func (s *Server) uiRender(w http.ResponseWriter, r *http.Request) {
 		s.renderUI(w, "result.html", result)
 		return
 	}
+	result.Ordered = r.PostForm.Get("_action") == "order"
 	params, err := formParams(tmpl, r.PostForm)
 	if err == nil {
-		result.Rendered, err = s.order(tmpl, params, strings.TrimSpace(r.PostForm.Get("_author")))
+		result.Rendered, err = s.order(tmpl, params, strings.TrimSpace(r.PostForm.Get("_author")), result.Ordered)
 	}
+	result.Notified = result.Ordered && err == nil && s.homerun.Enabled
 	if err != nil {
 		result.Error = err.Error()
 	}
