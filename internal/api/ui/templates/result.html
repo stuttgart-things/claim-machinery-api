@@ -3,6 +3,9 @@
 {{else}}
 <div class="result">
     <div class="actions">
+        {{if not .Ordered}}<span class="badge">preview · no notification</span>
+        {{else if .Notified}}<span class="badge ordered">ordered · notification sent</span>
+        {{else}}<span class="badge ordered">ordered · notifications are off</span>{{end}}
         <button type="button" data-copy>copy</button>
         <button type="button" data-download="{{.Name}}">download</button>
     </div>

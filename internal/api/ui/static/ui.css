@@ -1,16 +1,31 @@
-/* claim-machinery-api web UI — dark, like the sthings-portal shell. */
+/* claim-machinery-api web UI — dark, like the sthings-portal shell.
+ *
+ * Colours come from the portal's design tokens (--hr-*). The copy under
+ * :where(:root) is the standalone look; behind the portal the page links
+ * /static/homerun2-tokens.css, whose :root wins. */
+:where(:root) {
+    --hr-bg: #0f1117;
+    --hr-surface: #171a23;
+    --hr-card: #171a23;
+    --hr-border: #2a2f3d;
+    --hr-text: #e6e8ee;
+    --hr-muted: #8b93a7;
+    --hr-accent: #818cf8;
+    --hr-error: #f87171;
+    --hr-font: system-ui, sans-serif;
+}
 :root {
-    --bg: #0f1117;
-    --panel: #171a23;
-    --line: #2a2f3d;
-    --text: #e6e8ee;
-    --muted: #8b93a7;
-    --accent: #818cf8;
-    --error: #f87171;
+    --bg: var(--hr-bg);
+    --panel: var(--hr-card);
+    --line: var(--hr-border);
+    --text: var(--hr-text);
+    --muted: var(--hr-muted);
+    --accent: var(--hr-accent);
+    --error: var(--hr-error);
     --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 * { box-sizing: border-box; }
-body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.5 system-ui, sans-serif; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.5 var(--hr-font); }
 a { color: var(--accent); text-decoration: none; }
 code, pre { font-family: var(--mono); font-size: 13px; }
 .bar { display: flex; align-items: center; gap: 24px; padding: 12px 24px; border-bottom: 1px solid var(--line); background: var(--panel); }
@@ -45,10 +60,22 @@ button.tag { cursor: pointer; }
 .choice input { width: auto; }
 .actions { display: flex; gap: 8px; align-items: center; }
 button { padding: 8px 16px; border: 1px solid var(--accent); border-radius: 6px; background: var(--accent); color: #0f1117; font: inherit; font-weight: 600; cursor: pointer; }
-.result button { background: none; color: var(--accent); }
+.result button, button.secondary { background: none; color: var(--accent); }
+.badge { padding: 2px 8px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); font-size: 12px; }
+.badge.ordered { border-color: var(--accent); color: var(--accent); }
 .htmx-indicator { display: none; color: var(--muted); }
 .htmx-request .htmx-indicator, .htmx-request.htmx-indicator { display: inline; }
 .result pre { margin: 12px 0 0; padding: 16px; overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); }
 .error { padding: 12px 16px; border: 1px solid var(--error); border-radius: 8px; color: var(--error); }
 .error p { margin: 4px 0 0; white-space: pre-wrap; }
 footer { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; max-width: 960px; margin: 0 auto; padding: 16px; color: var(--muted); font-size: 12px; }
+
+/* Inside the portal's frame (hr-embedded, set before the first paint): the
+   portal shows the service name, so the bar becomes one compact line —
+   subtitle left, actions right — and the footer goes. */
+.embedded-sub { display: none; }
+.hr-embedded .bar { justify-content: space-between; min-height: 44px; padding: 6px 16px; background: var(--hr-surface); border-bottom: 1px solid var(--hr-border); }
+.hr-embedded .brand { display: none; }
+.hr-embedded .embedded-sub { display: inline; font-size: 13px; color: var(--muted); }
+.hr-embedded .bar nav { font-size: 12px; }
+.hr-embedded footer { display: none; }

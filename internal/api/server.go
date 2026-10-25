@@ -38,6 +38,9 @@ type Server struct {
 	// render turns a template and its merged parameters into YAML. It is
 	// app.RenderTemplateFromParams (KCL from OCI); tests replace it.
 	render func(*claimtemplate.ClaimTemplate, map[string]interface{}) (string, error)
+	// sendNotification delivers an order's homerun message with the homerun
+	// config (notify.SendHomerunMessage). Tests replace it.
+	sendNotification func(notify.HomerunMessage)
 }
 
 // NewServer creates and initializes a new HTTP server
@@ -60,6 +63,7 @@ func NewServer(templatesDir string) (*Server, error) {
 		loadedAt:  time.Now(),
 		render:    app.RenderTemplateFromParams,
 	}
+	s.sendNotification = func(msg notify.HomerunMessage) { notify.SendHomerunMessage(s.homerun, msg) }
 
 	// Register routes
 	s.registerRoutes()
@@ -94,6 +98,7 @@ func NewServerWithTemplates(templates []*claimtemplate.ClaimTemplate) (*Server, 
 		loadedAt:  time.Now(),
 		render:    app.RenderTemplateFromParams,
 	}
+	s.sendNotification = func(msg notify.HomerunMessage) { notify.SendHomerunMessage(s.homerun, msg) }
 
 	// Register routes
 	s.registerRoutes()

@@ -7,10 +7,12 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stuttgart-things/claim-machinery-api/internal/claimtemplate"
+	"github.com/stuttgart-things/claim-machinery-api/internal/notify"
 )
 
 func intPtr(i int) *int { return &i }
@@ -110,6 +112,8 @@ func TestUITemplateForm(t *testing.T) {
 		`maxlength="15"`,
 		`placeholder="from clusterbookIP"`,
 		"1 platform parameter uses its default",
+		`<button type="submit" name="_action" value="preview" class="secondary">Preview</button>`,
+		`<button type="submit" name="_action" value="order">Order</button>`,
 	} {
 		assert.Contains(t, body, want)
 	}
@@ -212,4 +216,87 @@ func TestParseBasePath(t *testing.T) {
 		_, err := ParseBasePath(in)
 		assert.Error(t, err, in)
 	}
+}
+
+// captureNotifications replaces the homerun sender; order sends from a
+// goroutine, so messages arrive on the channel.
+func captureNotifications(s *Server) chan notify.HomerunMessage {
+	sent := make(chan notify.HomerunMessage, 4)
+	s.homerun.Enabled = true
+	s.sendNotification = func(msg notify.HomerunMessage) { sent <- msg }
+	return sent
+}
+
+func TestUIPreviewDoesNotNotify(t *testing.T) {
+	for name, form := range map[string]url.Values{
+		"preview button": {"vmName": {"web-1"}, "_action": {"preview"}},
+		"no action":      {"vmName": {"web-1"}},
+	} {
+		t.Run(name, func(t *testing.T) {
+			s, got := newUITestServer(t, "")
+			sent := captureNotifications(s)
+
+			body := serve(s, http.MethodPost, "/ui/templates/vm/render", form).Body.String()
+			assert.Contains(t, body, "name: &lt;web-1&gt;")
+			assert.Contains(t, body, "preview · no notification")
+			assert.NotNil(t, *got, "a preview renders")
+			// order returns before it would start the notification goroutine,
+			// so nothing can still be on its way here.
+			assert.Empty(t, sent)
+		})
+	}
+}
+
+func TestUIOrderNotifies(t *testing.T) {
+	s, _ := newUITestServer(t, "")
+	sent := captureNotifications(s)
+
+	body := serve(s, http.MethodPost, "/ui/templates/vm/render", url.Values{
+		"vmName": {"web-1"}, "_action": {"order"}, "_author": {"patrick"},
+	}).Body.String()
+	assert.Contains(t, body, "ordered · notification sent")
+	select {
+	case msg := <-sent:
+		assert.Contains(t, msg.Author, "patrick")
+	case <-time.After(2 * time.Second):
+		t.Fatal("order sent no notification")
+	}
+
+	s.homerun.Enabled = false
+	body = serve(s, http.MethodPost, "/ui/templates/vm/render", url.Values{"vmName": {"web-1"}, "_action": {"order"}}).Body.String()
+	assert.Contains(t, body, "ordered · notifications are off")
+}
+
+func TestAPIOrderNotifies(t *testing.T) {
+	s, _ := newUITestServer(t, "")
+	sent := captureNotifications(s)
+
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/claim-templates/vm/order",
+		strings.NewReader(`{"parameters":{"vmName":"web-1"},"author":"patrick"}`))
+	w := httptest.NewRecorder()
+	s.router.ServeHTTP(w, req)
+	require.Equal(t, http.StatusOK, w.Code)
+	select {
+	case msg := <-sent:
+		assert.Contains(t, msg.Author, "patrick")
+	case <-time.After(2 * time.Second):
+		t.Fatal("the order endpoint sent no notification")
+	}
+}
+
+func TestUIPortalEmbedding(t *testing.T) {
+	s, _ := newUITestServer(t, "/claims")
+
+	for _, path := range []string{"/claims/ui/", "/claims/ui/templates/vm"} {
+		plain := serve(s, http.MethodGet, path, nil).Body.String()
+		assert.Contains(t, plain, `classList.add('hr-embedded')`, path)
+		assert.Contains(t, plain, `class="embedded-sub"`, path)
+		assert.NotContains(t, plain, "homerun2-tokens.css", "%s: tokens only through the portal", path)
+
+		portal := serve(s, http.MethodGet, path, nil, "X-Forwarded-Prefix", "/claims").Body.String()
+		assert.Contains(t, portal, `<link rel="stylesheet" href="/static/homerun2-tokens.css">`, path)
+	}
+	css := serve(s, http.MethodGet, "/claims/ui/static/ui.css", nil).Body.String()
+	assert.Contains(t, css, ":where(:root)")
+	assert.Contains(t, css, ".hr-embedded .bar")
 }

@@ -3,8 +3,10 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script>if (window.self !== window.top) document.documentElement.classList.add('hr-embedded')</script>
     <title>{{.Title}} · claim machinery</title>
     <link rel="stylesheet" href="{{.Base}}/ui/static/ui.css">
+    {{if .PortalTheme}}<link rel="stylesheet" href="/static/homerun2-tokens.css">{{end}}
     <script src="{{.Base}}/ui/static/htmx.min.js"></script>
 </head>
 <body>
@@ -13,6 +15,7 @@
 {{define "nav"}}
 <header class="bar">
     <a class="brand" href="{{.Base}}/ui/">claim machinery</a>
+    <span class="embedded-sub">Claim templates</span>
     <nav>
         <a href="{{.Base}}/ui/">templates</a>
         <a href="{{.Base}}/docs">api docs</a>
