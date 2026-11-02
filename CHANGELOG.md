@@ -1,3 +1,10 @@
+# [0.25.0](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.24.0...v0.25.0) (2026-11-02)
+
+
+### Features
+
+* **auth:** optional ZITADEL JWT check for claim orders ([#120](https://github.com/stuttgart-things/claim-machinery-api/issues/120)) ([9f9ee31](https://github.com/stuttgart-things/claim-machinery-api/commit/9f9ee3172056e6dd29dbbde528170b88c597aa58)), closes [#119](https://github.com/stuttgart-things/claim-machinery-api/issues/119) [stuttgart-things/stuttgart-things#4262](https://github.com/stuttgart-things/stuttgart-things/issues/4262)
+
 # [0.24.0](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.23.0...v0.24.0) (2026-10-25)
 
 
