@@ -82,6 +82,8 @@ type uiResultData struct {
 	Name     string
 	Rendered string
 	Error    string
+	// ErrorTitle heads the error; empty means "Render failed".
+	ErrorTitle string
 	// Ordered is false for a preview. Notified tells whether the order
 	// went to homerun (notifications can be off).
 	Ordered  bool
@@ -198,9 +200,32 @@ func (s *Server) uiRender(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	result.Ordered = r.PostForm.Get("_action") == "order"
+	author := strings.TrimSpace(r.PostForm.Get("_author"))
+	if result.Ordered && s.auth != nil {
+		// Ordering needs an identity: a bearer token, or the user
+		// sthings-portal forwards (AUTH_TRUST_FORWARDED_USER). The preview
+		// stays open.
+		id, err := s.auth.AuthorizeUI(r)
+		if err != nil {
+			status := authStatus(err)
+			log.Printf("[auth] ui order %s refused (%d): %v", tmpl.Metadata.Name, status, err)
+			result.ErrorTitle = "Order not allowed"
+			result.Error = publicAuthError(err)
+			// htmx swaps only 2xx answers: it gets the error fragment with
+			// 200, any other client the real status.
+			if r.Header.Get("HX-Request") != "true" {
+				w.Header().Set("Content-Type", "text/html; charset=utf-8")
+				w.WriteHeader(status)
+			}
+			s.renderUI(w, "result.html", result)
+			return
+		}
+		author = orderAuthor(author, &id)
+		logOrder(tmpl.Metadata.Name, &id, author)
+	}
 	params, err := formParams(tmpl, r.PostForm)
 	if err == nil {
-		result.Rendered, err = s.order(tmpl, params, strings.TrimSpace(r.PostForm.Get("_author")), result.Ordered)
+		result.Rendered, err = s.order(tmpl, params, author, result.Ordered)
 	}
 	result.Notified = result.Ordered && err == nil && s.homerun.Enabled
 	if err != nil {

@@ -19,6 +19,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/stuttgart-things/claim-machinery-api/internal/api"
 	"github.com/stuttgart-things/claim-machinery-api/internal/app"
+	"github.com/stuttgart-things/claim-machinery-api/internal/auth"
 	"github.com/stuttgart-things/claim-machinery-api/internal/claimtemplate"
 	"github.com/stuttgart-things/claim-machinery-api/internal/functions"
 	"github.com/stuttgart-things/claim-machinery-api/internal/notify"
@@ -56,6 +57,12 @@ func runServer(cmd *cobra.Command, args []string) error {
 		{"HOMERUN_URL", "Omni-pitcher base URL", "-"},
 		{"HOMERUN_AUTH_TOKEN", "Bearer token for pitcher", "-"},
 		{"ENABLE_TEST_ROUTES", "Enable test endpoints", "off"},
+		{auth.EnvIssuer, "OIDC issuer; set = order needs a JWT", "- (off)"},
+		{auth.EnvAudience, "Accepted token audiences (comma list)", "-"},
+		{auth.EnvCAFile, "PEM bundle trusted for the issuer", "-"},
+		{auth.EnvOrderRoles, "Roles allowed to order (comma list)", "- (any)"},
+		{auth.EnvRolesClaim, "Claim holding the roles", auth.ZitadelRolesClaim},
+		{auth.EnvTrustForwardedUser, "UI order trusts sthings-portal's X-Forwarded-User", "false"},
 	}
 	printEnvTable(envVars)
 
@@ -189,6 +196,43 @@ func runServer(cmd *cobra.Command, args []string) error {
 		printKV("homerun", fmt.Sprintf("✅ enabled (%s)", homerunCfg.URL))
 	} else {
 		printKV("homerun", "⏸️  disabled")
+	}
+
+	// --- Order auth --------------------------------------------------------------
+	authCfg, err := auth.LoadConfig()
+	if err != nil {
+		log.Fatalf("invalid auth config: %v", err)
+	}
+	authenticator, err := auth.New(authCfg)
+	if err != nil {
+		log.Fatalf("invalid auth config: %v", err)
+	}
+	printSection("🔐 Order auth")
+	if authenticator == nil {
+		printKV("order", "⏸️  open (AUTH_OIDC_ISSUER not set)")
+		if authCfg.TrustForwardedUser || len(authCfg.OrderRoles) > 0 {
+			log.Printf("[auth] %s / %s have no effect without %s", auth.EnvTrustForwardedUser, auth.EnvOrderRoles, auth.EnvIssuer)
+		}
+	} else {
+		server.SetAuth(authenticator)
+		printKV("order", fmt.Sprintf("✅ bearer JWT of %s", authCfg.Issuer))
+		printKV("audience", strings.Join(authCfg.Audiences, ", "))
+		if len(authCfg.OrderRoles) > 0 {
+			printKV("roles", strings.Join(authCfg.OrderRoles, ", "))
+		} else {
+			printKV("roles", "any valid token")
+		}
+		if authCfg.TrustForwardedUser {
+			printKV("ui order", "✅ trusts X-Forwarded-User (sthings-portal)")
+		} else {
+			printKV("ui order", "bearer token only")
+		}
+		// Discover early for the log; a failure is retried on the first order.
+		go func() {
+			if _, err := authenticator.Discover(); err != nil {
+				log.Printf("[auth] discovery of %s failed (retried on order): %v", authCfg.Issuer, err)
+			}
+		}()
 	}
 
 	// --- Auto-reload ------------------------------------------------------------
