@@ -1,5 +1,5 @@
 {{if .Error}}
-<div class="error" role="alert"><strong>Render failed</strong><p>{{.Error}}</p></div>
+<div class="error" role="alert"><strong>{{or .ErrorTitle "Render failed"}}</strong><p>{{.Error}}</p></div>
 {{else}}
 <div class="result">
     <div class="actions">

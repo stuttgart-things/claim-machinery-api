@@ -42,6 +42,15 @@ paths:
   /api/v1/claim-templates/{name}/order:
     post:
       summary: Render template with parameters
+      description: |
+        Renders the template and sends the homerun notification. When the
+        service runs with AUTH_OIDC_ISSUER, a JWT of that issuer is required
+        (aud in AUTH_OIDC_AUDIENCE, optionally one of AUTH_ORDER_ROLES); the
+        token's user becomes the author when none is given. Without
+        AUTH_OIDC_ISSUER the endpoint is open.
+      security:
+        - {}
+        - bearerAuth: []
       parameters:
         - in: path
           name: name
@@ -67,3 +76,22 @@ paths:
           description: Not Found
           content:
             application/json: {}
+        '401':
+          description: Bearer token missing or invalid (only with AUTH_OIDC_ISSUER)
+          content:
+            application/json: {}
+        '403':
+          description: Token lacks one of AUTH_ORDER_ROLES
+          content:
+            application/json: {}
+        '503':
+          description: Identity provider unreachable
+          content:
+            application/json: {}
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: ZITADEL-issued JWT (access or ID token) of the lab issuer

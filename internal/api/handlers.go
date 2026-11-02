@@ -76,6 +76,11 @@ func (s *Server) getTemplate(w http.ResponseWriter, r *http.Request) {
 
 // orderClaim renders a claim template with provided parameters
 func (s *Server) orderClaim(w http.ResponseWriter, r *http.Request) {
+	// With order auth on, the bearer token is checked before anything else.
+	id, ok := s.authorizeAPIOrder(w, r)
+	if !ok {
+		return
+	}
 	w.Header().Set("Content-Type", "application/json")
 
 	// Extract template name from URL
@@ -102,7 +107,9 @@ func (s *Server) orderClaim(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rendered, err := s.order(tmpl, req.Parameters, req.Author, true)
+	author := orderAuthor(req.Author, id)
+	logOrder(name, id, author)
+	rendered, err := s.order(tmpl, req.Parameters, author, true)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		_ = json.NewEncoder(w).Encode(map[string]string{

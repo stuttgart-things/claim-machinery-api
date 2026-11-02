@@ -50,6 +50,7 @@ internal/
   render/                KCL execution engine (OCI-based via CLI, file-based via Go SDK)
   claimtemplate/         Domain model: ClaimTemplate struct, YAML deserialization
   notify/                Homerun2 (omni-pitcher) notification sender
+  auth/                  Optional order auth: ZITADEL JWT via go-oidc, portal-forwarded identity for UI orders; authtest/ is a fake issuer for tests
   version/               Build metadata (set via ldflags)
 ```
 
@@ -84,6 +85,12 @@ Responses use Kubernetes-style format with `apiVersion: api.claim-machinery.io/v
 | `HOMERUN_URL` | Omni-pitcher base URL (e.g. `https://pitcher.example.com`) | - |
 | `HOMERUN_AUTH_TOKEN` | Bearer token for pitcher `/pitch` endpoint | - |
 | `RELOAD_INTERVAL` | Profile auto-reload interval (e.g. `2m`, `30s`, `0` to disable) | `2m` |
+| `AUTH_OIDC_ISSUER` | OIDC issuer (ZITADEL); set = `POST .../order` and the UI's Order need a JWT (`internal/auth`) | - (off) |
+| `AUTH_OIDC_AUDIENCE` | Accepted `aud` values, comma list (required with the issuer) | - |
+| `AUTH_OIDC_CA_FILE` | PEM bundle trusted for the issuer | - |
+| `AUTH_ORDER_ROLES` | Roles allowed to order (comma list); empty = any valid token | - |
+| `AUTH_ROLES_CLAIM` | Claim holding the roles | `urn:zitadel:iam:org:project:roles` |
+| `AUTH_TRUST_FORWARDED_USER` | UI order accepts sthings-portal's `X-Forwarded-User`/`X-Forwarded-Groups` (never the API) | `false` |
 
 ## Testing Conventions
 

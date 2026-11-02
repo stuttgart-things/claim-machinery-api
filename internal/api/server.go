@@ -15,6 +15,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/stuttgart-things/claim-machinery-api/internal/app"
+	"github.com/stuttgart-things/claim-machinery-api/internal/auth"
 	"github.com/stuttgart-things/claim-machinery-api/internal/claimtemplate"
 	"github.com/stuttgart-things/claim-machinery-api/internal/functions"
 	"github.com/stuttgart-things/claim-machinery-api/internal/notify"
@@ -30,6 +31,8 @@ type Server struct {
 	importSources map[string]string // template name -> import path (file or URL)
 	functions     *functions.Registry
 	homerun       notify.HomerunConfig
+	// auth, when set, guards ordering (API and UI order); nil leaves it open.
+	auth *auth.Authenticator
 	// loadedAt is when the current template set was loaded (start or reload).
 	loadedAt time.Time
 	// basePath is the prefix the UI answers under behind sthings-portal

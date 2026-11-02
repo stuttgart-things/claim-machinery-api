@@ -220,6 +220,97 @@ compact line (the portal names the service); a request through the portal
 (`X-Forwarded-Prefix`) links the portal's design tokens
 (`/static/homerun2-tokens.css`), which the UI's colours are built on.
 
+### Order authentication (optional)
+
+`POST /api/v1/claim-templates/{name}/order` is the only endpoint with side
+effects (homerun notification, profile functions calling other services). It
+can require a JWT of an OIDC issuer — the lab ZITADEL. **Off by default**:
+without `AUTH_OIDC_ISSUER` ordering stays open, exactly as before. Read
+endpoints, the UI's preview, `/health`, `/version` and `/openapi*` never need
+a token.
+
+| Variable | Purpose | Default |
+|---|---|---|
+| `AUTH_OIDC_ISSUER` | Issuer URL, e.g. `https://zitadel.sthings-infra.4sthings.tiab.ssc.sva.de`. Set = ordering needs `Authorization: Bearer <JWT>` | - (off) |
+| `AUTH_OIDC_AUDIENCE` | Accepted `aud` values, comma list (ZITADEL project ID and/or client IDs); required with the issuer | - |
+| `AUTH_OIDC_CA_FILE` | PEM bundle trusted for the issuer in addition to the system roots (the labs' ZITADEL use Vault PKI certificates; mount e.g. trust-manager's bundle) | - |
+| `AUTH_ORDER_ROLES` | Roles of which the orderer needs one (comma list, e.g. `portal-admin`); empty = any valid token | - |
+| `AUTH_ROLES_CLAIM` | Claim holding the roles (list, comma string, or object whose keys are the roles) | `urn:zitadel:iam:org:project:roles` (project-specific `urn:zitadel:iam:org:project:<id>:roles` is read too) |
+| `AUTH_TRUST_FORWARDED_USER` | `true`: the web UI's **Order** accepts the identity sthings-portal forwards (`X-Forwarded-User`, roles from `X-Forwarded-Groups`) | `false` |
+
+With the issuer set, the order endpoint checks the token with
+[`github.com/coreos/go-oidc/v3`](https://github.com/coreos/go-oidc): signature
+against the issuer's JWKS (OIDC discovery, keys cached and refreshed on
+rotation), `iss`, `exp`, `nbf`, and that `aud` contains one of
+`AUTH_OIDC_AUDIENCE`. Answers: **401** (with `WWW-Authenticate: Bearer`)
+without or with an invalid token, **403** when `AUTH_ORDER_ROLES` is set and
+the token has none of them, **503** when the issuer cannot be reached. The
+issuer is contacted lazily, so an unreachable ZITADEL does not stop the
+service from starting. The token's `preferred_username` (else `email`, else
+`sub`) becomes the order's `author` when the request names none, and every
+authorized order is logged with user and subject.
+
+```bash
+curl -X POST https://claims.example/api/v1/claim-templates/volumeclaim/order \
+  -H "Authorization: Bearer $CLAIM_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"parameters": {"namespace": "production"}}'
+```
+
+**Getting a token (ZITADEL).** Callers without a user (CLI in pipelines,
+Backstage backend, workflows) use a *machine user* in the project's org:
+
+1. Create a machine user and set its **Access Token Type to JWT** (the
+   default, *Bearer*, issues opaque tokens this service cannot verify).
+2. Grant it a project role (e.g. the one in `AUTH_ORDER_ROLES`).
+3. Get a token with client credentials (client secret of the machine user)
+   or the JWT profile grant (key file), asking for the project audience and
+   roles:
+
+```bash
+curl -s -u "$CLIENT_ID:$CLIENT_SECRET" "$ISSUER/oauth/v2/token" \
+  -d grant_type=client_credentials \
+  -d scope="openid profile urn:zitadel:iam:org:project:id:$PROJECT_ID:aud urn:zitadel:iam:org:projects:roles" \
+  | jq -r .access_token
+```
+
+The `…:aud` scope puts the project ID into `aud` (use it as
+`AUTH_OIDC_AUDIENCE`); roles only show up in the token when the project
+asserts them (*Assert Roles on Authentication*) or the roles scope is asked
+for. A personal access token of a machine user works as well, as long as the
+user's token type is JWT.
+
+**Web UI.** sthings-portal logs users in with ZITADEL but forwards only
+`X-Forwarded-User` / `X-Forwarded-Groups` (after removing whatever the client
+sent under these names), no token. So with auth on, the UI's **Order**
+(`/ui/templates/{name}/render`, `_action=order`) accepts:
+
+- a bearer token, checked like the API's, or
+- with `AUTH_TRUST_FORWARDED_USER=true`, the forwarded user; with
+  `AUTH_ORDER_ROLES` one of the roles must be in `X-Forwarded-Groups` (the
+  portal fills it from ZITADEL's roles claim unless it is configured with
+  another groups claim);
+- anything else gets *Order not allowed* (401/403; htmx gets the fragment
+  with 200 so it is shown) and nothing is rendered or sent. **Preview**
+  stays open.
+
+`POST …/order` never looks at the forwarded headers. They are only
+trustworthy when every path to the UI goes through the portal: the service's
+own host (flux `route-api` component) exposes only `/api`, `/health`,
+`/version` and `/openapi*`, so `/ui` is not reachable there; any other route
+or ingress to the Service must not expose `/ui` or must remove
+`X-Forwarded-User` / `X-Forwarded-Groups` (Gateway API
+`RequestHeaderModifier`). Pods inside the cluster can still send the headers
+to the Service directly; restrict ingress to the portal and the gateway with a
+NetworkPolicy where that matters.
+
+**Rollout.** Enable per cluster only after every caller sends a token (claims
+CLI, Backstage actions, k2n, …), otherwise their orders get 401. Order: create
+the machine users and roles, release the callers with token support, then set
+`AUTH_OIDC_ISSUER`, `AUTH_OIDC_AUDIENCE`, `AUTH_OIDC_CA_FILE` and
+`AUTH_TRUST_FORWARDED_USER=true` on the cluster. Removing `AUTH_OIDC_ISSUER`
+switches back.
+
 ## Usage
 
 ### API Server (Default)
@@ -268,6 +359,13 @@ export LOG_FORMAT=json   # default: text
 export ENABLE_HOMERUN=true
 export HOMERUN_URL=https://pitcher.example.com
 export HOMERUN_AUTH_TOKEN=your-bearer-token
+
+# Order authentication (optional, see "Order authentication")
+export AUTH_OIDC_ISSUER=https://zitadel.example.com
+export AUTH_OIDC_AUDIENCE=123456789012345678   # ZITADEL project ID / client IDs
+export AUTH_OIDC_CA_FILE=/etc/ssl/trust-bundle/ca.crt
+export AUTH_ORDER_ROLES=portal-admin
+export AUTH_TRUST_FORWARDED_USER=true          # UI order behind sthings-portal
 ```
 
 **Priority:** Flag > Environment Variable > Default
