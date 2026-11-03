@@ -294,7 +294,7 @@ func runRender(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	result, err := render.RenderKCLFromOCI(tmpl.Spec.Source, tmpl.Spec.Tag, stringParams)
+	result, err := render.RenderKCLFromOCI(tmpl.Spec.Source, tmpl.Spec.Tag, app.TypedParams(tmpl, stringParams))
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "\n❌ Rendering failed: %v\n", err)
 		os.Exit(1)

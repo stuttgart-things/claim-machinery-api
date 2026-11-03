@@ -2,6 +2,7 @@ package render
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
@@ -157,9 +158,27 @@ func convertToOptionStrings(answers map[string]interface{}) []string {
 	return options
 }
 
+// QuotedString is a parameter value that must reach KCL as a string. A bare
+// `-D key=value` lets kcl parse the value, so "1.30" arrives as the float 1.3,
+// "007" as the int 7 and "true" as a bool (#127). app.TypedParams wraps the
+// values of `type: string` parameters in it.
+type QuotedString string
+
+// kclStringLiteral returns s as a double-quoted KCL string literal. JSON's
+// escapes (\", \\, \n, \uXXXX) are valid in KCL strings.
+func kclStringLiteral(s string) string {
+	var b bytes.Buffer
+	enc := json.NewEncoder(&b)
+	enc.SetEscapeHTML(false)
+	_ = enc.Encode(s) // a string always encodes
+	return strings.TrimSuffix(b.String(), "\n")
+}
+
 // formatKCLFlag formats a key-value pair as a KCL -D flag string.
 func formatKCLFlag(key string, value interface{}) string {
 	switch v := value.(type) {
+	case QuotedString:
+		return fmt.Sprintf("%s=%s", key, kclStringLiteral(string(v)))
 	case []string:
 		return fmt.Sprintf("%s=%s", key, formatKCLList(v))
 	case []interface{}:
