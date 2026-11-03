@@ -139,37 +139,30 @@ func runServer(cmd *cobra.Command, args []string) error {
 			importSources[t.Metadata.Name] = templatesDir
 		}
 	} else {
-		profileResults, err2 := app.LoadMultipleProfiles(profilePath)
-		if err2 != nil {
-			log.Fatalf("failed to load templates from profiles: %v", err2)
-		}
-
-		// Merge dir templates + all profile results
-		merged := make(map[string]*claimtemplate.ClaimTemplate)
-		for _, t := range dirTemplates {
-			merged[t.Metadata.Name] = t
-			importSources[t.Metadata.Name] = templatesDir
-		}
-
-		profileTemplates, mergedReg, profileSources, err2 := app.MergeProfileResults(profileResults)
-		if err2 != nil {
-			log.Fatalf("failed to merge profile results: %v", err2)
-		}
-		for _, t := range profileTemplates {
-			merged[t.Metadata.Name] = t
-			if src, ok := profileSources[t.Metadata.Name]; ok {
-				importSources[t.Metadata.Name] = src
+		final, mergedReg, sources, err2 := loadMergedTemplates(enableTemplatesDir, templatesDir, profilePath)
+		switch {
+		case err2 == nil:
+			importSources = sources
+			server, err = api.NewServerWithTemplates(final)
+			if err == nil {
+				server.SetFunctions(mergedReg)
 			}
-		}
-
-		final := make([]*claimtemplate.ClaimTemplate, 0, len(merged))
-		for _, t := range merged {
-			final = append(final, t)
-		}
-
-		server, err = api.NewServerWithTemplates(final)
-		if err == nil {
-			server.SetFunctions(mergedReg)
+		case !anyRemote(profilePaths):
+			// Local profiles only: a failure is a config error, not a blip.
+			log.Fatalf("failed to load templates from profiles: %v", err2)
+		default:
+			// A remote profile could not be fetched (e.g. DNS not up yet after a
+			// CNI restart). Start without it, report not-ready on /ready, and
+			// keep retrying in the background instead of exiting into a crash
+			// loop (#107).
+			log.Printf("⚠️  failed to load templates from profiles: %v (starting without them, retrying in background)", err2)
+			for _, t := range dirTemplates {
+				importSources[t.Metadata.Name] = templatesDir
+			}
+			server, err = api.NewServerWithTemplates(dirTemplates)
+			if err == nil {
+				server.SetProfilesPending(true)
+			}
 		}
 	}
 	if err == nil {
@@ -275,10 +268,16 @@ func runServer(cmd *cobra.Command, args []string) error {
 		}
 	}()
 
-	// Start config auto-reload watcher for profile changes
-	if len(profilePaths) > 0 && pollInterval > 0 {
-		go watchProfilesForReload(stopCh, server, profilePath, enableTemplatesDir, templatesDir, pollInterval)
-	}
+	// Load pending profiles in the background, then start the config
+	// auto-reload watcher for profile changes.
+	go func() {
+		if server.ProfilesPending() && !retryProfileLoad(stopCh, server, enableTemplatesDir, templatesDir, profilePath, initialRetryBackoff, maxRetryBackoff) {
+			return
+		}
+		if len(profilePaths) > 0 && pollInterval > 0 {
+			watchProfilesForReload(stopCh, server, profilePath, enableTemplatesDir, templatesDir, pollInterval)
+		}
+	}()
 
 	// Wait for interrupt signal
 	sigChan := make(chan os.Signal, 1)
@@ -321,6 +320,50 @@ func resolveReloadInterval() time.Duration {
 		return 2 * time.Minute
 	}
 	return d
+}
+
+// Backoff of the background profile load when the start-up load failed.
+const (
+	initialRetryBackoff = 2 * time.Second
+	maxRetryBackoff     = 30 * time.Second
+)
+
+// anyRemote reports whether one of the profile paths is an HTTP(S) URL.
+func anyRemote(paths []string) bool {
+	for _, p := range paths {
+		if strings.HasPrefix(p, "http://") || strings.HasPrefix(p, "https://") {
+			return true
+		}
+	}
+	return false
+}
+
+// retryProfileLoad loads the profiles with exponential backoff until it
+// succeeds or stopCh closes, swaps the result into the server and clears its
+// pending state. It returns false when stopped before a load succeeded.
+func retryProfileLoad(stopCh <-chan struct{}, server *api.Server, enableTemplatesDir bool, templatesDir, profilePath string, backoff, maxBackoff time.Duration) bool {
+	for attempt := 1; ; attempt++ {
+		select {
+		case <-stopCh:
+			return false
+		case <-time.After(backoff):
+		}
+		templates, reg, sources, err := loadMergedTemplates(enableTemplatesDir, templatesDir, profilePath)
+		if err != nil {
+			backoff *= 2
+			if backoff > maxBackoff {
+				backoff = maxBackoff
+			}
+			log.Printf("[profiles] load attempt %d failed: %v (next in %s)", attempt, err, backoff)
+			continue
+		}
+		server.UpdateTemplatesAndFunctions(templates, reg)
+		server.SetImportSources(sources)
+		server.SetProfilesPending(false)
+		printSection(fmt.Sprintf("📦 Templates (%d loaded after %d retries)", len(templates), attempt))
+		printTemplateTable(server.TemplateSources())
+		return true
+	}
 }
 
 // watchProfilesForReload periodically checks all profiles for changes and
