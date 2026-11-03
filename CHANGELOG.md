@@ -1,3 +1,17 @@
+# [0.26.0](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.25.0...v0.26.0) (2026-11-03)
+
+
+### Bug Fixes
+
+* **app:** keep ports in profile URLs in SplitProfilePaths ([#125](https://github.com/stuttgart-things/claim-machinery-api/issues/125)) ([113bbbf](https://github.com/stuttgart-things/claim-machinery-api/commit/113bbbf0c9739983dd8a94205da6a5dfeb4bef91)), closes [#124](https://github.com/stuttgart-things/claim-machinery-api/issues/124)
+* **deps:** update module github.com/go-jose/go-jose/v4 to v4.1.8 ([#121](https://github.com/stuttgart-things/claim-machinery-api/issues/121)) ([9c04ee5](https://github.com/stuttgart-things/claim-machinery-api/commit/9c04ee57658144d9bf57b1325384198b2ecce354))
+* **server:** keep running when a remote profile is unreachable at startup ([#123](https://github.com/stuttgart-things/claim-machinery-api/issues/123)) ([0b421d5](https://github.com/stuttgart-things/claim-machinery-api/commit/0b421d5642ea846ea1d96727d1f74a94abba3054)), closes [stuttgart-things/flux#611](https://github.com/stuttgart-things/flux/issues/611) [#107](https://github.com/stuttgart-things/claim-machinery-api/issues/107)
+
+
+### Features
+
+* **profiles:** machinery profile for LabDA vSphere + LabUL Proxmox ([#126](https://github.com/stuttgart-things/claim-machinery-api/issues/126)) ([a9d87a8](https://github.com/stuttgart-things/claim-machinery-api/commit/a9d87a81ce55a957c1d59e49273d0e226edc9236)), closes [#107](https://github.com/stuttgart-things/claim-machinery-api/issues/107)
+
 # [0.25.0](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.24.0...v0.25.0) (2026-11-02)
 
 
