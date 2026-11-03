@@ -1,0 +1,9 @@
+---
+# Profile for the machinery cluster (LabDA vSphere). machinery orders VMs on
+# LabDA vSphere (NativeVsphereVM) and LabUL Proxmox (NativeProxmoxVM), both
+# rendered by the xr-native-vm KCL module, plus volume claims.
+name: machinery
+templates:
+  - https://raw.githubusercontent.com/stuttgart-things/kcl/refs/heads/main/crossplane/xr-native-vm/templates/native-vm-labda-vsphere.yaml
+  - https://raw.githubusercontent.com/stuttgart-things/kcl/refs/heads/main/crossplane/xr-native-vm/templates/native-vm-labul-proxmox.yaml
+  - https://raw.githubusercontent.com/stuttgart-things/kcl/refs/heads/main/crossplane/claim-xplane-volumeclaim/templates/volumeclaim-simple.yaml

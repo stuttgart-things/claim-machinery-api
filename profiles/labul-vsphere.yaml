@@ -1,4 +1,7 @@
 ---
+# DEPRECATED: LabUL vSphere is decommissioned; use machinery.yaml (same
+# templates). Kept so deployments that still pin CLAIM_MACHINERY_PROFILE_NAME
+# to labul-vsphere keep working; remove once none do.
 # VM templates render NativeVsphereVM / NativeProxmoxVM (xr-native-vm), the
 # kinds machinery runs. Dropped: vspherevm-simple / vspherevm-labul (VsphereVM
 # via OpenTofu, no instances), harborproject and storageplatform-nfs/-openebs
