@@ -370,7 +370,7 @@ export AUTH_TRUST_FORWARDED_USER=true          # UI order behind sthings-portal
 
 **Priority:** Flag > Environment Variable > Default
 
-> **New in v0.6.0:** `TEMPLATE_PROFILE_PATH` supports HTTP/HTTPS URLs. The profile is downloaded at startup before parsing template entries.
+> **New in v0.6.0:** `TEMPLATE_PROFILE_PATH` supports HTTP/HTTPS URLs. The profile is downloaded at startup before parsing template entries. URLs with a port (e.g. `http://svc.ns:8080/profile.yaml`, `http://[::1]:8080/profile.yaml`) work in a colon-separated list too; the `:<port>` stays part of the URL.
 
 <details>
 <summary><strong>Template Profile</strong></summary>

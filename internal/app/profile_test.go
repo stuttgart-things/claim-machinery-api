@@ -129,6 +129,32 @@ func TestSplitProfilePaths_WithURLs(t *testing.T) {
 	require.Equal(t, []string{"https://example.com/profile.yaml", "testdata/profile.yaml", "http://local/p.yaml"}, paths)
 }
 
+func TestSplitProfilePaths_Table(t *testing.T) {
+	tests := []struct {
+		name string
+		raw  string
+		want []string
+	}{
+		{"url with port", "https://host:8443/p.yaml", []string{"https://host:8443/p.yaml"}},
+		{"two urls, first with port", "https://a:8443/p.yaml:https://b/q.yaml", []string{"https://a:8443/p.yaml", "https://b/q.yaml"}},
+		{"local, url with port, local", "local.yaml:http://host:8080/p.yaml:other.yaml", []string{"local.yaml", "http://host:8080/p.yaml", "other.yaml"}},
+		{"port without path", "http://host:8080", []string{"http://host:8080"}},
+		{"port without path, then local", "http://host:8080:other.yaml", []string{"http://host:8080", "other.yaml"}},
+		{"ipv6 literal with port", "http://[::1]:8080/p.yaml", []string{"http://[::1]:8080/p.yaml"}},
+		{"ipv6 literal without port, then local", "http://[::1]/p.yaml:a.yaml", []string{"http://[::1]/p.yaml", "a.yaml"}},
+		{"httptest style url", "http://127.0.0.1:34567/profile.yaml", []string{"http://127.0.0.1:34567/profile.yaml"}},
+		{"cluster service url", "http://svc.ns:8080/p.yaml:a.yaml", []string{"http://svc.ns:8080/p.yaml", "a.yaml"}},
+		{"local paths unchanged", "a.yaml:b.yaml", []string{"a.yaml", "b.yaml"}},
+		{"urls without port unchanged", "https://a/p.yaml:http://b/q.yaml", []string{"https://a/p.yaml", "http://b/q.yaml"}},
+		{"url then non-port name", "http://host:a.yaml", []string{"http://host", "a.yaml"}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			require.Equal(t, tt.want, SplitProfilePaths(tt.raw))
+		})
+	}
+}
+
 func TestSplitProfilePaths_Empty(t *testing.T) {
 	paths := SplitProfilePaths("")
 	require.Nil(t, paths)
