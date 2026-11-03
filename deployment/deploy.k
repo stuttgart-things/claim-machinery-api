@@ -77,7 +77,7 @@ deployment = {
                         }
                         readinessProbe: {
                             httpGet: {
-                                path: "/health"
+                                path: "/ready"
                                 port: "http"
                             }
                             initialDelaySeconds: 5

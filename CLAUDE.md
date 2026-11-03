@@ -65,7 +65,7 @@ internal/
 - `GET /api/v1/claim-templates` - List all templates
 - `GET /api/v1/claim-templates/{name}` - Get specific template
 - `POST /api/v1/claim-templates/{name}/order` - Render template with `{"parameters": {...}}` body
-- `GET /health`, `GET /version`, `GET /docs`, `GET /openapi.yaml`
+- `GET /health` (liveness, always 200), `GET /ready` (503 while a remote profile that failed at startup is still being retried), `GET /version`, `GET /docs`, `GET /openapi.yaml`
 - `GET /ui/` - web UI (`internal/api/ui.go`, templates and vendored htmx embedded from `internal/api/ui/`); renders through `Server.order`, the same path as the order endpoint; its Preview button passes `notify=false`, Order sends the homerun notification
 
 Responses use Kubernetes-style format with `apiVersion: api.claim-machinery.io/v1alpha1` and `kind` fields.

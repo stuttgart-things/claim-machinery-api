@@ -11,6 +11,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -35,6 +36,9 @@ type Server struct {
 	auth *auth.Authenticator
 	// loadedAt is when the current template set was loaded (start or reload).
 	loadedAt time.Time
+	// profilesPending is true while the configured profiles could not be
+	// loaded yet (e.g. network down at start); /ready answers 503 meanwhile.
+	profilesPending atomic.Bool
 	// basePath is the prefix the UI answers under behind sthings-portal
 	// ("" or e.g. "/claims"), see ParseBasePath and SetBasePath.
 	basePath string
@@ -156,6 +160,8 @@ func (s *Server) registerRoutes() {
 func (s *Server) registerServiceRoutes(r *mux.Router) {
 	// Health check endpoint
 	r.HandleFunc("/health", s.healthCheck).Methods(http.MethodGet)
+	// Readiness: 503 until the configured profiles are loaded
+	r.HandleFunc("/ready", s.readyCheck).Methods(http.MethodGet)
 
 	// Service metadata
 	r.HandleFunc("/", s.rootInfo).Methods(http.MethodGet)
@@ -291,11 +297,43 @@ func (s *Server) getTemplateMap() map[string]*claimtemplate.ClaimTemplate {
 	return t
 }
 
-// healthCheck returns server health status
+// SetProfilesPending marks whether the configured profiles are still missing
+// (true) or loaded (false). It drives /ready and the profiles field of /health.
+func (s *Server) SetProfilesPending(pending bool) {
+	s.profilesPending.Store(pending)
+}
+
+// ProfilesPending reports whether the configured profiles are still missing.
+func (s *Server) ProfilesPending() bool {
+	return s.profilesPending.Load()
+}
+
+func (s *Server) profilesState() string {
+	if s.ProfilesPending() {
+		return "pending"
+	}
+	return "loaded"
+}
+
+// healthCheck returns server health status. It is the liveness check and stays
+// 200 while profiles are pending, so a network blip at start does not turn into
+// a restart loop; readiness is /ready.
 func (s *Server) healthCheck(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	_, _ = fmt.Fprintf(w, `{"status":"healthy","timestamp":"%s"}`, time.Now().Format(time.RFC3339))
+	_, _ = fmt.Fprintf(w, `{"status":"healthy","profiles":"%s","timestamp":"%s"}`, s.profilesState(), time.Now().Format(time.RFC3339))
+}
+
+// readyCheck answers 200 once the configured profiles are loaded and 503 while
+// they are still pending.
+func (s *Server) readyCheck(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	status, state := http.StatusOK, "ready"
+	if s.ProfilesPending() {
+		status, state = http.StatusServiceUnavailable, "not-ready"
+	}
+	w.WriteHeader(status)
+	_, _ = fmt.Fprintf(w, `{"status":"%s","profiles":"%s","timestamp":"%s"}`, state, s.profilesState(), time.Now().Format(time.RFC3339))
 }
 
 // rootInfo returns a minimal service index with useful links. A browser
@@ -312,6 +350,7 @@ func (s *Server) rootInfo(w http.ResponseWriter, r *http.Request) {
 			"version": "%s",
 			"endpoints": [
 				"/health",
+				"/ready",
 				"/version",
 				"/api/v1/claim-templates",
 				"/api/v1/claim-templates/{name}",
@@ -345,7 +384,7 @@ func (s *Server) serveOpenAPI(w http.ResponseWriter, r *http.Request) {
 	// Fallback: minimal inline doc
 	w.Header().Set("Content-Type", "application/yaml")
 	w.WriteHeader(http.StatusOK)
-	_, _ = fmt.Fprintf(w, "openapi: 3.0.3\ninfo:\n  title: Claim Machinery API\n  version: 0.0.0\npaths:\n  /health:\n    get:\n      summary: Health check\n      responses:\n        '200':\n          description: OK\n  /api/v1/claim-templates:\n    get:\n      summary: List claim templates\n      responses:\n        '200':\n          description: OK\n  /api/v1/claim-templates/{name}:\n    get:\n      summary: Get template\n      parameters:\n        - in: path\n          name: name\n          required: true\n          schema:\n            type: string\n      responses:\n        '200':\n          description: OK\n  /api/v1/claim-templates/{name}/order:\n    post:\n      summary: Render template\n      parameters:\n        - in: path\n          name: name\n          required: true\n          schema:\n            type: string\n      requestBody:\n        content:\n          application/json:\n            schema:\n              type: object\n      responses:\n        '200':\n          description: OK\n")
+	_, _ = fmt.Fprintf(w, "openapi: 3.0.3\ninfo:\n  title: Claim Machinery API\n  version: 0.0.0\npaths:\n  /health:\n    get:\n      summary: Health check\n      responses:\n        '200':\n          description: OK\n  /ready:\n    get:\n      summary: Readiness (503 while profiles are pending)\n      responses:\n        '200':\n          description: Ready\n        '503':\n          description: Profiles not loaded yet\n  /api/v1/claim-templates:\n    get:\n      summary: List claim templates\n      responses:\n        '200':\n          description: OK\n  /api/v1/claim-templates/{name}:\n    get:\n      summary: Get template\n      parameters:\n        - in: path\n          name: name\n          required: true\n          schema:\n            type: string\n      responses:\n        '200':\n          description: OK\n  /api/v1/claim-templates/{name}/order:\n    post:\n      summary: Render template\n      parameters:\n        - in: path\n          name: name\n          required: true\n          schema:\n            type: string\n      requestBody:\n        content:\n          application/json:\n            schema:\n              type: object\n      responses:\n        '200':\n          description: OK\n")
 }
 
 // serveDocs serves a simple Redoc viewer for the OpenAPI spec

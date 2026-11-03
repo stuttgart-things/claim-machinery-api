@@ -188,3 +188,30 @@ func TestOrderClaim_InvalidBody(t *testing.T) {
 	// Assertions
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 }
+
+// While profiles are pending, /health stays 200 (liveness) and /ready is 503.
+func TestReadyCheckFollowsProfilesPending(t *testing.T) {
+	server, err := NewServer(testdataDir(t))
+	require.NoError(t, err)
+
+	get := func(path string) *httptest.ResponseRecorder {
+		w := httptest.NewRecorder()
+		server.router.ServeHTTP(w, httptest.NewRequest(http.MethodGet, path, nil))
+		return w
+	}
+
+	assert.Equal(t, http.StatusOK, get("/ready").Code)
+
+	server.SetProfilesPending(true)
+	w := get("/ready")
+	assert.Equal(t, http.StatusServiceUnavailable, w.Code)
+	assert.Contains(t, w.Body.String(), `"profiles":"pending"`)
+	h := get("/health")
+	assert.Equal(t, http.StatusOK, h.Code)
+	assert.Contains(t, h.Body.String(), `"profiles":"pending"`)
+
+	server.SetProfilesPending(false)
+	w = get("/ready")
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Contains(t, w.Body.String(), `"profiles":"loaded"`)
+}
