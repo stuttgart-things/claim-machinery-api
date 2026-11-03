@@ -370,7 +370,7 @@ export AUTH_TRUST_FORWARDED_USER=true          # UI order behind sthings-portal
 
 **Priority:** Flag > Environment Variable > Default
 
-> **New in v0.6.0:** `TEMPLATE_PROFILE_PATH` supports HTTP/HTTPS URLs. The profile is downloaded at startup before parsing template entries.
+> **New in v0.6.0:** `TEMPLATE_PROFILE_PATH` supports HTTP/HTTPS URLs. The profile is downloaded at startup before parsing template entries. URLs with a port (e.g. `http://svc.ns:8080/profile.yaml`, `http://[::1]:8080/profile.yaml`) work in a colon-separated list too; the `:<port>` stays part of the URL.
 
 > **Unreachable remote profile at startup:** if a profile URL cannot be fetched when the server starts (e.g. DNS not up yet after a CNI restart), the server does not exit. It starts with the templates directory only, retries the profiles in the background (backoff 2s up to 30s), and starts the auto-reload watcher once they are loaded. Meanwhile `GET /ready` answers `503` and `GET /health` stays `200` with `"profiles":"pending"`, so use `/health` for liveness and `/ready` for readiness. Local-only profile paths that fail to load still stop the server.
 

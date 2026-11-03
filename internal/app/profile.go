@@ -107,8 +107,9 @@ func MergeProfileResults(results []*ProfileResult) ([]*claimtemplate.ClaimTempla
 	return templates, functions.NewRegistry(allFuncDefs), importSources, nil
 }
 
-// splitProfilePaths splits a colon-separated list of profile paths.
-// Supports both local paths and URLs (colons in http:// and https:// are preserved).
+// SplitProfilePaths splits a colon-separated list of profile paths.
+// Supports both local paths and URLs (colons in http:// and https://, in a
+// host:port and in IPv6 literals are preserved).
 func SplitProfilePaths(raw string) []string {
 	raw = strings.TrimSpace(raw)
 	if raw == "" {
@@ -126,7 +127,7 @@ func SplitProfilePaths(raw string) []string {
 				scheme = "https://"
 			}
 			rest := remaining[len(scheme):]
-			idx := strings.Index(rest, ":")
+			idx := urlSeparatorIndex(rest)
 			if idx == -1 {
 				paths = append(paths, remaining)
 				break
@@ -153,6 +154,49 @@ func SplitProfilePaths(raw string) []string {
 		}
 	}
 	return cleaned
+}
+
+// urlSeparatorIndex returns the index of the colon in rest (a URL without its
+// scheme) that separates it from the next profile path, or -1 if there is none.
+// A colon inside an IPv6 literal ("[::1]") or one that introduces a port
+// (":<digits>" followed by "/", "?", "#", ":" or end of string) is part of the URL.
+func urlSeparatorIndex(rest string) int {
+	start := 0
+	if strings.HasPrefix(rest, "[") {
+		if end := strings.Index(rest, "]"); end != -1 {
+			start = end + 1
+		}
+	}
+	idx := strings.Index(rest[start:], ":")
+	if idx == -1 {
+		return -1
+	}
+	idx += start
+	if n := portLen(rest[idx+1:]); n > 0 {
+		after := idx + 1 + n
+		next := strings.Index(rest[after:], ":")
+		if next == -1 {
+			return -1
+		}
+		return after + next
+	}
+	return idx
+}
+
+// portLen returns the length of a leading port number in s, or 0 if s does not
+// start with digits followed by "/", "?", "#", ":" or end of string.
+func portLen(s string) int {
+	n := 0
+	for n < len(s) && s[n] >= '0' && s[n] <= '9' {
+		n++
+	}
+	if n == 0 {
+		return 0
+	}
+	if n == len(s) || strings.ContainsRune("/?#:", rune(s[n])) {
+		return n
+	}
+	return 0
 }
 
 // resolveProfileName returns the profile name from the YAML or derives it from the file path.
