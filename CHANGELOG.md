@@ -5,6 +5,13 @@
 
 * **auth:** identity-bound parameters and per-template order roles ([#122](https://github.com/stuttgart-things/claim-machinery-api/issues/122)) ([#129](https://github.com/stuttgart-things/claim-machinery-api/issues/129)) ([54221cc](https://github.com/stuttgart-things/claim-machinery-api/commit/54221ccbe48bf91ee622821b3f8f561947e1afc2))
 
+# [0.27.0](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.26.1...v0.27.0) (2026-11-04)
+
+
+### Features
+
+* **auth:** identity-bound parameters and per-template order roles ([#122](https://github.com/stuttgart-things/claim-machinery-api/issues/122)) ([#129](https://github.com/stuttgart-things/claim-machinery-api/issues/129)) ([54221cc](https://github.com/stuttgart-things/claim-machinery-api/commit/54221ccbe48bf91ee622821b3f8f561947e1afc2))
+
 ## [0.26.1](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.26.0...v0.26.1) (2026-11-04)
 
 
