@@ -138,7 +138,7 @@ func RenderTemplateWithFunctions(t *claimtemplate.ClaimTemplate, reg *functions.
 	}
 
 	// Render using KCL from OCI source
-	result, err := render.RenderKCLFromOCI(t.Spec.Source, t.Spec.Tag, params)
+	result, err := render.RenderKCLFromOCI(t.Spec.Source, t.Spec.Tag, TypedParams(t, params))
 	if err != nil {
 		return "", fmt.Errorf("rendering failed for template %s: %w", t.Metadata.Name, err)
 	}
@@ -150,10 +150,33 @@ func RenderTemplateWithFunctions(t *claimtemplate.ClaimTemplate, reg *functions.
 	return result, nil
 }
 
+// TypedParams returns params with the string values of the template's
+// `type: string` parameters wrapped in render.QuotedString, so kcl receives
+// them as strings and not as whatever they look like ("1.30" -> 1.3, #127).
+// Other values are untouched: booleans and numbers arrive from the web UI as
+// strings ("true") and must still be parsed by kcl. params is not modified.
+func TypedParams(t *claimtemplate.ClaimTemplate, params map[string]interface{}) map[string]interface{} {
+	isString := make(map[string]bool, len(t.Spec.Parameters))
+	for _, p := range t.Spec.Parameters {
+		if p.Type == "string" {
+			isString[p.Name] = true
+		}
+	}
+	out := make(map[string]interface{}, len(params))
+	for k, v := range params {
+		if s, ok := v.(string); ok && isString[k] {
+			out[k] = render.QuotedString(s)
+			continue
+		}
+		out[k] = v
+	}
+	return out
+}
+
 // RenderTemplateFromParams renders a claim template using pre-built parameter values.
 // Unlike RenderTemplate, this does not rebuild parameters from the template definition.
 func RenderTemplateFromParams(t *claimtemplate.ClaimTemplate, params map[string]interface{}) (string, error) {
-	result, err := render.RenderKCLFromOCI(t.Spec.Source, t.Spec.Tag, params)
+	result, err := render.RenderKCLFromOCI(t.Spec.Source, t.Spec.Tag, TypedParams(t, params))
 	if err != nil {
 		return "", fmt.Errorf("rendering failed for template %s: %w", t.Metadata.Name, err)
 	}
@@ -171,7 +194,7 @@ func RenderTemplateToFile(t *claimtemplate.ClaimTemplate, destination string) (s
 	params := BuildParameterValues(t)
 
 	// Render using KCL from OCI source
-	result, err := render.RenderKCLFromOCIToFile(t.Spec.Source, t.Spec.Tag, params, destination)
+	result, err := render.RenderKCLFromOCIToFile(t.Spec.Source, t.Spec.Tag, TypedParams(t, params), destination)
 	if err != nil {
 		log.Printf("⚠️  failed to render template %s: %v", t.Metadata.Name, err)
 		return result, err

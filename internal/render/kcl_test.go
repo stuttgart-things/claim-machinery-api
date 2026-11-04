@@ -322,3 +322,31 @@ func TestRenderKCLFromOCIToFile(t *testing.T) {
 	assert.NoError(t, err, "Expected to read output file")
 	assert.Equal(t, result, string(fileContent), "Expected file content to match returned YAML")
 }
+
+// String values that look like numbers, bools or null stay strings when
+// quoted (#127); other kinds are formatted as before.
+func TestFormatKCLFlag_QuotedString(t *testing.T) {
+	cases := []struct {
+		value interface{}
+		want  string
+	}{
+		{QuotedString("1.30"), `v="1.30"`},
+		{QuotedString("007"), `v="007"`},
+		{QuotedString("true"), `v="true"`},
+		{QuotedString("null"), `v="null"`},
+		{QuotedString("a,b"), `v="a,b"`},
+		{QuotedString("user:default/x"), `v="user:default/x"`},
+		{QuotedString(`say "hi" \o/`), `v="say \"hi\" \\o/"`},
+		{QuotedString("a<b&c"), `v="a<b&c"`},
+		{QuotedString("line1\nline2"), `v="line1\nline2"`},
+		{QuotedString(""), `v=""`},
+		// unchanged: raw strings, bools, numbers, lists
+		{"1.30", `v=1.30`},
+		{true, `v=true`},
+		{3, `v=3`},
+		{[]string{"a", "b"}, `v=["a","b"]`},
+	}
+	for _, c := range cases {
+		assert.Equal(t, c.want, formatKCLFlag("v", c.value), "value %#v", c.value)
+	}
+}
