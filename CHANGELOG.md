@@ -1,3 +1,10 @@
+## [0.26.1](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.26.0...v0.26.1) (2026-11-04)
+
+
+### Bug Fixes
+
+* **render:** pass string parameters to KCL as string literals ([#128](https://github.com/stuttgart-things/claim-machinery-api/issues/128)) ([ce5d1e1](https://github.com/stuttgart-things/claim-machinery-api/commit/ce5d1e174bdbf9fea07c9fd8db74f9682d1e567c)), closes [#127](https://github.com/stuttgart-things/claim-machinery-api/issues/127)
+
 # [0.26.0](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.25.0...v0.26.0) (2026-11-03)
 
 
