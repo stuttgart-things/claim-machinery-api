@@ -15,6 +15,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/gorilla/mux"
+	"github.com/stuttgart-things/claim-machinery-api/internal/auth"
 	"github.com/stuttgart-things/claim-machinery-api/internal/claimtemplate"
 	"github.com/stuttgart-things/claim-machinery-api/internal/version"
 )
@@ -201,11 +202,12 @@ func (s *Server) uiRender(w http.ResponseWriter, r *http.Request) {
 	}
 	result.Ordered = r.PostForm.Get("_action") == "order"
 	author := strings.TrimSpace(r.PostForm.Get("_author"))
+	var id *auth.Identity
 	if result.Ordered && s.auth != nil {
 		// Ordering needs an identity: a bearer token, or the user
 		// sthings-portal forwards (AUTH_TRUST_FORWARDED_USER). The preview
 		// stays open.
-		id, err := s.auth.AuthorizeUI(r)
+		login, err := s.auth.AuthorizeUI(r)
 		if err != nil {
 			status := authStatus(err)
 			log.Printf("[auth] ui order %s refused (%d): %v", tmpl.Metadata.Name, status, err)
@@ -220,10 +222,24 @@ func (s *Server) uiRender(w http.ResponseWriter, r *http.Request) {
 			s.renderUI(w, "result.html", result)
 			return
 		}
-		author = orderAuthor(author, &id)
-		logOrder(tmpl.Metadata.Name, &id, author)
+		id = &login
+		author = orderAuthor(author, id)
+		logOrder(tmpl.Metadata.Name, id, author)
 	}
 	params, err := formParams(tmpl, r.PostForm)
+	if err == nil && result.Ordered {
+		var refused *orderRefused
+		if params, refused = s.bindIdentity(tmpl, params, id); refused != nil {
+			result.ErrorTitle = "Order not allowed"
+			result.Error = refused.msg
+			if r.Header.Get("HX-Request") != "true" {
+				w.Header().Set("Content-Type", "text/html; charset=utf-8")
+				w.WriteHeader(refused.status)
+			}
+			s.renderUI(w, "result.html", result)
+			return
+		}
+	}
 	if err == nil {
 		result.Rendered, err = s.order(tmpl, params, author, result.Ordered)
 	}

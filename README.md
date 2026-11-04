@@ -237,6 +237,8 @@ a token.
 | `AUTH_ORDER_ROLES` | Roles of which the orderer needs one (comma list, e.g. `portal-admin`); empty = any valid token | - |
 | `AUTH_ROLES_CLAIM` | Claim holding the roles (list, comma string, or object whose keys are the roles) | `urn:zitadel:iam:org:project:roles` (project-specific `urn:zitadel:iam:org:project:<id>:roles` is read too) |
 | `AUTH_TRUST_FORWARDED_USER` | `true`: the web UI's **Order** accepts the identity sthings-portal forwards (`X-Forwarded-User`, roles from `X-Forwarded-Groups`) | `false` |
+| `AUTH_ADMIN_ROLES` | Roles that may name any owner and order every template, whatever its `orderRoles` (comma list) | - |
+| `AUTH_ROLE_GROUPS` | Role -> Backstage group for `identity: owner` (`role=group:default/x`, comma list); replaces the explicit defaults, the `backstage-team-`/`backstage-beta-` prefixes stay | sthings-backstage's: `backstage-platform=group:default/platform-team,backstage-developer=group:default/guests` |
 
 With the issuer set, the order endpoint checks the token with
 [`github.com/coreos/go-oidc/v3`](https://github.com/coreos/go-oidc): signature
@@ -279,6 +281,43 @@ The `…:aud` scope puts the project ID into `aud` (use it as
 asserts them (*Assert Roles on Authentication*) or the roles scope is asked
 for. A personal access token of a machine user works as well, as long as the
 user's token type is JWT.
+
+**Who orders: identity-bound parameters (#122).** With auth on, a template
+can bind parameters to the login instead of trusting what the caller sends,
+and limit who may order it:
+
+```yaml
+spec:
+  orderRoles: [backstage-developer, backstage-platform]   # optional
+  parameters:
+    - name: requested_by
+      type: string
+      hidden: true
+      identity: user      # set from the login; another value -> 400
+    - name: owner
+      type: string
+      identity: owner     # empty -> the login; else the login or one of its groups (admin: any) -> else 403
+```
+
+The values are what sthings-backstage's ZITADEL sign-in makes of the same
+token, so Backstage shows the order under the right user and group:
+
+- the user is `user:default/<preferred_username without the login domain>`
+  (`patrick@sthings.example` -> `user:default/patrick`); a login that is no
+  valid Backstage entity name cannot order identity-bound templates (403)
+- the groups come from the roles: `backstage-platform` ->
+  `group:default/platform-team`, `backstage-developer` ->
+  `group:default/guests` (replace these with `AUTH_ROLE_GROUPS`,
+  `role=group:default/x,...`), and by name `backstage-team-<t>` ->
+  `group:default/<t>`, `backstage-beta-<t>` -> `group:default/beta-<t>`
+- `AUTH_ADMIN_ROLES` (comma list, e.g. `backstage-platform`) may name any
+  owner and order every template whatever its `orderRoles`
+
+A caller value equal to the login is accepted, so a client that already
+sends it keeps working. Both the API and the UI's **Order** apply the rules
+(the UI never takes a hidden parameter from the form); the **Preview** is not
+an order and renders without them. Without `AUTH_OIDC_ISSUER` nothing
+changes.
 
 **Web UI.** sthings-portal logs users in with ZITADEL but forwards only
 `X-Forwarded-User` / `X-Forwarded-Groups` (after removing whatever the client

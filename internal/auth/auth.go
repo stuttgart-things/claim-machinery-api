@@ -38,6 +38,8 @@ const (
 	EnvOrderRoles         = "AUTH_ORDER_ROLES"
 	EnvRolesClaim         = "AUTH_ROLES_CLAIM"
 	EnvTrustForwardedUser = "AUTH_TRUST_FORWARDED_USER"
+	EnvAdminRoles         = "AUTH_ADMIN_ROLES"
+	EnvRoleGroups         = "AUTH_ROLE_GROUPS"
 )
 
 // ZitadelRolesClaim is where ZITADEL puts a user's project roles (an object
@@ -79,6 +81,13 @@ type Config struct {
 	// TrustForwardedUser lets the web UI's order accept X-Forwarded-User /
 	// X-Forwarded-Groups from sthings-portal (AUTH_TRUST_FORWARDED_USER).
 	TrustForwardedUser bool
+	// AdminRoles may order for any owner and any template, whatever its
+	// orderRoles (AUTH_ADMIN_ROLES, comma list) (#122).
+	AdminRoles []string
+	// RoleGroups maps a role to the Backstage group it makes the orderer a
+	// member of (AUTH_ROLE_GROUPS, "role=group:default/x" comma list);
+	// nil: DefaultRoleGroups. See Groups.
+	RoleGroups map[string]string
 }
 
 // Enabled reports whether orders need authentication.
@@ -90,7 +99,13 @@ func LoadConfig() (Config, error) {
 	if err != nil {
 		return Config{}, fmt.Errorf("%s: %w", EnvTrustForwardedUser, err)
 	}
+	roleGroups, err := ParseRoleGroups(os.Getenv(EnvRoleGroups))
+	if err != nil {
+		return Config{}, fmt.Errorf("%s: %w", EnvRoleGroups, err)
+	}
 	return Config{
+		AdminRoles:         SplitList(os.Getenv(EnvAdminRoles)),
+		RoleGroups:         roleGroups,
 		Issuer:             strings.TrimSpace(os.Getenv(EnvIssuer)),
 		Audiences:          SplitList(os.Getenv(EnvAudience)),
 		CAFile:             strings.TrimSpace(os.Getenv(EnvCAFile)),

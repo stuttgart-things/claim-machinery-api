@@ -48,6 +48,14 @@ paths:
         (aud in AUTH_OIDC_AUDIENCE, optionally one of AUTH_ORDER_ROLES); the
         token's user becomes the author when none is given. Without
         AUTH_OIDC_ISSUER the endpoint is open.
+
+        With auth on, the template's identity rules apply (#122): its
+        spec.orderRoles limit who may order it (admins in AUTH_ADMIN_ROLES
+        always may); a parameter with identity: user is set from the login
+        (user:default/<preferred_username without domain>) and a different
+        value is refused with 400; a parameter with identity: owner defaults
+        to the login and may only name the login or one of its groups (the
+        roles mapped to Backstage groups), any value for an admin, else 403.
       security:
         - {}
         - bearerAuth: []
@@ -69,7 +77,7 @@ paths:
           content:
             application/json: {}
         '400':
-          description: Bad Request
+          description: Bad Request; with auth also a value sent for an identity-bound (identity user) parameter that is not the login
           content:
             application/json: {}
         '404':
@@ -81,7 +89,7 @@ paths:
           content:
             application/json: {}
         '403':
-          description: Token lacks one of AUTH_ORDER_ROLES
+          description: Token lacks one of AUTH_ORDER_ROLES or of the template's orderRoles, or names an owner that is neither the login nor one of its groups
           content:
             application/json: {}
         '503':
