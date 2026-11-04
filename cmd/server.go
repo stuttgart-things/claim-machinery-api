@@ -63,6 +63,8 @@ func runServer(cmd *cobra.Command, args []string) error {
 		{auth.EnvOrderRoles, "Roles allowed to order (comma list)", "- (any)"},
 		{auth.EnvRolesClaim, "Claim holding the roles", auth.ZitadelRolesClaim},
 		{auth.EnvTrustForwardedUser, "UI order trusts sthings-portal's X-Forwarded-User", "false"},
+		{auth.EnvAdminRoles, "Roles that may order any template for any owner", "-"},
+		{auth.EnvRoleGroups, "Role -> Backstage group (role=group:default/x,...)", "Backstage defaults"},
 	}
 	printEnvTable(envVars)
 
@@ -214,6 +216,9 @@ func runServer(cmd *cobra.Command, args []string) error {
 			printKV("roles", strings.Join(authCfg.OrderRoles, ", "))
 		} else {
 			printKV("roles", "any valid token")
+		}
+		if len(authCfg.AdminRoles) > 0 {
+			printKV("admin roles", strings.Join(authCfg.AdminRoles, ", "))
 		}
 		if authCfg.TrustForwardedUser {
 			printKV("ui order", "✅ trusts X-Forwarded-User (sthings-portal)")

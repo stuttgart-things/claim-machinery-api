@@ -108,8 +108,14 @@ func (s *Server) orderClaim(w http.ResponseWriter, r *http.Request) {
 	}
 
 	author := orderAuthor(req.Author, id)
+	params, refused := s.bindIdentity(tmpl, req.Parameters, id)
+	if refused != nil {
+		w.WriteHeader(refused.status)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": refused.msg})
+		return
+	}
 	logOrder(name, id, author)
-	rendered, err := s.order(tmpl, req.Parameters, author, true)
+	rendered, err := s.order(tmpl, params, author, true)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		_ = json.NewEncoder(w).Encode(map[string]string{

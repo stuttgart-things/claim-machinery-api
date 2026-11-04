@@ -29,6 +29,11 @@ type ClaimTemplateSpec struct {
 	Tag        string           `yaml:"tag,omitempty" json:"tag,omitempty"`
 	Parameters []Parameter      `yaml:"parameters" json:"parameters"`
 	Secrets    []SecretTemplate `yaml:"secrets,omitempty" json:"secrets,omitempty"`
+
+	// OrderRoles, when set and order auth is on, are the roles of which the
+	// orderer needs one to order this template, in addition to the global
+	// AUTH_ORDER_ROLES; admins (AUTH_ADMIN_ROLES) always may (#122).
+	OrderRoles []string `yaml:"orderRoles,omitempty" json:"orderRoles,omitempty"`
 }
 
 // SecretTemplate defines a Kubernetes Secret that accompanies the rendered template.
@@ -71,8 +76,22 @@ type Parameter struct {
 	// The resolved value is used as the default; users can still override it interactively.
 	ValueFrom *ValueFromSpec `yaml:"valueFrom,omitempty" json:"valueFrom,omitempty"`
 
+	// Identity binds the parameter to the authenticated orderer when order
+	// auth is on (#122); without auth it is an ordinary parameter.
+	//   user:  set from the login (Backstage user ref); a different value
+	//          from the caller is refused (400)
+	//   owner: the login's user ref when empty; otherwise one of the login's
+	//          groups or its own ref, any value for an admin (else 403)
+	Identity string `yaml:"identity,omitempty" json:"identity,omitempty"`
+
 	// Validation
 	Pattern   string `yaml:"pattern,omitempty" json:"pattern,omitempty"`
 	MinLength *int   `yaml:"minLength,omitempty" json:"minLength,omitempty"`
 	MaxLength *int   `yaml:"maxLength,omitempty" json:"maxLength,omitempty"`
 }
+
+// Identity binding values of Parameter.Identity.
+const (
+	IdentityUser  = "user"
+	IdentityOwner = "owner"
+)

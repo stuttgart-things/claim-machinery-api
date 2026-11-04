@@ -70,6 +70,16 @@ spec:
 | `hidden` | boolean | all | Hide from UI forms, always use default value (platform-defined parameters) |
 | `allowRandom` | boolean | enum fields | Add "🎲 Random" option to enum dropdowns for random selection |
 
+### Identity Fields (order auth, #122)
+
+Only with order auth on (`AUTH_OIDC_ISSUER`); without it they are ordinary
+parameters. See README, "Who orders: identity-bound parameters".
+
+| Field | Type | Where | Description |
+|-------|------|-------|-------------|
+| `identity` | `user` \| `owner` | parameter | `user`: set from the login, a different value is refused (400). `owner`: the login when empty, else the login or one of its groups (any value for an admin), otherwise 403 |
+| `orderRoles` | array[string] | `spec` | Roles of which the orderer needs one for this template (besides `AUTH_ORDER_ROLES`); admins always may |
+
 ## Parameter Types
 
 ### string
