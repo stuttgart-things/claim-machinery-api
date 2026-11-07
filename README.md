@@ -79,6 +79,7 @@ The server loads templates from `tests/profile.yaml` by default and listens on p
 | `/api/v1/claim-templates` | GET | List all available claim templates |
 | `/api/v1/claim-templates/{name}` | GET | Get template details with parameter schema |
 | `/api/v1/claim-templates/{name}/order` | POST | Render a claim with custom parameters |
+| `/api/v1/claim-templates/{name}/order-pr` | POST | Order through a GitOps pull request (off by default, see [Order as PR](#order-as-pr-optional-off-by-default)) |
 | `/health` | GET | Health check |
 | `/version` | GET | Build version metadata |
 | `/openapi.yaml` | GET | OpenAPI specification |
@@ -208,7 +209,9 @@ the default or the profile function (`valueFrom`). **Preview** only renders;
 homerun notification. Both show the YAML with copy and download; Enter in a
 field previews. Values are passed as strings, like
 the interactive CLI. Secrets are not part of the form — they are encrypted
-client-side and never pass through the API.
+client-side and never pass through the API. **Order as PR** (only when
+[enabled](#order-as-pr-optional-off-by-default)) has the GitOps repository open
+the pull request instead and shows the run, then the pull request link.
 
 Behind [sthings-portal](https://github.com/stuttgart-things/sthings-portal/issues/23)
 set `BASE_PATH` (e.g. `/claims`, KCL `config.basePath`): UI, docs and API
@@ -350,6 +353,78 @@ the machine users and roles, release the callers with token support, then set
 `AUTH_TRUST_FORWARDED_USER=true` on the cluster. Removing `AUTH_OIDC_ISSUER`
 switches back.
 
+### Order as PR (optional, off by default)
+
+**Order** ends with the rendered YAML and a homerun notification; nothing
+reaches the cluster until someone commits it. **Order as PR** (#131) has the
+GitOps repository open the pull request itself, the same one
+`claims render --layout source-path --create-pr` or a Backstage template
+opens. The API gets no write access to the repository: it only starts the
+workflow `dispatch-order-claim.yaml` in `stuttgart-things/stuttgart-things`
+(`workflow_dispatch`, like `claims change` does with
+`dispatch-change-claim.yaml`), and that workflow runs the claims CLI.
+
+**Off by default.** `POST /api/v1/claim-templates/{name}/order-pr`, the UI's
+**Order as PR** button and `/ui/order-pr/…` exist only when **both** order
+auth (`AUTH_OIDC_ISSUER`, see above) **and** the GitHub App below are
+configured; otherwise the endpoint answers 404 and the UI shows no button.
+Dispatch credentials without `AUTH_OIDC_ISSUER` are ignored (logged at
+start), a partial set of them stops the service.
+
+| Variable | Purpose | Default |
+|---|---|---|
+| `GITHUB_DISPATCH_APP_ID` | GitHub App ID (the JWT's `iss`) | - (off) |
+| `GITHUB_DISPATCH_INSTALLATION_ID` | The App's installation ID on the org | - |
+| `GITHUB_DISPATCH_PRIVATE_KEY_FILE` | The App's private key (PEM, PKCS#1 as GitHub hands it out, or PKCS#8); mount it from a Secret | - |
+| `GITHUB_DISPATCH_REPO` | Repository the workflow lives in (`owner/name`) | `stuttgart-things/stuttgart-things` |
+| `GITHUB_DISPATCH_WORKFLOW` | Workflow file | `dispatch-order-claim.yaml` |
+| `GITHUB_DISPATCH_REF` | Branch the workflow runs on | `main` |
+| `GITHUB_DISPATCH_API_URL` | GitHub REST API (GHES: `https://<host>/api/v3`) | `https://api.github.com` |
+
+The App needs **`actions: write`** on the GitOps repository only (dispatch,
+read runs). **`pull_requests: read`** is optional: with it the UI shows the
+link of the pull request; without it (private repository) the UI links the
+run, whose log names the pull request. The service signs an RS256 JWT with
+the App key, exchanges it for an installation token limited to the one
+repository and caches that until shortly before it expires.
+
+What an order as PR does:
+
+1. Checks the bearer token (API) or the portal's forwarded user (UI)
+   exactly like **Order**, including `AUTH_ORDER_ROLES`, the template's
+   `orderRoles` and the identity-bound parameters (#122).
+2. Renders once without notification, so parameters the template rejects
+   fail here (422), not in the workflow.
+3. Starts the workflow with the inputs `template`, `params` (the caller's
+   parameters as JSON; defaults and profile functions resolve again when the
+   workflow renders), `requested_by` (**always the verified login**, never a
+   form or body field), `reason` (optional, up to 500 characters) and
+   `order_id` (`cma-<12 hex>`, the run's name and a line in the PR body).
+4. Answers **202** with the run URL (`run.url`), or the workflow URL when
+   the run did not show up within a few seconds, and sends a homerun
+   notification (title `Claim Order (PR): <template>`) linking the run when
+   notifications are on. The UI polls the run and shows the pull request
+   link once the run has opened it.
+
+```bash
+curl -X POST https://claims.example/api/v1/claim-templates/volumeclaim/order-pr \
+  -H "Authorization: Bearer $CLAIM_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"parameters": {"namespace": "production"}, "reason": "team storage"}'
+```
+
+**Not possible (422):** templates that create secrets (the UI does not
+handle secrets, and the claims CLI's `source-path` layout refuses them), and
+templates with an `identity: user` parameter: the workflow renders through
+this API with its own machine login, which would no longer match the
+orderer. Order those with the claims CLI.
+
+**The workflow needs the API too.** `claims render` in the workflow calls
+`POST …/order` of the `CLAIM_API_URL` it is given. With auth on, the
+workflow's machine user needs a JWT (`CLAIM_API_OIDC_*`) and, for templates
+with `identity: owner`, a role in `AUTH_ADMIN_ROLES` (it names the orderer
+as owner). That render also sends the usual order notification.
+
 ## Usage
 
 ### API Server (Default)
@@ -405,6 +480,11 @@ export AUTH_OIDC_AUDIENCE=123456789012345678   # ZITADEL project ID / client IDs
 export AUTH_OIDC_CA_FILE=/etc/ssl/trust-bundle/ca.crt
 export AUTH_ORDER_ROLES=portal-admin
 export AUTH_TRUST_FORWARDED_USER=true          # UI order behind sthings-portal
+
+# Order as PR (optional, needs the order auth above; see "Order as PR")
+export GITHUB_DISPATCH_APP_ID=123456
+export GITHUB_DISPATCH_INSTALLATION_ID=12345678
+export GITHUB_DISPATCH_PRIVATE_KEY_FILE=/etc/github-app/private-key.pem
 ```
 
 **Priority:** Flag > Environment Variable > Default

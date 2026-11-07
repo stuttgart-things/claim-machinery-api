@@ -50,6 +50,7 @@ internal/
   render/                KCL execution engine (OCI-based via CLI, file-based via Go SDK)
   claimtemplate/         Domain model: ClaimTemplate struct, YAML deserialization
   notify/                Homerun2 (omni-pitcher) notification sender
+  dispatch/              Optional order as PR: GitHub App token + workflow_dispatch of the GitOps order workflow
   auth/                  Optional order auth: ZITADEL JWT via go-oidc, portal-forwarded identity for UI orders; authtest/ is a fake issuer for tests
   version/               Build metadata (set via ldflags)
 ```
@@ -65,6 +66,7 @@ internal/
 - `GET /api/v1/claim-templates` - List all templates
 - `GET /api/v1/claim-templates/{name}` - Get specific template
 - `POST /api/v1/claim-templates/{name}/order` - Render template with `{"parameters": {...}}` body
+- `POST /api/v1/claim-templates/{name}/order-pr` - Order as PR (#131, `internal/api/orderpr.go`): validates like order, then `workflow_dispatch`es the GitOps repo's `dispatch-order-claim.yaml` through a GitHub App (`internal/dispatch`, fake GitHub in `internal/dispatch/dispatchtest`); 404 unless both `AUTH_OIDC_ISSUER` and `GITHUB_DISPATCH_*` are set; the UI's "Order as PR" button and `/ui/order-pr/{orderID}` polling follow the same gate
 - `GET /health` (liveness, always 200), `GET /ready` (503 while a remote profile that failed at startup is still being retried), `GET /version`, `GET /docs`, `GET /openapi.yaml`
 - `GET /ui/` - web UI (`internal/api/ui.go`, templates and vendored htmx embedded from `internal/api/ui/`); renders through `Server.order`, the same path as the order endpoint; its Preview button passes `notify=false`, Order sends the homerun notification
 
@@ -91,6 +93,8 @@ Responses use Kubernetes-style format with `apiVersion: api.claim-machinery.io/v
 | `AUTH_ORDER_ROLES` | Roles allowed to order (comma list); empty = any valid token | - |
 | `AUTH_ROLES_CLAIM` | Claim holding the roles | `urn:zitadel:iam:org:project:roles` |
 | `AUTH_TRUST_FORWARDED_USER` | UI order accepts sthings-portal's `X-Forwarded-User`/`X-Forwarded-Groups` (never the API) | `false` |
+| `GITHUB_DISPATCH_APP_ID` / `_INSTALLATION_ID` / `_PRIVATE_KEY_FILE` | GitHub App for order as PR; all three, plus `AUTH_OIDC_ISSUER`, turn it on | - (off) |
+| `GITHUB_DISPATCH_REPO` / `_WORKFLOW` / `_REF` / `_API_URL` | Where the order workflow runs | `stuttgart-things/stuttgart-things`, `dispatch-order-claim.yaml`, `main`, `https://api.github.com` |
 
 ## Testing Conventions
 

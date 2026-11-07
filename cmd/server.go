@@ -21,6 +21,7 @@ import (
 	"github.com/stuttgart-things/claim-machinery-api/internal/app"
 	"github.com/stuttgart-things/claim-machinery-api/internal/auth"
 	"github.com/stuttgart-things/claim-machinery-api/internal/claimtemplate"
+	"github.com/stuttgart-things/claim-machinery-api/internal/dispatch"
 	"github.com/stuttgart-things/claim-machinery-api/internal/functions"
 	"github.com/stuttgart-things/claim-machinery-api/internal/notify"
 )
@@ -65,6 +66,13 @@ func runServer(cmd *cobra.Command, args []string) error {
 		{auth.EnvTrustForwardedUser, "UI order trusts sthings-portal's X-Forwarded-User", "false"},
 		{auth.EnvAdminRoles, "Roles that may order any template for any owner", "-"},
 		{auth.EnvRoleGroups, "Role -> Backstage group (role=group:default/x,...)", "Backstage defaults"},
+		{dispatch.EnvAppID, "GitHub App ID for order as PR (with order auth)", "- (off)"},
+		{dispatch.EnvInstallationID, "GitHub App installation ID", "-"},
+		{dispatch.EnvPrivateKeyFile, "GitHub App private key (PEM file)", "-"},
+		{dispatch.EnvRepo, "GitOps repository the order workflow runs in", dispatch.DefaultRepo},
+		{dispatch.EnvWorkflow, "Order workflow file", dispatch.DefaultWorkflow},
+		{dispatch.EnvRef, "Branch the order workflow runs on", dispatch.DefaultRef},
+		{dispatch.EnvAPIURL, "GitHub REST API", dispatch.DefaultAPIURL},
 	}
 	printEnvTable(envVars)
 
@@ -231,6 +239,25 @@ func runServer(cmd *cobra.Command, args []string) error {
 				log.Printf("[auth] discovery of %s failed (retried on order): %v", authCfg.Issuer, err)
 			}
 		}()
+	}
+
+	// --- Order as PR (#131) -------------------------------------------------------
+	dispatchCfg := dispatch.LoadConfig()
+	dispatcher, err := dispatch.New(dispatchCfg)
+	if err != nil {
+		log.Fatalf("invalid order-as-PR config: %v", err)
+	}
+	printSection("🔀 Order as PR")
+	switch {
+	case dispatcher == nil:
+		printKV("order-pr", "⏸️  off (GITHUB_DISPATCH_* not set)")
+	case authenticator == nil:
+		printKV("order-pr", "⏸️  off: needs order auth (AUTH_OIDC_ISSUER) for requested_by")
+		log.Printf("[order-pr] GITHUB_DISPATCH_* has no effect without %s", auth.EnvIssuer)
+	default:
+		server.SetDispatch(dispatcher)
+		c := dispatcher.Config()
+		printKV("order-pr", fmt.Sprintf("✅ %s in %s@%s (App %s)", c.Workflow, c.Repo, c.Ref, c.AppID))
 	}
 
 	// --- Auto-reload ------------------------------------------------------------
