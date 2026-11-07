@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"sort"
 	"strings"
 	"time"
 )
@@ -155,4 +156,46 @@ func isTruthy(v string) bool {
 		return true
 	}
 	return false
+}
+
+// BuildOrderPRMessage constructs the HomerunMessage of an order as PR
+// (#131): the order workflow was dispatched; url links its run (or the
+// workflow), where the pull request shows up.
+func BuildOrderPRMessage(
+	templateName string,
+	templateTitle string,
+	templateType string,
+	templateTags []string,
+	params map[string]interface{},
+	requestedBy string,
+	orderID string,
+	url string,
+) HomerunMessage {
+	title := templateTitle
+	if title == "" {
+		title = templateName
+	}
+	var paramLines []string
+	for k, v := range params {
+		paramLines = append(paramLines, fmt.Sprintf("  %s: %v", k, v))
+	}
+	sort.Strings(paramLines)
+	msgBody := fmt.Sprintf("Template '%s' ordered as PR (order %s); the workflow run opens the pull request: %s", title, orderID, url)
+	if len(paramLines) > 0 {
+		msgBody += "\n\nParameters:\n" + strings.Join(paramLines, "\n")
+	}
+	tagParts := []string{"claim-order", "order-pr"}
+	if templateType != "" {
+		tagParts = append(tagParts, templateType)
+	}
+	tagParts = append(tagParts, templateTags...)
+	return HomerunMessage{
+		Title:    "Claim Order (PR): " + templateName,
+		Message:  msgBody,
+		Severity: "info",
+		Author:   requestedBy,
+		System:   "claim-machinery-api",
+		Tags:     strings.Join(tagParts, ","),
+		Url:      url,
+	}
 }

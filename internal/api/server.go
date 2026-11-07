@@ -18,6 +18,7 @@ import (
 	"github.com/stuttgart-things/claim-machinery-api/internal/app"
 	"github.com/stuttgart-things/claim-machinery-api/internal/auth"
 	"github.com/stuttgart-things/claim-machinery-api/internal/claimtemplate"
+	"github.com/stuttgart-things/claim-machinery-api/internal/dispatch"
 	"github.com/stuttgart-things/claim-machinery-api/internal/functions"
 	"github.com/stuttgart-things/claim-machinery-api/internal/notify"
 	"github.com/stuttgart-things/claim-machinery-api/internal/version"
@@ -34,6 +35,8 @@ type Server struct {
 	homerun       notify.HomerunConfig
 	// auth, when set, guards ordering (API and UI order); nil leaves it open.
 	auth *auth.Authenticator
+	// dispatch, when set together with auth, enables order as PR (#131).
+	dispatch *dispatch.Client
 	// loadedAt is when the current template set was loaded (start or reload).
 	loadedAt time.Time
 	// profilesPending is true while the configured profiles could not be
@@ -173,6 +176,8 @@ func (s *Server) registerServiceRoutes(r *mux.Router) {
 	r.HandleFunc("/api/v1/claim-templates", s.listTemplates).Methods(http.MethodGet)
 	r.HandleFunc("/api/v1/claim-templates/{name}", s.getTemplate).Methods(http.MethodGet)
 	r.HandleFunc("/api/v1/claim-templates/{name}/order", s.orderClaim).Methods(http.MethodPost)
+	// Order as PR: 404 unless order auth and the dispatch are configured.
+	r.HandleFunc("/api/v1/claim-templates/{name}/order-pr", s.orderClaimPR).Methods(http.MethodPost)
 
 	// Optional test-only routes (enable with ENABLE_TEST_ROUTES=1)
 	if os.Getenv("ENABLE_TEST_ROUTES") == "1" || os.Getenv("ENABLE_TEST_ROUTES") == "true" {
@@ -188,6 +193,7 @@ func (s *Server) registerUIRoutes(r *mux.Router) {
 	r.HandleFunc("/ui/", s.uiIndex).Methods(http.MethodGet)
 	r.HandleFunc("/ui/templates/{name}", s.uiTemplate).Methods(http.MethodGet)
 	r.HandleFunc("/ui/templates/{name}/render", s.uiRender).Methods(http.MethodPost)
+	r.HandleFunc("/ui/order-pr/{orderID}", s.uiOrderPRStatus).Methods(http.MethodGet)
 	r.PathPrefix("/ui/static/").Handler(http.StripPrefix(s.basePath+"/ui/", http.FileServerFS(uiStatic)))
 }
 
