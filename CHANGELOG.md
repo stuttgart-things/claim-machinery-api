@@ -1,3 +1,10 @@
+## [0.28.1](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.28.0...v0.28.1) (2026-11-07)
+
+
+### Bug Fixes
+
+* **auth:** take the login name from userinfo when the token has none ([#134](https://github.com/stuttgart-things/claim-machinery-api/issues/134)) ([ce7917d](https://github.com/stuttgart-things/claim-machinery-api/commit/ce7917da0afc92388a275f17e80e2e2be0dcd735)), closes [stuttgart-things#4380](https://github.com/stuttgart-things/issues/4380) [#122](https://github.com/stuttgart-things/claim-machinery-api/issues/122)
+
 # [0.28.0](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.27.0...v0.28.0) (2026-11-07)
 
 
