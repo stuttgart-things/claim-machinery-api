@@ -1,3 +1,10 @@
+# [0.28.0](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.27.0...v0.28.0) (2026-11-07)
+
+
+### Features
+
+* **api:** order as PR via workflow_dispatch, off by default ([#133](https://github.com/stuttgart-things/claim-machinery-api/issues/133)) ([e3af48b](https://github.com/stuttgart-things/claim-machinery-api/commit/e3af48b7ed8042a2949ef93ef906e108c0b1de16)), closes [#131](https://github.com/stuttgart-things/claim-machinery-api/issues/131)
+
 # [0.27.0](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.26.1...v0.27.0) (2026-11-04)
 
 
