@@ -11,6 +11,9 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strings"
+	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -24,6 +27,11 @@ type Issuer struct {
 	CAFile string
 	key    *rsa.PrivateKey
 	keyID  string
+
+	userinfoMu     sync.Mutex
+	userinfo       map[string]any
+	userinfoStatus int
+	userinfoCalls  atomic.Int32
 }
 
 // NewIssuer starts an issuer that is stopped with the test.
@@ -42,6 +50,7 @@ func NewIssuer(t testing.TB) *Issuer {
 			"jwks_uri":                              iss.URL() + "/keys",
 			"authorization_endpoint":                iss.URL() + "/authorize",
 			"token_endpoint":                        iss.URL() + "/token",
+			"userinfo_endpoint":                     iss.URL() + "/userinfo",
 			"id_token_signing_alg_values_supported": []string{"RS256"},
 		})
 	})
@@ -50,6 +59,24 @@ func NewIssuer(t testing.TB) *Issuer {
 		_ = json.NewEncoder(w).Encode(jose.JSONWebKeySet{Keys: []jose.JSONWebKey{
 			{Key: &key.PublicKey, KeyID: iss.keyID, Algorithm: "RS256", Use: "sig"},
 		}})
+	})
+	// Userinfo answers SetUserinfo's claims to any bearer token (it does not
+	// check the token: the verifier did) and counts the calls.
+	mux.HandleFunc("/userinfo", func(w http.ResponseWriter, r *http.Request) {
+		iss.userinfoCalls.Add(1)
+		if !strings.HasPrefix(r.Header.Get("Authorization"), "Bearer ") {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		iss.userinfoMu.Lock()
+		status, claims := iss.userinfoStatus, iss.userinfo
+		iss.userinfoMu.Unlock()
+		if status != 0 && status != http.StatusOK {
+			w.WriteHeader(status)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(claims)
 	})
 	iss.Server = httptest.NewTLSServer(mux)
 	t.Cleanup(iss.Server.Close)
@@ -108,6 +135,16 @@ func SignWith(t testing.TB, key *rsa.PrivateKey, keyID string, claims map[string
 	}
 	return raw
 }
+
+// SetUserinfo sets what /userinfo answers: status (0 = 200) and claims.
+func (i *Issuer) SetUserinfo(status int, claims map[string]any) {
+	i.userinfoMu.Lock()
+	defer i.userinfoMu.Unlock()
+	i.userinfoStatus, i.userinfo = status, claims
+}
+
+// UserinfoCalls is how often /userinfo was asked.
+func (i *Issuer) UserinfoCalls() int { return int(i.userinfoCalls.Load()) }
 
 // KeyID is the kid of the issuer's key.
 func (i *Issuer) KeyID() string { return i.keyID }

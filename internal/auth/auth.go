@@ -14,10 +14,14 @@ package auth
 
 import (
 	"context"
+	"crypto/sha256"
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"sort"
@@ -57,6 +61,13 @@ const (
 
 // maxForwardedUser bounds the name taken from X-Forwarded-User.
 const maxForwardedUser = 128
+
+// maxCachedNames bounds the userinfo name cache; when it is full after
+// dropping the expired entries it starts over.
+const maxCachedNames = 1024
+
+// maxUserinfoBody bounds the userinfo response read.
+const maxUserinfoBody = 1 << 20
 
 // retryDiscovery is how long a failed discovery is remembered before the
 // next request tries again.
@@ -158,7 +169,8 @@ var (
 type Identity struct {
 	// Subject is the token's "sub"; empty for a forwarded user.
 	Subject string
-	// Name is preferred_username, email or sub (token), or X-Forwarded-User.
+	// Name is preferred_username or email (token, else the issuer's
+	// userinfo), else sub; or X-Forwarded-User.
 	Name  string
 	Roles []string
 	// Source is "token" or "forwarded".
@@ -173,10 +185,21 @@ type Authenticator struct {
 	// now is the clock of the token checks (tests set it).
 	now func() time.Time
 
-	mu       sync.Mutex
-	verifier *oidc.IDTokenVerifier
-	lastErr  error
-	lastTry  time.Time
+	mu          sync.Mutex
+	verifier    *oidc.IDTokenVerifier
+	userinfoURL string
+	lastErr     error
+	lastTry     time.Time
+
+	// names caches the login names fetched from userinfo, by token hash,
+	// until the token expires.
+	namesMu sync.Mutex
+	names   map[string]cachedName
+}
+
+type cachedName struct {
+	name   string
+	expiry time.Time
 }
 
 // New checks cfg and returns its Authenticator, or nil when auth is off.
@@ -250,6 +273,7 @@ func (a *Authenticator) Discover() (*oidc.IDTokenVerifier, error) {
 		SkipClientIDCheck: true,
 		Now:               a.now,
 	})
+	a.userinfoURL = provider.UserInfoEndpoint()
 	a.lastErr = nil
 	return a.verifier, nil
 }
@@ -326,12 +350,100 @@ func (a *Authenticator) verify(ctx context.Context, raw string) (Identity, error
 	if err := tok.Claims(&claims); err != nil {
 		return Identity{}, fmt.Errorf("%w: %v", ErrInvalidToken, err)
 	}
+	name := firstString(claims, "preferred_username", "email")
+	if name == "" {
+		if name, err = a.userinfoName(ctx, raw, tok.Subject, tok.Expiry); err != nil {
+			return Identity{}, err
+		}
+	}
+	if name == "" {
+		name = tok.Subject
+	}
 	return Identity{
 		Subject: tok.Subject,
-		Name:    firstString(claims, "preferred_username", "email", "sub"),
+		Name:    name,
 		Roles:   a.roles(claims),
 		Source:  "token",
 	}, nil
+}
+
+// userinfoName asks the issuer's userinfo endpoint for the login name of a
+// token that carries none. ZITADEL's JWT access tokens hold only sub (no
+// preferred_username or email, unlike its ID tokens), and the name is what
+// the order's author and the identity-bound parameters (user:default/<name>)
+// are made of. The answer is cached per token until it expires. "" when the
+// issuer has no userinfo endpoint or the answer names nobody.
+func (a *Authenticator) userinfoName(ctx context.Context, raw, sub string, expiry time.Time) (string, error) {
+	a.mu.Lock()
+	endpoint := a.userinfoURL
+	a.mu.Unlock()
+	if endpoint == "" {
+		return "", nil
+	}
+	sum := sha256.Sum256([]byte(raw))
+	key := hex.EncodeToString(sum[:])
+	if name, ok := a.cachedName(key); ok {
+		return name, nil
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
+	if err != nil {
+		return "", fmt.Errorf("%w: userinfo: %v", ErrUnavailable, err)
+	}
+	req.Header.Set("Authorization", "Bearer "+raw)
+	req.Header.Set("Accept", "application/json")
+	resp, err := a.client.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("%w: userinfo: %v", ErrUnavailable, err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+	switch {
+	case resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden:
+		// Signature and exp were fine, so the issuer revoked the token.
+		return "", fmt.Errorf("%w: userinfo refused the token (%d)", ErrInvalidToken, resp.StatusCode)
+	case resp.StatusCode != http.StatusOK:
+		return "", fmt.Errorf("%w: userinfo answered %d", ErrUnavailable, resp.StatusCode)
+	}
+	var info map[string]any
+	if err := json.NewDecoder(io.LimitReader(resp.Body, maxUserinfoBody)).Decode(&info); err != nil {
+		return "", fmt.Errorf("%w: userinfo: %v", ErrUnavailable, err)
+	}
+	if got := firstString(info, "sub"); got != sub {
+		return "", fmt.Errorf("%w: userinfo is about %q, the token about %q", ErrInvalidToken, got, sub)
+	}
+	name := firstString(info, "preferred_username", "email")
+	a.cacheName(key, name, expiry)
+	return name, nil
+}
+
+func (a *Authenticator) cachedName(key string) (string, bool) {
+	a.namesMu.Lock()
+	defer a.namesMu.Unlock()
+	c, ok := a.names[key]
+	if !ok || !a.now().Before(c.expiry) {
+		return "", false
+	}
+	return c.name, true
+}
+
+func (a *Authenticator) cacheName(key, name string, expiry time.Time) {
+	a.namesMu.Lock()
+	defer a.namesMu.Unlock()
+	now := a.now()
+	if a.names == nil {
+		a.names = map[string]cachedName{}
+	}
+	if len(a.names) >= maxCachedNames {
+		for k, c := range a.names {
+			if !now.Before(c.expiry) {
+				delete(a.names, k)
+			}
+		}
+		if len(a.names) >= maxCachedNames {
+			a.names = map[string]cachedName{}
+		}
+	}
+	a.names[key] = cachedName{name: name, expiry: expiry}
 }
 
 func (a *Authenticator) checkRoles(id Identity) error {

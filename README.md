@@ -253,7 +253,12 @@ the token has none of them, **503** when the issuer cannot be reached. The
 issuer is contacted lazily, so an unreachable ZITADEL does not stop the
 service from starting. The token's `preferred_username` (else `email`, else
 `sub`) becomes the order's `author` when the request names none, and every
-authorized order is logged with user and subject.
+authorized order is logged with user and subject. ZITADEL's JWT access tokens
+carry neither name (only `sub`; the name claims are in its ID tokens), so for
+a token without both the service asks the issuer's `userinfo_endpoint` with
+the same token and caches the answer until the token expires: a userinfo
+about another `sub` or a 401/403 there is an invalid token (401), an
+unreachable or failing userinfo is a 503.
 
 ```bash
 curl -X POST https://claims.example/api/v1/claim-templates/volumeclaim/order \

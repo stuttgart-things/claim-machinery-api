@@ -211,3 +211,97 @@ func TestIssuerUnavailable(t *testing.T) {
 	_, err = down.Authorize(bearer("x.y.z"))
 	assert.ErrorIs(t, err, ErrUnavailable)
 }
+
+// ZITADEL's JWT access tokens carry only sub; the name comes from userinfo
+// (stuttgart-things#4380).
+func TestAuthorizeUserinfoName(t *testing.T) {
+	iss := authtest.NewIssuer(t)
+	a := newTestAuth(t, iss, nil)
+
+	bare := iss.Claims(testAudience)
+	delete(bare, "preferred_username")
+	token := iss.Sign(t, bare)
+
+	iss.SetUserinfo(0, map[string]any{"sub": "123456789", "preferred_username": "patrick@sthings.example"})
+	id, err := a.Authorize(bearer(token))
+	require.NoError(t, err)
+	assert.Equal(t, "patrick@sthings.example", id.Name)
+	assert.Equal(t, "123456789", id.Subject)
+	assert.Equal(t, 1, iss.UserinfoCalls())
+
+	// Cached until the token expires.
+	_, err = a.Authorize(bearer(token))
+	require.NoError(t, err)
+	assert.Equal(t, 1, iss.UserinfoCalls(), "second order of the same token from the cache")
+
+	// A name in the token wins; userinfo is not asked.
+	_, err = a.Authorize(bearer(iss.Sign(t, iss.Claims(testAudience))))
+	require.NoError(t, err)
+	assert.Equal(t, 1, iss.UserinfoCalls())
+
+	// email when there is no preferred_username.
+	mail := iss.Claims(testAudience)
+	delete(mail, "preferred_username")
+	mail["jti"] = "mail"
+	iss.SetUserinfo(0, map[string]any{"sub": "123456789", "email": "patrick@example.com"})
+	id, err = a.Authorize(bearer(iss.Sign(t, mail)))
+	require.NoError(t, err)
+	assert.Equal(t, "patrick@example.com", id.Name)
+
+	// Userinfo without a name: sub, as before.
+	anon := iss.Claims(testAudience)
+	delete(anon, "preferred_username")
+	anon["jti"] = "anon"
+	iss.SetUserinfo(0, map[string]any{"sub": "123456789"})
+	id, err = a.Authorize(bearer(iss.Sign(t, anon)))
+	require.NoError(t, err)
+	assert.Equal(t, "123456789", id.Name)
+
+	// Userinfo about someone else: refused.
+	other := iss.Claims(testAudience)
+	delete(other, "preferred_username")
+	other["jti"] = "other"
+	iss.SetUserinfo(0, map[string]any{"sub": "987654321", "preferred_username": "biff"})
+	_, err = a.Authorize(bearer(iss.Sign(t, other)))
+	assert.ErrorIs(t, err, ErrInvalidToken)
+
+	// Revoked token: 401 from userinfo -> invalid token; issuer error -> 503.
+	revoked := iss.Claims(testAudience)
+	delete(revoked, "preferred_username")
+	revoked["jti"] = "revoked"
+	iss.SetUserinfo(http.StatusUnauthorized, nil)
+	_, err = a.Authorize(bearer(iss.Sign(t, revoked)))
+	assert.ErrorIs(t, err, ErrInvalidToken)
+
+	broken := iss.Claims(testAudience)
+	delete(broken, "preferred_username")
+	broken["jti"] = "broken"
+	iss.SetUserinfo(http.StatusBadGateway, nil)
+	_, err = a.Authorize(bearer(iss.Sign(t, broken)))
+	assert.ErrorIs(t, err, ErrUnavailable)
+}
+
+func TestNameCacheExpires(t *testing.T) {
+	iss := authtest.NewIssuer(t)
+	a := newTestAuth(t, iss, nil)
+	now := time.Now()
+	a.now = func() time.Time { return now }
+
+	a.cacheName("k", "patrick", now.Add(time.Minute))
+	name, ok := a.cachedName("k")
+	assert.True(t, ok)
+	assert.Equal(t, "patrick", name)
+
+	now = now.Add(2 * time.Minute)
+	_, ok = a.cachedName("k")
+	assert.False(t, ok, "expired")
+
+	// Full: expired entries go first, then everything.
+	for i := range maxCachedNames {
+		a.cacheName(string(rune(i)), "x", now.Add(time.Minute))
+	}
+	a.cacheName("new", "y", now.Add(time.Minute))
+	_, ok = a.cachedName("new")
+	assert.True(t, ok)
+	assert.LessOrEqual(t, len(a.names), maxCachedNames)
+}
