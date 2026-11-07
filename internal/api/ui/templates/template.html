@@ -39,16 +39,24 @@
             {{if .FromFunction}}<small>Empty: resolved by profile function <code>{{.FromFunction}}</code>.</small>{{end}}
         </div>
         {{end}}
+        {{if .OrderPRBlocked}}<p class="note">No Order as PR: {{.OrderPRBlocked}}.</p>{{end}}
         {{with .Template.Spec.Secrets}}<p class="note">This template also creates {{len .}} secret{{if gt (len .) 1}}s{{end}}. Secret values are encrypted on the client (SOPS) and never pass through the API, so they are not part of this form.</p>{{end}}
         {{if .Hidden}}<p class="note">{{.Hidden}} platform parameter{{if gt .Hidden 1}}s{{end}} use{{if eq .Hidden 1}}s{{end}} {{if gt .Hidden 1}}their{{else}}its{{end}} default.</p>{{end}}
         <div class="field">
             <label for="p-_author">Author <span class="hint">(optional, named in the order notification)</span></label>
             <input id="p-_author" name="_author" type="text">
         </div>
+        {{if and .OrderPR (not .OrderPRBlocked)}}
+        <div class="field">
+            <label for="p-_reason">Reason <span class="hint">(optional, for Order as PR: goes into the pull request)</span></label>
+            <input id="p-_reason" name="_reason" type="text" maxlength="500">
+        </div>
+        {{end}}
         <div class="actions">
             <button type="submit" name="_action" value="preview" class="secondary">Preview</button>
             <button type="submit" name="_action" value="order">Order</button>
-            <span class="hint">Preview only renders. Order renders and sends the homerun notification.</span>
+            {{if and .OrderPR (not .OrderPRBlocked)}}<button type="submit" name="_action" value="order-pr">Order as PR</button>{{end}}
+            <span class="hint">Preview only renders. Order renders and sends the homerun notification.{{if and .OrderPR (not .OrderPRBlocked)}} Order as PR opens the GitOps pull request (in your name) through a workflow.{{end}}</span>
             <span id="rendering" class="htmx-indicator">rendering…</span>
         </div>
     </form>

@@ -63,6 +63,10 @@ type uiTemplateData struct {
 	Template *claimtemplate.ClaimTemplate
 	Fields   []uiField
 	Hidden   int
+	// OrderPR shows the "Order as PR" button; OrderPRBlocked says why this
+	// template cannot be ordered that way.
+	OrderPR        bool
+	OrderPRBlocked string
 }
 
 // uiField is one form input, derived from a template parameter.
@@ -139,7 +143,10 @@ func (s *Server) uiTemplate(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	data := uiTemplateData{uiPage: s.page(r, tmpl.Metadata.Name), Template: tmpl}
+	data := uiTemplateData{uiPage: s.page(r, tmpl.Metadata.Name), Template: tmpl, OrderPR: s.orderPREnabled()}
+	if data.OrderPR {
+		data.OrderPRBlocked = orderPRBlocked(tmpl)
+	}
 	for _, p := range tmpl.Spec.Parameters {
 		if p.Hidden {
 			data.Hidden++
@@ -198,6 +205,10 @@ func (s *Server) uiRender(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
 		result.Error = "invalid form: " + err.Error()
 		s.renderUI(w, "result.html", result)
+		return
+	}
+	if r.PostForm.Get("_action") == "order-pr" {
+		s.uiOrderPR(w, r, tmpl)
 		return
 	}
 	result.Ordered = r.PostForm.Get("_action") == "order"

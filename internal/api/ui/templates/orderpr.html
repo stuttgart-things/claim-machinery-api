@@ -1,0 +1,11 @@
+<div class="result orderpr"{{if .PollURL}} hx-get="{{.PollURL}}" hx-trigger="load delay:5s" hx-target="this" hx-swap="outerHTML"{{end}}>
+    <div class="actions">
+        <span class="badge ordered">order as PR · {{.State}}</span>
+        {{if .PollURL}}<span class="hint">updating…</span>{{end}}
+    </div>
+    <p>Order <code>{{.OrderID}}</code>{{if .Name}} of <code>{{.Name}}</code>{{end}}{{if .RequestedBy}}, requested by <strong>{{.RequestedBy}}</strong>{{end}}.</p>
+    {{if .PRURL}}<p>Pull request: <a href="{{.PRURL}}" target="_blank" rel="noopener">{{.PRURL}}</a>. Merging it applies the order.</p>{{end}}
+    {{if .RunURL}}<p>Workflow run: <a href="{{.RunURL}}" target="_blank" rel="noopener">{{.RunURL}}</a></p>
+    {{else}}<p>Workflow: <a href="{{.WorkflowURL}}" target="_blank" rel="noopener">{{.WorkflowURL}}</a></p>{{end}}
+    {{if .Note}}<p class="hint">{{.Note}}</p>{{end}}
+</div>
