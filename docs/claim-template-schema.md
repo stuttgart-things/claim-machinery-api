@@ -57,9 +57,11 @@ All fields from the `Parameter` struct (`internal/claimtemplate/claimtemplate.go
 | `hidden` | `bool` | no | If `true`, the parameter is not shown in forms and always uses its default value silently. |
 | `allowRandom` | `bool` | no | If `true`, prepends a "Random" option to enum dropdowns. Only meaningful when `enum` is set. |
 | `multiselect` | `bool` | no | If `true`, allows selecting multiple values from `enum` options. Renders as a multi-select checkbox list. Only meaningful when `enum` is set. |
-| `pattern` | `string` | no | Regex pattern for string validation. Shown in CLI description but not enforced at runtime yet. |
-| `minLength` | `*int` | no | Minimum string length. Available in schema; validation not enforced at runtime yet. |
-| `maxLength` | `*int` | no | Maximum string length. Available in schema; validation not enforced at runtime yet. |
+| `pattern` | `string` | no | Regex pattern for string validation. Checked by the API on order (400). |
+| `minLength` | `*int` | no | Minimum string length. Checked by the API on order (400). |
+| `maxLength` | `*int` | no | Maximum string length. Checked by the API on order (400). |
+| `showWhen` | `map[string][]string` | no | The parameter applies only when every named parameter has one of the listed values (see [Parameter Conditions](#parameter-conditions)). |
+| `enumWhen` | `map[string]map[string][]string` | no | Allowed values depending on another parameter's value (see [Parameter Conditions](#parameter-conditions)). |
 
 ## 3. Parameter Types and Behavior
 
@@ -82,17 +84,105 @@ All fields from the `Parameter` struct (`internal/claimtemplate/claimtemplate.go
 
 ## 4. Validation Rules
 
-| Rule | CLI | API | KCL |
-|------|-----|-----|-----|
-| `required` | Appends `*` to title; no hard block | Not enforced | Not enforced |
-| `enum` | Enforced via dropdown (user can only pick listed values) | Not validated | Not enforced |
-| `pattern` | Displayed in field description; **not enforced at runtime** (noted as TODO) | Not validated | Not enforced |
-| `minLength` | Available in schema; **not enforced at runtime** | Not validated | Not enforced |
-| `maxLength` | Available in schema; **not enforced at runtime** | Not validated | Not enforced |
-| `type: integer` | Validated with `strconv.Atoi` (rejects non-numeric input) | Not validated | KCL schema may enforce |
-| `type: boolean` | Enforced via select (true/false only) | Not validated | KCL schema may enforce |
+Since #135 the API checks the parameters of an order (`POST …/order`,
+`…/order-pr`, the web UI) **before** KCL runs and answers **400** with the
+fields that are wrong:
 
-**Summary:** The CLI is the primary validation surface today. The API merges user-supplied parameters with defaults (`app.BuildParameterValues`) but does not validate types, patterns, or required fields. KCL schemas may enforce their own constraints during rendering.
+```json
+{"error": "invalid parameters", "fields": {"size": "use_case dev allows large or xlarge, got small"}}
+```
+
+| Rule | API (before KCL) |
+|------|------------------|
+| `showWhen` | A value sent for an inactive parameter is ignored (dropped); its default, if any, still reaches KCL |
+| `required` | An active required parameter needs a non-empty value, unless it has a `default` or `valueFrom` |
+| `enum` / `enumWhen` | A value sent (each item of a list) must be allowed; with `enumWhen` the default is checked too |
+| `pattern`, `minLength`, `maxLength` | Checked for string values sent |
+| `type: boolean` | A value sent must be `true` / `false` (JSON bool or string) |
+
+An empty string is "not set": it is not checked against enum/pattern and
+the default or KCL decides, as before.
+
+A failing `assert` (or schema `check`) of the KCL module answers **400** as
+well, with only the assert's message — no stack trace, no ANSI codes:
+
+```json
+{"error": "use_case dev needs size large or xlarge, got small"}
+```
+
+Any other render failure (OCI pull, syntax, runtime error) stays **500**
+(order as PR: 422).
+
+### Parameter Conditions
+
+Two optional fields per parameter (#135) let a template say *when* a
+parameter applies and *which values* it allows given another parameter.
+Clients that do not know them ignore them and show every field, as before.
+
+```yaml
+parameters:
+  - name: use_case
+    type: string
+    default: baseos
+    enum: [baseos, kind, dev, rke2, github-runner]
+
+  - name: size
+    type: string
+    default: medium
+    enum: [small, medium, large, xlarge]
+    enumWhen:                 # <controlling param>: {<its value>: [allowed values]}
+      use_case:
+        dev: [large, xlarge]
+        github-runner: [large, xlarge]
+        rke2: [medium, large, xlarge]
+
+  - name: kind_workers
+    type: string
+    default: "1"
+    showWhen:                 # <controlling param>: [values that show this one]
+      use_case: [kind]
+
+  - name: dev_features
+    type: array
+    multiselect: true
+    enum: [toolchain, docker, go, kind]
+    showWhen:
+      use_case: [dev]
+```
+
+**`showWhen: {<param>: [<value>, …]}`**
+- The parameter is *active* only when every key matches (AND); a key
+  matches when the controlling parameter's value is one of the listed
+  values (OR). A multiselect controlling parameter matches when one of its
+  selected values is listed.
+- Inactive: clients hide it; the API ignores (drops) a value sent for it.
+  Its `default`, if any, still goes to KCL, exactly as when a client never
+  sent the field, so modules see what they saw before.
+- An inactive parameter has no value for other conditions (chains resolve:
+  `dev_kind_workers` with `showWhen: {dev_features: [kind]}` is hidden
+  while `dev_features` is).
+
+**`enumWhen: {<param>: {<value>: [<allowed>, …]}}`**
+- While the controlling parameter has one of the listed values, the
+  parameter allows only the given values. A value that is not listed
+  leaves `enum` as it is. Several controlling parameters intersect.
+- The lists should be subsets of `enum`; the loader logs a warning
+  otherwise (and for a condition naming an unknown parameter).
+- The default must be allowed too: with `use_case: dev` and no `size`
+  sent, the default `medium` is refused (`… got medium (default)`), so
+  clients should pick the first allowed value when the current one drops
+  out.
+
+**Common rules**
+- The value a condition looks at is the one sent, else the controlling
+  parameter's `default`. Values compare as strings: a boolean matches
+  `"true"` / `"false"` (YAML `[true]` decodes as `"true"`).
+- `hidden: true` parameters can control others through their default.
+- Layout order is the order of `spec.parameters`; put controlling
+  parameters (e.g. `use_case`) before the fields they control.
+- The reference implementation is `internal/claimtemplate/conditions.go`
+  (`ActiveParams`, `Parameter.AllowedValues`, `CheckParams`); the web UI's
+  form script follows the same rules.
 
 ## 5. Special Features
 
@@ -340,4 +430,6 @@ spec:
 | `cmd/render.go` | CLI form rendering (hidden, allowRandom, multiselect behavior) |
 | `internal/render/kcl.go` | KCL `-D` flag formatting and list literal rendering |
 | `internal/app/renderer.go` | Default value building and template rendering |
-| `internal/api/handlers.go` | API parameter handling (merge with defaults, no validation) |
+| `internal/api/handlers.go` | API parameter handling (validation, merge with defaults, error mapping) |
+| `internal/claimtemplate/conditions.go` | `showWhen` / `enumWhen` evaluation and order validation (`CheckParams`) |
+| `internal/render/kclerror.go` | KCL `assert` failures to `AssertError` (400) |

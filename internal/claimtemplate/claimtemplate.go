@@ -84,6 +84,17 @@ type Parameter struct {
 	//          groups or its own ref, any value for an admin (else 403)
 	Identity string `yaml:"identity,omitempty" json:"identity,omitempty"`
 
+	// ShowWhen makes the parameter conditional (#135): it applies only when
+	// every named parameter has one of the listed values, e.g.
+	// {use_case: [dev]}. Clients hide it otherwise and the API ignores a
+	// value sent for it. See conditions.go.
+	ShowWhen map[string][]string `yaml:"showWhen,omitempty" json:"showWhen,omitempty"`
+
+	// EnumWhen narrows the allowed values by another parameter's value
+	// (#135), e.g. {use_case: {dev: [large, xlarge]}}; a value not listed
+	// leaves the enum as it is. See conditions.go.
+	EnumWhen map[string]map[string][]string `yaml:"enumWhen,omitempty" json:"enumWhen,omitempty"`
+
 	// Validation
 	Pattern   string `yaml:"pattern,omitempty" json:"pattern,omitempty"`
 	MinLength *int   `yaml:"minLength,omitempty" json:"minLength,omitempty"`

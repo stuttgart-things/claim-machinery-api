@@ -2,6 +2,8 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
+	"log"
 	"net/http"
 	"time"
 
@@ -9,6 +11,7 @@ import (
 	"github.com/stuttgart-things/claim-machinery-api/internal/app"
 	"github.com/stuttgart-things/claim-machinery-api/internal/claimtemplate"
 	notifypkg "github.com/stuttgart-things/claim-machinery-api/internal/notify"
+	"github.com/stuttgart-things/claim-machinery-api/internal/render"
 )
 
 // OrderRequest represents a claim order request
@@ -117,10 +120,10 @@ func (s *Server) orderClaim(w http.ResponseWriter, r *http.Request) {
 	logOrder(name, id, author)
 	rendered, err := s.order(tmpl, params, author, true)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		_ = json.NewEncoder(w).Encode(map[string]string{
-			"error": err.Error(),
-		})
+		// 400 for invalid parameters (with the fields) and failed module
+		// asserts (only their message), 500 for anything else (#135).
+		status, body := orderErrorResponse(err, http.StatusInternalServerError)
+		writeParamError(w, status, body)
 		return
 	}
 
@@ -146,10 +149,13 @@ func (s *Server) order(tmpl *claimtemplate.ClaimTemplate, userInput map[string]i
 	// Debug: log received parameters
 	debugParams("Received from request", userInput)
 
-	// Pre-seed user-provided params so valueFrom arg references (e.g. {{.networkKey}}) resolve correctly
-	userParams := make(map[string]interface{}, len(userInput))
-	for k, v := range userInput {
-		userParams[k] = v
+	// Check the template's rules before KCL (#135): drop values of
+	// parameters whose showWhen does not match, check required, enum
+	// (narrowed by enumWhen), pattern and length. The result is a copy, so
+	// valueFrom arg references (e.g. {{.networkKey}}) resolve against it.
+	userParams, err := claimtemplate.CheckParams(tmpl, userInput)
+	if err != nil {
+		return "", err
 	}
 
 	// Build parameter values (merge request params with defaults + function calls)
@@ -161,6 +167,12 @@ func (s *Server) order(tmpl *claimtemplate.ClaimTemplate, userInput map[string]i
 	// Render template directly with pre-built params (skip BuildParameterValues rebuild)
 	rendered, err := s.render(tmpl, params)
 	if err != nil {
+		var aerr *render.AssertError
+		if errors.As(err, &aerr) {
+			// A rule of the module failed: the caller gets only its message.
+			log.Printf("[order] %s: module assert failed: %s\n%s", tmpl.Metadata.Name, aerr.Message, aerr.Stderr)
+			return "", aerr
+		}
 		return "", err
 	}
 	if !notify {

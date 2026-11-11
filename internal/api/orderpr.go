@@ -106,7 +106,7 @@ func cleanReason(s string) string {
 func (s *Server) orderPR(ctx context.Context, tmpl *claimtemplate.ClaimTemplate, params map[string]interface{}, id *auth.Identity, reason string) (*orderPRResult, *orderRefused) {
 	name := tmpl.Metadata.Name
 	if msg := orderPRBlocked(tmpl); msg != "" {
-		return nil, &orderRefused{http.StatusUnprocessableEntity, "order as PR not possible: " + msg}
+		return nil, &orderRefused{status: http.StatusUnprocessableEntity, msg: "order as PR not possible: " + msg}
 	}
 	params, refused := s.bindIdentity(tmpl, params, id)
 	if refused != nil {
@@ -115,16 +115,27 @@ func (s *Server) orderPR(ctx context.Context, tmpl *claimtemplate.ClaimTemplate,
 	if params == nil {
 		params = map[string]interface{}{}
 	}
+	// The workflow gets the checked parameters: values of parameters whose
+	// showWhen does not match are dropped (#135).
+	checked, err := claimtemplate.CheckParams(tmpl, params)
+	if err != nil {
+		status, body := orderErrorResponse(err, http.StatusUnprocessableEntity)
+		return nil, &orderRefused{status: status, msg: body.Error, fields: body.Fields}
+	}
+	params = checked
 	logOrder(name, id, id.Name)
 	if _, err := s.order(tmpl, params, id.Name, false); err != nil {
-		return nil, &orderRefused{http.StatusUnprocessableEntity, err.Error()}
+		// Invalid parameters and module asserts are 400, a render that
+		// fails otherwise 422 as before.
+		status, body := orderErrorResponse(err, http.StatusUnprocessableEntity)
+		return nil, &orderRefused{status: status, msg: body.Error, fields: body.Fields}
 	}
 
 	o := dispatch.Order{ID: newOrderID(), Template: name, Params: params, RequestedBy: id.Name, Reason: cleanReason(reason)}
 	run, err := s.dispatch.Dispatch(ctx, o)
 	if err != nil {
 		log.Printf("[order-pr] %s (%s) by %q: %v", name, o.ID, id.Name, err)
-		return nil, &orderRefused{http.StatusBadGateway, "starting the order workflow failed"}
+		return nil, &orderRefused{status: http.StatusBadGateway, msg: "starting the order workflow failed"}
 	}
 	res := &orderPRResult{OrderID: o.ID, Template: name, RequestedBy: id.Name, Run: run, WorkflowURL: s.dispatch.WorkflowURL()}
 	link := res.WorkflowURL
@@ -193,7 +204,7 @@ func (s *Server) orderClaimPR(w http.ResponseWriter, r *http.Request) {
 	}
 	res, refused := s.orderPR(r.Context(), tmpl, req.Parameters, id, req.Reason)
 	if refused != nil {
-		writeJSONError(w, refused.status, refused.msg)
+		writeParamError(w, refused.status, ParamErrorResponse{Error: refused.msg, Fields: refused.fields})
 		return
 	}
 	resp := OrderPRResponse{
@@ -270,7 +281,7 @@ func (s *Server) uiOrderPR(w http.ResponseWriter, r *http.Request, tmpl *claimte
 	}
 	res, refused := s.orderPR(r.Context(), tmpl, params, &login, r.PostForm.Get("_reason"))
 	if refused != nil {
-		fail(refused.status, refused.msg)
+		fail(refused.status, refused.text())
 		return
 	}
 	data := uiOrderPRData{

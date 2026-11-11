@@ -70,6 +70,15 @@ spec:
 | `hidden` | boolean | all | Hide from UI forms, always use default value (platform-defined parameters) |
 | `allowRandom` | boolean | enum fields | Add "🎲 Random" option to enum dropdowns for random selection |
 
+### Condition Fields (#135)
+
+| Field | Type | Example | Description |
+|-------|------|---------|-------------|
+| `showWhen` | map[string]array[string] | `{use_case: [dev]}` | Parameter applies only when every named parameter has one of the values; clients hide it otherwise, the API ignores a value sent for it |
+| `enumWhen` | map[string]map[string]array[string] | `{use_case: {dev: [large, xlarge]}}` | Allowed values while the named parameter has that value; unlisted values keep `enum` |
+
+Full rules: [claim-template-schema.md, Parameter Conditions](claim-template-schema.md#parameter-conditions).
+
 ### Identity Fields (order auth, #122)
 
 Only with order auth on (`AUTH_OIDC_ISSUER`); without it they are ordinary
@@ -422,6 +431,7 @@ Always add:
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 0.4.0 | 2026-11-11 | Added `showWhen` and `enumWhen`; API validates parameters (400 with fields) (#135) |
 | 0.3.0 | 2026-03-19 | Added `profile` metadata field for multi-profile support |
 | 0.2.0 | 2026-01-25 | Added `hidden` and `allowRandom` fields |
 | 0.1.0 | 2026-01-09 | Initial specification |

@@ -2,17 +2,16 @@ package api
 
 import (
 	"embed"
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"io/fs"
 	"log"
 	"math/rand/v2"
 	"net/http"
-	"regexp"
 	"sort"
 	"strings"
 	"time"
-	"unicode/utf8"
 
 	"github.com/gorilla/mux"
 	"github.com/stuttgart-things/claim-machinery-api/internal/auth"
@@ -67,6 +66,41 @@ type uiTemplateData struct {
 	// template cannot be ordered that way.
 	OrderPR        bool
 	OrderPRBlocked string
+	// Conditions is the JSON the form's script evaluates showWhen and
+	// enumWhen with (#135); empty when no parameter has conditions.
+	Conditions string
+}
+
+// uiCondition is one parameter as the form's condition script sees it;
+// hidden parameters are included, their defaults may control others.
+type uiCondition struct {
+	Name     string                         `json:"name"`
+	Default  interface{}                    `json:"default,omitempty"`
+	Enum     []string                       `json:"enum,omitempty"`
+	ShowWhen map[string][]string            `json:"showWhen,omitempty"`
+	EnumWhen map[string]map[string][]string `json:"enumWhen,omitempty"`
+	Hidden   bool                           `json:"hidden,omitempty"`
+}
+
+// uiConditions returns the JSON for the form's condition script, or "" when
+// the template has no conditions.
+func uiConditions(tmpl *claimtemplate.ClaimTemplate) string {
+	has := false
+	conds := make([]uiCondition, 0, len(tmpl.Spec.Parameters))
+	for _, p := range tmpl.Spec.Parameters {
+		has = has || p.HasConditions()
+		conds = append(conds, uiCondition{Name: p.Name, Default: p.Default, Enum: p.Enum,
+			ShowWhen: p.ShowWhen, EnumWhen: p.EnumWhen, Hidden: p.Hidden})
+	}
+	if !has {
+		return ""
+	}
+	b, err := json.Marshal(conds)
+	if err != nil {
+		log.Printf("[ui] conditions of %s: %v", tmpl.Metadata.Name, err)
+		return ""
+	}
+	return string(b)
 }
 
 // uiField is one form input, derived from a template parameter.
@@ -147,6 +181,7 @@ func (s *Server) uiTemplate(w http.ResponseWriter, r *http.Request) {
 	if data.OrderPR {
 		data.OrderPRBlocked = orderPRBlocked(tmpl)
 	}
+	data.Conditions = uiConditions(tmpl)
 	for _, p := range tmpl.Spec.Parameters {
 		if p.Hidden {
 			data.Hidden++
@@ -264,15 +299,37 @@ func (s *Server) uiRender(w http.ResponseWriter, r *http.Request) {
 // formParams turns the submitted form into order parameters with the TUI's
 // rules: values stay strings (the KCL schemas expect strings), a multiselect
 // is a list, an empty field is left out so the default or the profile
-// function fills it, and "Random" picks one of the enum values. Hidden
-// parameters are never taken from the form.
+// function fills it, and "Random" picks one of the allowed values. Hidden
+// parameters are never taken from the form, nor are parameters whose
+// showWhen does not match (#135); enum checks use the values enumWhen
+// allows.
 func formParams(tmpl *claimtemplate.ClaimTemplate, form map[string][]string) (map[string]interface{}, error) {
-	params := map[string]interface{}{}
-	var problems []string
+	// What the form says, for the conditions; hidden parameters keep their
+	// defaults (ActiveParams fills them in).
+	input := map[string]interface{}{}
 	for _, p := range tmpl.Spec.Parameters {
 		if p.Hidden {
 			continue
 		}
+		values := form[p.Name]
+		switch {
+		case p.Multiselect && len(p.Enum) > 0:
+			if len(values) > 0 {
+				input[p.Name] = values
+			}
+		case len(values) > 0 && values[0] != randomValue:
+			input[p.Name] = strings.TrimSpace(values[0])
+		}
+	}
+	active, effective := claimtemplate.ActiveParams(tmpl, input)
+
+	params := map[string]interface{}{}
+	var problems []string
+	for _, p := range tmpl.Spec.Parameters {
+		if p.Hidden || !active[p.Name] {
+			continue
+		}
+		allowed := p.AllowedValues(effective)
 		values := form[p.Name]
 		if p.Multiselect && len(p.Enum) > 0 {
 			var picked []string
@@ -283,6 +340,9 @@ func formParams(tmpl *claimtemplate.ClaimTemplate, form map[string][]string) (ma
 			}
 			if len(picked) > 0 {
 				params[p.Name] = picked
+				if msg := claimtemplate.CheckValue(p, picked, effective); msg != "" {
+					problems = append(problems, label(p)+" "+msg)
+				}
 			}
 			continue
 		}
@@ -296,11 +356,11 @@ func formParams(tmpl *claimtemplate.ClaimTemplate, form map[string][]string) (ma
 			}
 			continue
 		}
-		if v == randomValue && p.AllowRandom && len(p.Enum) > 0 {
-			v = p.Enum[rand.IntN(len(p.Enum))]
+		if v == randomValue && p.AllowRandom && len(allowed) > 0 {
+			v = allowed[rand.IntN(len(allowed))]
 		}
-		if msg := validate(p, v); msg != "" {
-			problems = append(problems, msg)
+		if msg := claimtemplate.CheckValue(p, v, effective); msg != "" {
+			problems = append(problems, label(p)+" "+msg)
 			continue
 		}
 		params[p.Name] = v
@@ -309,31 +369,6 @@ func formParams(tmpl *claimtemplate.ClaimTemplate, form map[string][]string) (ma
 		return nil, fmt.Errorf("%s", strings.Join(problems, "; "))
 	}
 	return params, nil
-}
-
-// validate checks a value against the parameter's enum, pattern and length;
-// the browser checks the same, this keeps a hand-made request honest.
-func validate(p claimtemplate.Parameter, v string) string {
-	if len(p.Enum) > 0 && !contains(p.Enum, v) {
-		return fmt.Sprintf("%s must be one of %s", label(p), strings.Join(p.Enum, ", "))
-	}
-	if p.Type == "boolean" && v != "true" && v != "false" {
-		return fmt.Sprintf("%s must be true or false", label(p))
-	}
-	n := utf8.RuneCountInString(v)
-	if p.MinLength != nil && n < *p.MinLength {
-		return fmt.Sprintf("%s needs at least %d characters", label(p), *p.MinLength)
-	}
-	if p.MaxLength != nil && n > *p.MaxLength {
-		return fmt.Sprintf("%s allows at most %d characters", label(p), *p.MaxLength)
-	}
-	if p.Pattern != "" {
-		re, err := regexp.Compile(p.Pattern)
-		if err == nil && !re.MatchString(v) {
-			return fmt.Sprintf("%s does not match %s", label(p), p.Pattern)
-		}
-	}
-	return ""
 }
 
 func label(p claimtemplate.Parameter) string {

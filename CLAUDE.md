@@ -114,4 +114,4 @@ Responses use Kubernetes-style format with `apiVersion: api.claim-machinery.io/v
 
 Templates are YAML files with `apiVersion`, `kind: ClaimTemplate`, `metadata` (name, description, tags), and `spec` containing:
 - `kclModuleRef` - OCI reference for the KCL module to execute
-- `parameters[]` - Each has: name, type (string/boolean/integer), default, enum, pattern, hidden, multiselect, allowRandom
+- `parameters[]` - Each has: name, type (string/boolean/integer), default, enum, pattern, hidden, multiselect, allowRandom, showWhen, enumWhen (#135, `internal/claimtemplate/conditions.go`; `CheckParams` validates orders before KCL → 400 `{"error":"invalid parameters","fields":{...}}`, a KCL assert → 400 with its message via `render.AssertError`)
