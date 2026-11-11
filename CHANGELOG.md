@@ -1,3 +1,10 @@
+# [0.29.0](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.28.1...v0.29.0) (2026-11-11)
+
+
+### Features
+
+* **templates:** parameter conditions (showWhen, enumWhen) and 400 with field errors ([#136](https://github.com/stuttgart-things/claim-machinery-api/issues/136)) ([a455544](https://github.com/stuttgart-things/claim-machinery-api/commit/a45554464df51dc019fe60d7890c59c72014156a)), closes [#135](https://github.com/stuttgart-things/claim-machinery-api/issues/135)
+
 ## [0.28.1](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.28.0...v0.28.1) (2026-11-07)
 
 
