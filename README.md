@@ -154,6 +154,15 @@ curl -s -X POST http://localhost:8080/api/v1/claim-templates/volumeclaim/order \
 
 Passing an empty body `{}` renders with all default values.
 
+Invalid parameters are refused before KCL runs (#135) with **400** and the
+fields: `{"error":"invalid parameters","fields":{"size":"use_case dev allows large or xlarge, got small"}}`
+(`required`, `enum`, `enumWhen`, `pattern`, `minLength`/`maxLength`;
+values of parameters hidden by `showWhen` are ignored). A failing `assert`
+of the KCL module is a 400 with only its message
+(`{"error":"use_case dev needs size large or xlarge, got small"}`); other
+render failures stay 500. See
+[Parameter Conditions](docs/claim-template-schema.md#parameter-conditions).
+
 The order request supports an optional `author` field for tracking who ordered the resource:
 
 ```bash
@@ -203,7 +212,9 @@ curl http://localhost:8080/version
 form from each template's `spec.parameters`: `enum` → select (plus
 "random" with `allowRandom`), `multiselect` → checkboxes, `boolean` →
 true/false, everything else a text field with `pattern`/`minLength`/`maxLength`
-checks. `hidden` parameters keep their defaults, an empty field falls back to
+checks. Fields whose `showWhen` does not match are hidden and not sent,
+selects offer only the values `enumWhen` allows (#135).
+`hidden` parameters keep their defaults, an empty field falls back to
 the default or the profile function (`valueFrom`). **Preview** only renders;
 **Order** goes through the same code path as `POST …/order`, including the
 homerun notification. Both show the YAML with copy and download; Enter in a

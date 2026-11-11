@@ -32,9 +32,11 @@ paths:
             type: string
       responses:
         '200':
-          description: OK
+          description: The template; parameters carry showWhen / enumWhen when the template declares them (#135)
           content:
-            application/json: {}
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClaimTemplate'
         '404':
           description: Not Found
           content:
@@ -56,6 +58,14 @@ paths:
         value is refused with 400; a parameter with identity: owner defaults
         to the login and may only name the login or one of its groups (the
         roles mapped to Backstage groups), any value for an admin, else 403.
+
+        The parameters are checked against the template before KCL runs
+        (#135): values of parameters whose showWhen does not match are
+        ignored; required, enum (narrowed by enumWhen), pattern,
+        minLength/maxLength and boolean values are checked, and a violation
+        answers 400 with {"error":"invalid parameters","fields":{...}}. A
+        failing assert of the KCL module answers 400 with only its message;
+        other render failures are 500.
       security:
         - {}
         - bearerAuth: []
@@ -77,9 +87,20 @@ paths:
           content:
             application/json: {}
         '400':
-          description: Bad Request; with auth also a value sent for an identity-bound (identity user) parameter that is not the login
+          description: |
+            Invalid body; invalid parameters (error "invalid parameters" with
+            fields); a failed assert of the KCL module (error is its message);
+            with auth also a value sent for an identity-bound (identity user)
+            parameter that is not the login
           content:
-            application/json: {}
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidParameters:
+                  value: {"error": "invalid parameters", "fields": {"size": "use_case dev allows large or xlarge, got small"}}
+                kclAssert:
+                  value: {"error": "use_case dev needs size large or xlarge, got small"}
         '404':
           description: Not Found
           content:
@@ -88,6 +109,12 @@ paths:
           description: Bearer token missing or invalid (only with AUTH_OIDC_ISSUER)
           content:
             application/json: {}
+        '500':
+          description: Rendering failed for another reason than the parameters (OCI pull, KCL syntax/runtime error)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '403':
           description: Token lacks one of AUTH_ORDER_ROLES or of the template's orderRoles, or names an owner that is neither the login nor one of its groups
           content:
@@ -140,9 +167,11 @@ paths:
               schema:
                 $ref: '#/components/schemas/OrderPRResponse'
         '400':
-          description: Invalid body, or a value for an identity-bound parameter that is not the login
+          description: Invalid body, invalid parameters (with fields) or a failed KCL module assert, as for POST .../order; or a value for an identity-bound parameter that is not the login
           content:
-            application/json: {}
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '401':
           description: Bearer token missing or invalid
           content:
@@ -156,7 +185,7 @@ paths:
           content:
             application/json: {}
         '422':
-          description: Template excluded (secrets, identity user parameter) or the parameters do not render
+          description: Template excluded (secrets, identity user parameter) or the render fails for another reason than the parameters
           content:
             application/json: {}
         '502':
@@ -169,6 +198,133 @@ paths:
             application/json: {}
 components:
   schemas:
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+          description: '"invalid parameters" when fields is set; else the message (for a KCL assert only the assert message)'
+        fields:
+          type: object
+          description: Parameter name -> what is wrong with its value (#135)
+          additionalProperties:
+            type: string
+    ClaimTemplate:
+      type: object
+      properties:
+        apiVersion:
+          type: string
+        kind:
+          type: string
+        metadata:
+          type: object
+          properties:
+            name:
+              type: string
+            title:
+              type: string
+            description:
+              type: string
+            tags:
+              type: array
+              items:
+                type: string
+            profile:
+              type: string
+        spec:
+          type: object
+          properties:
+            type:
+              type: string
+            source:
+              type: string
+            tag:
+              type: string
+            orderRoles:
+              type: array
+              items:
+                type: string
+            parameters:
+              type: array
+              items:
+                $ref: '#/components/schemas/Parameter'
+            secrets:
+              type: array
+              items:
+                type: object
+    Parameter:
+      type: object
+      required: [name, type]
+      properties:
+        name:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        type:
+          type: string
+          enum: [string, boolean, integer, number, array]
+        default: {}
+        required:
+          type: boolean
+        enum:
+          type: array
+          items:
+            type: string
+        hidden:
+          type: boolean
+        allowRandom:
+          type: boolean
+        multiselect:
+          type: boolean
+        valueFrom:
+          type: object
+          properties:
+            function:
+              type: string
+            args:
+              type: object
+              additionalProperties:
+                type: string
+            condition:
+              type: string
+        identity:
+          type: string
+          enum: [user, owner]
+        pattern:
+          type: string
+        minLength:
+          type: integer
+        maxLength:
+          type: integer
+        showWhen:
+          type: object
+          description: |
+            The parameter applies only when every named parameter's value
+            (sent, else its default; compared as strings) is one of the
+            listed values. Clients hide it otherwise; the API ignores a value
+            sent for it. An inactive parameter has no value for other
+            conditions. Absent: always applies.
+          additionalProperties:
+            type: array
+            items:
+              type: string
+          example: {"use_case": ["dev"]}
+        enumWhen:
+          type: object
+          description: |
+            Controlling parameter -> its value -> the values this parameter
+            allows meanwhile. A value not listed leaves enum as it is;
+            several controlling parameters intersect.
+          additionalProperties:
+            type: object
+            additionalProperties:
+              type: array
+              items:
+                type: string
+          example: {"use_case": {"dev": ["large", "xlarge"], "rke2": ["medium", "large", "xlarge"]}}
     OrderPRRequest:
       type: object
       properties:

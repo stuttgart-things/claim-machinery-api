@@ -6,9 +6,9 @@
     {{if .Template.Metadata.Description}}<p class="lead">{{.Template.Metadata.Description}}</p>{{end}}
     <p class="meta"><code>{{.Template.Spec.Source}}{{if .Template.Spec.Tag}}:{{.Template.Spec.Tag}}{{end}}</code></p>
 
-    <form class="order" hx-post="{{.Base}}/ui/templates/{{.Template.Metadata.Name}}/render" hx-target="#result" hx-indicator="#rendering">
+    <form class="order" hx-post="{{.Base}}/ui/templates/{{.Template.Metadata.Name}}/render" hx-target="#result" hx-indicator="#rendering"{{if .Conditions}} data-conditions="{{.Conditions}}"{{end}}>
         {{range .Fields}}
-        <div class="field">
+        <div class="field" data-param="{{.Name}}">
             <label for="p-{{.Name}}">{{if .Title}}{{.Title}}{{else}}{{.Name}}{{end}}{{if .Required}} <span class="req">*</span>{{end}}</label>
             {{if eq .Widget "multiselect"}}
             <div class="choices" id="p-{{.Name}}">
@@ -64,6 +64,80 @@
     <section id="result" aria-live="polite"></section>
 </main>
 <script>
+    // Parameter conditions (#135): hide fields whose showWhen does not
+    // match (disabled, so they are not sent) and offer only the values
+    // enumWhen allows. Same rules as claimtemplate.ActiveParams and
+    // Parameter.AllowedValues; the server checks again.
+    (() => {
+        const form = document.querySelector('form.order');
+        if (!form || !form.dataset.conditions) return;
+        const conds = JSON.parse(form.dataset.conditions);
+        const strs = v => v == null ? [] : Array.isArray(v) ? v.map(String) : [String(v)];
+        const empty = v => v == null || (Array.isArray(v) ? v.length === 0 : String(v).trim() === '');
+        const field = name => form.querySelector('.field[data-param="' + CSS.escape(name) + '"]');
+        const sent = c => {
+            const f = field(c.name);
+            if (!f) return undefined;
+            const boxes = f.querySelectorAll('input[type=checkbox]');
+            if (boxes.length) return [...boxes].filter(b => b.checked).map(b => b.value);
+            const el = f.querySelector('select, input');
+            return !el || el.value === '__random__' ? undefined : el.value;
+        };
+        const update = depth => {
+            const active = {};
+            conds.forEach(c => { active[c.name] = true; });
+            let values = {};
+            for (let i = 0; i <= conds.length; i++) {
+                values = {};
+                conds.forEach(c => {
+                    if (!active[c.name]) return;
+                    const v = sent(c);
+                    if (!empty(v)) values[c.name] = v;
+                    else if (c.default != null) values[c.name] = c.default;
+                });
+                let changed = false;
+                conds.forEach(c => {
+                    if (!c.showWhen) return;
+                    const shown = Object.entries(c.showWhen).every(([k, want]) => strs(values[k]).some(s => want.includes(s)));
+                    if (shown !== active[c.name]) { active[c.name] = shown; changed = true; }
+                });
+                if (!changed) break;
+            }
+            let again = false;
+            conds.forEach(c => {
+                const f = field(c.name);
+                if (!f) return;
+                const on = active[c.name];
+                f.style.display = on ? '' : 'none';
+                f.querySelectorAll('input, select').forEach(el => { el.disabled = !on; });
+                if (!c.enumWhen) return;
+                let allowed = c.enum && c.enum.length ? c.enum.slice() : null;
+                Object.keys(c.enumWhen).sort().forEach(k => strs(values[k]).forEach(v => {
+                    const list = c.enumWhen[k][v];
+                    if (list) allowed = allowed ? allowed.filter(a => list.includes(a)) : list.slice();
+                }));
+                const ok = v => !allowed || v === '' || v === '__random__' || allowed.includes(v);
+                const sel = f.querySelector('select');
+                if (sel) {
+                    [...sel.options].forEach(o => { o.hidden = o.disabled = !ok(o.value); });
+                    if (!ok(sel.value)) {
+                        const first = [...sel.options].find(o => !o.disabled && o.value !== '' && o.value !== '__random__');
+                        if (first) { sel.value = first.value; again = true; }
+                    }
+                }
+                f.querySelectorAll('input[type=checkbox]').forEach(b => {
+                    const allowedBox = ok(b.value);
+                    b.disabled = !on || !allowedBox;
+                    if (!allowedBox && b.checked) { b.checked = false; again = true; }
+                    b.closest('label').style.display = allowedBox ? '' : 'none';
+                });
+            });
+            if (again && depth < 5) update(depth + 1);
+        };
+        form.addEventListener('change', () => update(0));
+        update(0);
+    })();
+
     // Copy and download act on the rendered YAML in #result.
     document.addEventListener('click', e => {
         const pre = document.querySelector('#result pre');

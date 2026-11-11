@@ -38,6 +38,9 @@ func RenderKCL(
 	// Execute KCL
 	result, err := kcl.Run(kclFile, opts...)
 	if err != nil {
+		if _, assertErr := kclRunError(err.Error()); assertErr != nil {
+			return "", assertErr
+		}
 		return "", fmt.Errorf("KCL execution failed: %w", err)
 	}
 
@@ -100,7 +103,11 @@ func RenderKCLFromOCI(
 	cmd.Stderr = &stderr
 
 	if err := cmd.Run(); err != nil {
-		return "", fmt.Errorf("KCL execution from OCI source failed: %w\nStderr: %s", err, stderr.String())
+		clean, assertErr := kclRunError(stderr.String())
+		if assertErr != nil {
+			return "", assertErr
+		}
+		return "", fmt.Errorf("KCL execution from OCI source failed: %w\nStderr: %s", err, clean)
 	}
 
 	// Output generated YAML

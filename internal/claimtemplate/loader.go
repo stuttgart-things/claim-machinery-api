@@ -2,6 +2,7 @@ package claimtemplate
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"strings"
 
@@ -25,6 +26,12 @@ func LoadClaimTemplate(path string) (*ClaimTemplate, error) {
 
 	if tmpl.Metadata.Name == "" {
 		return nil, fmt.Errorf("template missing metadata.name in %s", path)
+	}
+
+	// Broken conditions (#135) are logged, not refused: an unknown
+	// parameter in showWhen simply never matches.
+	for _, problem := range tmpl.CheckConditions() {
+		log.Printf("⚠️  template %s: %s", tmpl.Metadata.Name, problem)
 	}
 
 	return &tmpl, nil
