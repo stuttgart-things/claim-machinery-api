@@ -1,3 +1,10 @@
+# [0.30.0](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.29.0...v0.30.0) (2026-11-16)
+
+
+### Features
+
+* **ui:** show the login, owner choices and an order confirmation ([#139](https://github.com/stuttgart-things/claim-machinery-api/issues/139)) ([7e98a67](https://github.com/stuttgart-things/claim-machinery-api/commit/7e98a6724821b1d3c78b5c9c3fec220dae009dc4)), closes [#138](https://github.com/stuttgart-things/claim-machinery-api/issues/138)
+
 # [0.29.0](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.28.1...v0.29.0) (2026-11-11)
 
 
