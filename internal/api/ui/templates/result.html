@@ -1,14 +1,25 @@
 {{if .Error}}
 <div class="error" role="alert"><strong>{{or .ErrorTitle "Render failed"}}</strong><p>{{.Error}}</p></div>
 {{else}}
+{{if .Ordered}}
+<div class="ordered-box" role="status">
+    <strong>Ordered: {{.Title}}{{with .Subject}} <code>{{.}}</code>{{end}}</strong>
+    <p>{{if .RequestedBy}}Requested by <code>{{.RequestedBy}}</code>{{if .Owner}}, owner <code>{{.Owner}}</code>{{end}}. {{end}}{{if .Notified}}The homerun notification was sent.{{else}}Notifications are off, nobody was notified.{{end}}</p>
+    <p class="hint">This page does not keep or track orders: the YAML below is what was ordered.{{if .OrderPR}} To deliver it to the GitOps repository, use Order as PR -- it shows the pull request and its status.{{end}}</p>
+</div>
+{{/* The order is done: replace the buttons, so one click is one order (#138). */}}
+<div class="actions" id="order-actions" hx-swap-oob="true">
+    <span class="badge ordered">ordered</span>
+    <a href="{{.Base}}/ui/templates/{{.Name}}">new order</a>
+</div>
+{{end}}
 <div class="result">
     <div class="actions">
-        {{if not .Ordered}}<span class="badge">preview · no notification</span>
-        {{else if .Notified}}<span class="badge ordered">ordered · notification sent</span>
-        {{else}}<span class="badge ordered">ordered · notifications are off</span>{{end}}
+        {{if not .Ordered}}<span class="badge">preview · no notification</span>{{if .RequestedBy}} <span class="hint">as <code>{{.RequestedBy}}</code>{{if .Owner}}, owner <code>{{.Owner}}</code>{{end}}</span>{{end}}{{end}}
         <button type="button" data-copy>copy</button>
         <button type="button" data-download="{{.Name}}">download</button>
     </div>
+    {{with .Note}}<p class="hint">{{.}}</p>{{end}}
     <pre><code>{{.Rendered}}</code></pre>
 </div>
 {{end}}

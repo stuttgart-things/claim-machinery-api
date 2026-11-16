@@ -254,7 +254,7 @@ func TestUIOrderNotifies(t *testing.T) {
 	body := serve(s, http.MethodPost, "/ui/templates/vm/render", url.Values{
 		"vmName": {"web-1"}, "_action": {"order"}, "_author": {"patrick"},
 	}).Body.String()
-	assert.Contains(t, body, "ordered · notification sent")
+	assert.Contains(t, body, "The homerun notification was sent.")
 	select {
 	case msg := <-sent:
 		assert.Contains(t, msg.Author, "patrick")
@@ -264,7 +264,7 @@ func TestUIOrderNotifies(t *testing.T) {
 
 	s.homerun.Enabled = false
 	body = serve(s, http.MethodPost, "/ui/templates/vm/render", url.Values{"vmName": {"web-1"}, "_action": {"order"}}).Body.String()
-	assert.Contains(t, body, "ordered · notifications are off")
+	assert.Contains(t, body, "Notifications are off, nobody was notified.")
 }
 
 func TestAPIOrderNotifies(t *testing.T) {

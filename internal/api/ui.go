@@ -69,6 +69,14 @@ type uiTemplateData struct {
 	// Conditions is the JSON the form's script evaluates showWhen and
 	// enumWhen with (#135); empty when no parameter has conditions.
 	Conditions string
+	// Auth is on (orders need an identity); Login is the orderer's
+	// user ref when the request carries one (token or trusted forwarded
+	// user), "" otherwise (#138).
+	Auth  bool
+	Login string
+	// FromLogin names the hidden parameters bound to the login
+	// (identity: user); they are not counted in Hidden.
+	FromLogin []string
 }
 
 // uiCondition is one parameter as the form's condition script sees it;
@@ -114,6 +122,12 @@ type uiField struct {
 	Selected map[string]bool
 	// FromFunction names the profile function that fills an empty field.
 	FromFunction string
+	// For identity: owner with a known login (#138): Login is the
+	// default (empty = the login), Owners the login's groups, OwnerFree
+	// whether any other owner may be typed (admins).
+	Login     string
+	Owners    []string
+	OwnerFree bool
 }
 
 type uiResultData struct {
@@ -127,6 +141,19 @@ type uiResultData struct {
 	// went to homerun (notifications can be off).
 	Ordered  bool
 	Notified bool
+	// Title is the template's title (or name), Subject the order's
+	// "name" parameter when it has one (#138).
+	Title   string
+	Subject string
+	// RequestedBy / Owner are the identity-bound values the order (or a
+	// preview with a login) was rendered with; empty without auth.
+	RequestedBy string
+	Owner       string
+	// Note explains a preview: identity not bound, or what an order would
+	// be refused for.
+	Note string
+	// OrderPR: Order as PR is offered for this template (next step hint).
+	OrderPR bool
 }
 
 func (s *Server) page(r *http.Request, title string) uiPage {
@@ -182,14 +209,76 @@ func (s *Server) uiTemplate(w http.ResponseWriter, r *http.Request) {
 		data.OrderPRBlocked = orderPRBlocked(tmpl)
 	}
 	data.Conditions = uiConditions(tmpl)
+	var cfg auth.Config
+	var id *auth.Identity
+	if s.auth != nil {
+		data.Auth = true
+		cfg = s.auth.Config()
+		id = s.uiIdentity(r)
+		if id != nil {
+			data.Login, _ = id.UserRef()
+		}
+	}
 	for _, p := range tmpl.Spec.Parameters {
+		if data.Auth && p.Identity == claimtemplate.IdentityUser {
+			data.FromLogin = append(data.FromLogin, label(p))
+			continue
+		}
 		if p.Hidden {
 			data.Hidden++
 			continue
 		}
-		data.Fields = append(data.Fields, newUIField(p))
+		f := newUIField(p)
+		if data.Login != "" && p.Identity == claimtemplate.IdentityOwner && f.Widget == "text" {
+			f.Widget = "owner"
+			f.Login = data.Login
+			f.Owners = cfg.Groups(*id)
+			f.OwnerFree = cfg.IsAdmin(*id)
+		}
+		data.Fields = append(data.Fields, f)
 	}
 	s.renderUI(w, "template.html", data)
+}
+
+// uiIdentity is the orderer of a UI request -- a bearer token, or the user
+// sthings-portal forwards when trusted -- or nil (no auth, nobody, or the
+// issuer is unreachable). For showing the form and a preview only; an
+// order checks again (#138).
+func (s *Server) uiIdentity(r *http.Request) *auth.Identity {
+	if s.auth == nil {
+		return nil
+	}
+	id, err := s.auth.AuthorizeUI(r)
+	if err != nil {
+		return nil
+	}
+	return &id
+}
+
+// identityValues returns the values of the template's identity-bound
+// parameters in params: the first identity: user and identity: owner one.
+func identityValues(tmpl *claimtemplate.ClaimTemplate, params map[string]interface{}) (user, owner string) {
+	for _, p := range tmpl.Spec.Parameters {
+		v, _ := params[p.Name].(string)
+		switch {
+		case p.Identity == claimtemplate.IdentityUser && user == "":
+			user = v
+		case p.Identity == claimtemplate.IdentityOwner && owner == "":
+			owner = v
+		}
+	}
+	return user, owner
+}
+
+// hasIdentityParams reports whether a parameter of tmpl is bound to the
+// orderer.
+func hasIdentityParams(tmpl *claimtemplate.ClaimTemplate) bool {
+	for _, p := range tmpl.Spec.Parameters {
+		if p.Identity != "" {
+			return true
+		}
+	}
+	return false
 }
 
 func newUIField(p claimtemplate.Parameter) uiField {
@@ -236,7 +325,10 @@ func (s *Server) uiRender(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	result := uiResultData{Base: s.basePath, Name: tmpl.Metadata.Name}
+	result := uiResultData{Base: s.basePath, Name: tmpl.Metadata.Name, Title: tmpl.Metadata.Name, OrderPR: s.orderPREnabled() && orderPRBlocked(tmpl) == ""}
+	if tmpl.Metadata.Title != "" {
+		result.Title = tmpl.Metadata.Title
+	}
 	if err := r.ParseForm(); err != nil {
 		result.Error = "invalid form: " + err.Error()
 		s.renderUI(w, "result.html", result)
@@ -286,7 +378,23 @@ func (s *Server) uiRender(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+	// A preview with a login binds the identity like the order would, so
+	// it shows what will be ordered; one the order would refuse stays an
+	// unbound preview with the reason (#138).
+	if err == nil && !result.Ordered && s.auth != nil && hasIdentityParams(tmpl) {
+		if pid := s.uiIdentity(r); pid == nil {
+			result.Note = "Owner and requested-by are set from your login when you order."
+		} else if bound, refused := s.bindIdentity(tmpl, params, pid); refused != nil {
+			result.Note = "An order would be refused: " + refused.msg
+		} else {
+			params = bound
+		}
+	}
 	if err == nil {
+		result.RequestedBy, result.Owner = identityValues(tmpl, params)
+		if n, ok := params["name"].(string); ok {
+			result.Subject = n
+		}
 		result.Rendered, err = s.order(tmpl, params, author, result.Ordered)
 	}
 	result.Notified = result.Ordered && err == nil && s.homerun.Enabled

@@ -218,7 +218,13 @@ selects offer only the values `enumWhen` allows (#135).
 the default or the profile function (`valueFrom`). **Preview** only renders;
 **Order** goes through the same code path as `POST …/order`, including the
 homerun notification. Both show the YAML with copy and download; Enter in a
-field previews. Values are passed as strings, like
+field previews. An order confirms what was ordered, by whom and for which
+owner, and replaces the buttons with "new order", so one click is one order;
+the UI does not keep or track orders. With [order auth](#order-authentication-optional)
+the form names the login ("Ordering as user:default/…"), `identity: user`
+parameters are set from it, and an `identity: owner` field offers the login
+and its groups (admins may type any owner). A preview with a login binds
+these values like the order would; one the order would refuse says why (#138). Values are passed as strings, like
 the interactive CLI. Secrets are not part of the form — they are encrypted
 client-side and never pass through the API. **Order as PR** (only when
 [enabled](#order-as-pr-optional-off-by-default)) has the GitOps repository open
