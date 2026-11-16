@@ -6,7 +6,8 @@
     {{if .Template.Metadata.Description}}<p class="lead">{{.Template.Metadata.Description}}</p>{{end}}
     <p class="meta"><code>{{.Template.Spec.Source}}{{if .Template.Spec.Tag}}:{{.Template.Spec.Tag}}{{end}}</code></p>
 
-    <form class="order" hx-post="{{.Base}}/ui/templates/{{.Template.Metadata.Name}}/render" hx-target="#result" hx-indicator="#rendering"{{if .Conditions}} data-conditions="{{.Conditions}}"{{end}}>
+    {{if .Auth}}<p class="identity">{{if .Login}}Ordering as <strong>{{.Login}}</strong>{{else}}Ordering needs a login: none was found for this page{{end}}{{with .FromLogin}} -- {{join . ", "}} {{if gt (len .) 1}}are{{else}}is{{end}} set from it{{end}}.</p>{{end}}
+    <form class="order" hx-post="{{.Base}}/ui/templates/{{.Template.Metadata.Name}}/render" hx-target="#result" hx-indicator="#rendering" hx-disabled-elt="find .actions button"{{if .Conditions}} data-conditions="{{.Conditions}}"{{end}}>
         {{range .Fields}}
         <div class="field" data-param="{{.Name}}">
             <label for="p-{{.Name}}">{{if .Title}}{{.Title}}{{else}}{{.Name}}{{end}}{{if .Required}} <span class="req">*</span>{{end}}</label>
@@ -22,6 +23,21 @@
                 {{range .Enum}}<option value="{{.}}"{{if eq . $f.Value}} selected{{end}}>{{.}}</option>{{end}}
                 {{if .AllowRandom}}<option value="__random__">🎲 random</option>{{end}}
             </select>
+            {{else if eq .Widget "owner"}}
+            {{if .OwnerFree}}
+            <input id="p-{{.Name}}" name="{{.Name}}" type="text" list="owners-{{.Name}}" placeholder="empty: you ({{.Login}})">
+            <datalist id="owners-{{.Name}}">
+                <option value="{{.Login}}">you</option>
+                {{range .Owners}}<option value="{{.}}">{{.}}</option>{{end}}
+            </datalist>
+            <small>Empty: you. You may name any owner (admin role).</small>
+            {{else}}
+            <select id="p-{{.Name}}" name="{{.Name}}">
+                <option value="">you ({{.Login}})</option>
+                {{range .Owners}}<option value="{{.}}">{{.}}</option>{{end}}
+            </select>
+            <small>You or one of your groups.</small>
+            {{end}}
             {{else if eq .Widget "boolean"}}
             <select id="p-{{.Name}}" name="{{.Name}}">
                 <option value="true"{{if eq .Value "true"}} selected{{end}}>true</option>
@@ -52,7 +68,7 @@
             <input id="p-_reason" name="_reason" type="text" maxlength="500">
         </div>
         {{end}}
-        <div class="actions">
+        <div class="actions" id="order-actions">
             <button type="submit" name="_action" value="preview" class="secondary">Preview</button>
             <button type="submit" name="_action" value="order">Order</button>
             {{if and .OrderPR (not .OrderPRBlocked)}}<button type="submit" name="_action" value="order-pr">Order as PR</button>{{end}}

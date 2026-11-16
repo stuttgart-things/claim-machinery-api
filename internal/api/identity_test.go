@@ -177,3 +177,73 @@ func TestIdentityUIForwarded(t *testing.T) {
 
 	assert.Equal(t, http.StatusForbidden, order("", "backstage-beta-vm"), "template roles hold for the UI too")
 }
+
+// The order form names the login, offers the owners it may pick and does
+// not count requested_by as a platform default (#138).
+func TestIdentityUIForm(t *testing.T) {
+	s, _, _ := newIdentityServer(t, func(c *auth.Config) { c.TrustForwardedUser = true })
+	form := func(groups string) string {
+		return serve(s, http.MethodGet, "/ui/templates/vm-id", nil,
+			"X-Forwarded-User", "patrick@sthings.example", "X-Forwarded-Groups", groups).Body.String()
+	}
+
+	body := form("backstage-developer")
+	assert.Contains(t, body, "Ordering as <strong>user:default/patrick</strong>")
+	assert.Contains(t, body, "requested_by is set from it")
+	assert.NotContains(t, body, "platform parameter")
+	assert.Contains(t, body, `<option value="">you (user:default/patrick)</option>`)
+	assert.Contains(t, body, `<option value="group:default/guests">`)
+	assert.NotContains(t, body, `list="owners-owner"`, "no free owner without the admin role")
+	assert.Contains(t, body, `hx-disabled-elt="find .actions button"`)
+
+	body = form("backstage-platform")
+	assert.Contains(t, body, `list="owners-owner"`, "admins may type any owner")
+	assert.Contains(t, body, "empty: you (user:default/patrick)")
+
+	body = serve(s, http.MethodGet, "/ui/templates/vm-id", nil).Body.String()
+	assert.Contains(t, body, "Ordering needs a login")
+	assert.Contains(t, body, `<input id="p-owner" name="owner" type="text"`, "without a login the owner stays a text field")
+}
+
+// A preview with a login renders what the order would; without one it says
+// so (#138).
+func TestIdentityUIPreview(t *testing.T) {
+	s, _, rendered := newIdentityServer(t, func(c *auth.Config) { c.TrustForwardedUser = true })
+	preview := func(owner, groups string, header ...string) string {
+		*rendered = nil
+		form := url.Values{"_action": {"preview"}, "owner": {owner}}
+		if groups != "" {
+			header = append(header, "X-Forwarded-User", "patrick", "X-Forwarded-Groups", groups)
+		}
+		return serve(s, http.MethodPost, "/ui/templates/vm-id/render", form, header...).Body.String()
+	}
+
+	body := preview("", "backstage-developer")
+	assert.Equal(t, "user:default/patrick", (*rendered)["requested_by"])
+	assert.Equal(t, "user:default/patrick", (*rendered)["owner"])
+	assert.Contains(t, body, "preview · no notification")
+	assert.Contains(t, body, "as <code>user:default/patrick</code>, owner <code>user:default/patrick</code>")
+
+	body = preview("group:default/platform-team", "backstage-developer")
+	assert.Contains(t, body, "An order would be refused: forbidden:")
+	assert.Equal(t, "group:default/platform-team", (*rendered)["owner"], "the refused preview stays unbound")
+
+	body = preview("", "")
+	assert.Contains(t, body, "Owner and requested-by are set from your login when you order.")
+	assert.Empty(t, (*rendered)["requested_by"], "unbound: the empty default")
+}
+
+// An order confirms who ordered what and replaces the buttons, so one click
+// is one order (#138).
+func TestIdentityUIOrderConfirmation(t *testing.T) {
+	s, _, _ := newIdentityServer(t, func(c *auth.Config) { c.TrustForwardedUser = true })
+	body := serve(s, http.MethodPost, "/ui/templates/vm-id/render",
+		url.Values{"_action": {"order"}, "name": {"web-7"}},
+		"X-Forwarded-User", "patrick", "X-Forwarded-Groups", "backstage-developer").Body.String()
+	assert.Contains(t, body, `<div class="ordered-box" role="status">`)
+	assert.Contains(t, body, "Ordered: vm-id <code>web-7</code>")
+	assert.Contains(t, body, "Requested by <code>user:default/patrick</code>, owner <code>user:default/patrick</code>.")
+	assert.Contains(t, body, `id="order-actions" hx-swap-oob="true"`)
+	assert.Contains(t, body, `<a href="/ui/templates/vm-id">new order</a>`)
+	assert.NotContains(t, body, `value="order"`, "the replaced actions carry no order button")
+}

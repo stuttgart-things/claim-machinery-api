@@ -211,7 +211,7 @@ func TestOrderAuthUI(t *testing.T) {
 		})
 		w := serve(s, http.MethodPost, path, uiOrderForm("order"), "X-Forwarded-User", "patrick", "X-Forwarded-Groups", "portal-admin")
 		require.Equal(t, http.StatusOK, w.Code)
-		assert.Contains(t, w.Body.String(), "ordered · notification sent")
+		assert.Contains(t, w.Body.String(), "The homerun notification was sent.")
 		assert.Equal(t, "web1", (*rendered)["vmName"])
 		assert.Equal(t, "patrick", expectNotification(t, sent).Author)
 
