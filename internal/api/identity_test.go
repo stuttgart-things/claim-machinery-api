@@ -10,6 +10,7 @@ import (
 	"github.com/stuttgart-things/claim-machinery-api/internal/auth"
 	"github.com/stuttgart-things/claim-machinery-api/internal/auth/authtest"
 	"github.com/stuttgart-things/claim-machinery-api/internal/claimtemplate"
+	"github.com/stuttgart-things/claim-machinery-api/internal/notify"
 )
 
 // identityTemplate is a VM template like xr-native-vm's: requested_by bound
@@ -22,7 +23,8 @@ func identityTemplate() *claimtemplate.ClaimTemplate {
 			OrderRoles: []string{"backstage-developer", "backstage-team-sre"},
 			Parameters: []claimtemplate.Parameter{
 				{Name: "name", Type: "string", Default: "demo"},
-				{Name: "owner", Type: "string", Default: "", Identity: claimtemplate.IdentityOwner},
+				{Name: "owner", Type: "string", Default: "", Identity: claimtemplate.IdentityOwner,
+					Description: "Backstage entity ref of the owner; empty = the orderer"},
 				{Name: "requested_by", Type: "string", Default: "", Hidden: true, Identity: claimtemplate.IdentityUser},
 			},
 		},
@@ -246,4 +248,33 @@ func TestIdentityUIOrderConfirmation(t *testing.T) {
 	assert.Contains(t, body, `id="order-actions" hx-swap-oob="true"`)
 	assert.Contains(t, body, `<a href="/ui/templates/vm-id">new order</a>`)
 	assert.NotContains(t, body, `value="order"`, "the replaced actions carry no order button")
+}
+
+// The owner widget shows its own hint, not the template's description, which
+// is written for a text field (#140). Without a login the owner is a text
+// field and keeps it.
+func TestIdentityUIOwnerHint(t *testing.T) {
+	s, _, _ := newIdentityServer(t, func(c *auth.Config) { c.TrustForwardedUser = true })
+	body := serve(s, http.MethodGet, "/ui/templates/vm-id", nil,
+		"X-Forwarded-User", "patrick@sthings.example", "X-Forwarded-Groups", "backstage-developer").Body.String()
+	assert.Contains(t, body, "You or one of your groups.")
+	assert.NotContains(t, body, "empty = the orderer")
+
+	body = serve(s, http.MethodGet, "/ui/templates/vm-id", nil).Body.String()
+	assert.Contains(t, body, "empty = the orderer")
+}
+
+// The form says whether Order notifies, and drops the Author field (only
+// used in the notification) when notifications are off (#140).
+func TestUINotifyHint(t *testing.T) {
+	s, _, _ := newIdentityServer(t, nil)
+	body := serve(s, http.MethodGet, "/ui/templates/vm-id", nil).Body.String()
+	assert.Contains(t, body, "Order renders it; notifications are off.")
+	assert.NotContains(t, body, "sends the homerun notification")
+	assert.NotContains(t, body, `id="p-_author"`)
+
+	s.SetHomerunConfig(notify.HomerunConfig{Enabled: true, URL: "http://homerun.invalid"})
+	body = serve(s, http.MethodGet, "/ui/templates/vm-id", nil).Body.String()
+	assert.Contains(t, body, "Order renders and sends the homerun notification.")
+	assert.Contains(t, body, `id="p-_author"`)
 }

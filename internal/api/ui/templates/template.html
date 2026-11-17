@@ -51,17 +51,21 @@
                 {{- if .MaxLength}} maxlength="{{.MaxLength}}"{{end}}
                 {{- if and .Required (not .FromFunction)}} required{{end}}>
             {{end}}
-            {{if .Description}}<small>{{.Description}}</small>{{end}}
+            {{- /* the owner widget brings its own hint; the template's
+                   description ("empty = the orderer") fits a text field */}}
+            {{if and .Description (ne .Widget "owner")}}<small>{{.Description}}</small>{{end}}
             {{if .FromFunction}}<small>Empty: resolved by profile function <code>{{.FromFunction}}</code>.</small>{{end}}
         </div>
         {{end}}
         {{if .OrderPRBlocked}}<p class="note">No Order as PR: {{.OrderPRBlocked}}.</p>{{end}}
         {{with .Template.Spec.Secrets}}<p class="note">This template also creates {{len .}} secret{{if gt (len .) 1}}s{{end}}. Secret values are encrypted on the client (SOPS) and never pass through the API, so they are not part of this form.</p>{{end}}
         {{if .Hidden}}<p class="note">{{.Hidden}} platform parameter{{if gt .Hidden 1}}s{{end}} use{{if eq .Hidden 1}}s{{end}} {{if gt .Hidden 1}}their{{else}}its{{end}} default.</p>{{end}}
+        {{if .Notify}}
         <div class="field">
             <label for="p-_author">Author <span class="hint">(optional, named in the order notification)</span></label>
             <input id="p-_author" name="_author" type="text">
         </div>
+        {{end}}
         {{if and .OrderPR (not .OrderPRBlocked)}}
         <div class="field">
             <label for="p-_reason">Reason <span class="hint">(optional, for Order as PR: goes into the pull request)</span></label>
@@ -72,7 +76,7 @@
             <button type="submit" name="_action" value="preview" class="secondary">Preview</button>
             <button type="submit" name="_action" value="order">Order</button>
             {{if and .OrderPR (not .OrderPRBlocked)}}<button type="submit" name="_action" value="order-pr">Order as PR</button>{{end}}
-            <span class="hint">Preview only renders. Order renders and sends the homerun notification.{{if and .OrderPR (not .OrderPRBlocked)}} Order as PR opens the GitOps pull request (in your name) through a workflow.{{end}}</span>
+            <span class="hint">Preview only renders. {{if .Notify}}Order renders and sends the homerun notification.{{else}}Order renders it; notifications are off.{{end}}{{if and .OrderPR (not .OrderPRBlocked)}} Order as PR opens the GitOps pull request (in your name) through a workflow.{{end}}</span>
             <span id="rendering" class="htmx-indicator">rendering…</span>
         </div>
     </form>
