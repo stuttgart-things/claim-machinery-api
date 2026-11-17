@@ -6,9 +6,10 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"sort"
 	"strings"
 	"time"
+
+	"github.com/stuttgart-things/claim-machinery-api/internal/claimtemplate"
 )
 
 // HomerunMessage represents a message for the homerun2 omni-pitcher /pitch endpoint.
@@ -103,18 +104,14 @@ func BuildOrderMessage(
 	templateTags []string,
 	templateSource string,
 	templateTag string,
-	params map[string]interface{},
+	params []claimtemplate.NamedValue,
 	author string,
 ) HomerunMessage {
 	if author == "" {
 		author = "claim-machinery-api"
 	}
 
-	// Build parameter summary
-	var paramLines []string
-	for k, v := range params {
-		paramLines = append(paramLines, fmt.Sprintf("  %s: %v", k, v))
-	}
+	paramLines := formatParams(params)
 
 	title := templateTitle
 	if title == "" {
@@ -166,7 +163,7 @@ func BuildOrderPRMessage(
 	templateTitle string,
 	templateType string,
 	templateTags []string,
-	params map[string]interface{},
+	params []claimtemplate.NamedValue,
 	requestedBy string,
 	orderID string,
 	url string,
@@ -175,11 +172,7 @@ func BuildOrderPRMessage(
 	if title == "" {
 		title = templateName
 	}
-	var paramLines []string
-	for k, v := range params {
-		paramLines = append(paramLines, fmt.Sprintf("  %s: %v", k, v))
-	}
-	sort.Strings(paramLines)
+	paramLines := formatParams(params)
 	msgBody := fmt.Sprintf("Template '%s' ordered as PR (order %s); the workflow run opens the pull request: %s", title, orderID, url)
 	if len(paramLines) > 0 {
 		msgBody += "\n\nParameters:\n" + strings.Join(paramLines, "\n")
@@ -198,4 +191,28 @@ func BuildOrderPRMessage(
 		Tags:     strings.Join(tagParts, ","),
 		Url:      url,
 	}
+}
+
+// formatParams formats the parameters of an order for the message body, one
+// "  name: value" line each in the given order; lists are joined with ", ".
+func formatParams(params []claimtemplate.NamedValue) []string {
+	lines := make([]string, 0, len(params))
+	for _, p := range params {
+		lines = append(lines, fmt.Sprintf("  %s: %s", p.Name, formatValue(p.Value)))
+	}
+	return lines
+}
+
+func formatValue(v interface{}) string {
+	switch t := v.(type) {
+	case []string:
+		return strings.Join(t, ", ")
+	case []interface{}:
+		parts := make([]string, len(t))
+		for i, e := range t {
+			parts[i] = fmt.Sprint(e)
+		}
+		return strings.Join(parts, ", ")
+	}
+	return fmt.Sprint(v)
 }

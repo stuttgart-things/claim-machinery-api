@@ -205,3 +205,32 @@ func TestCheckConditions(t *testing.T) {
 		"parameter size: showWhen names unknown parameter usecase",
 	}, tmpl.CheckConditions())
 }
+
+// Summary lists what the orderer saw (#142): no hidden platform parameters
+// (identity ones stay), no defaults of parameters another use case shows,
+// no empty values, in template order.
+func TestSummary(t *testing.T) {
+	tmpl := &ClaimTemplate{Spec: ClaimTemplateSpec{Parameters: []Parameter{
+		{Name: "templateName", Hidden: true, Default: "labda-vsphere"},
+		{Name: "name", Required: true},
+		{Name: "use_case", Default: "baseos"},
+		{Name: "dev_features", Default: []interface{}{"docker"}, ShowWhen: map[string][]string{"use_case": {"dev"}}},
+		{Name: "os", Default: "ubuntu26", ShowWhen: map[string][]string{"use_case": {"baseos"}}},
+		{Name: "runner_labels", ShowWhen: map[string][]string{"use_case": {"baseos"}}},
+		{Name: "size", Default: "medium"},
+		{Name: "owner", Identity: "owner"},
+		{Name: "requested_by", Hidden: true, Identity: "user"},
+		{Name: "order_id", Hidden: true},
+		{Name: "management_cluster", Hidden: true, Default: "machinery"},
+	}}}
+	merged := map[string]interface{}{
+		"templateName": "labda-vsphere", "name": "demo", "use_case": "baseos",
+		"dev_features": []interface{}{"docker"}, "os": "ubuntu26", "runner_labels": "",
+		"size": "medium", "owner": "user:default/sthings", "requested_by": "user:default/sthings",
+		"order_id": "", "management_cluster": "machinery", "not_in_template": "x",
+	}
+	assert.Equal(t, []NamedValue{
+		{"name", "demo"}, {"use_case", "baseos"}, {"os", "ubuntu26"}, {"size", "medium"},
+		{"owner", "user:default/sthings"}, {"requested_by", "user:default/sthings"},
+	}, Summary(tmpl, merged))
+}

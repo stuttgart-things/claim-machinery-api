@@ -8,6 +8,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/stuttgart-things/claim-machinery-api/internal/claimtemplate"
 )
 
 func TestIsTruthy(t *testing.T) {
@@ -135,16 +137,17 @@ func TestBuildOrderMessage(t *testing.T) {
 		[]string{"crossplane", "postgresql"},
 		"oci://ghcr.io/stuttgart-things/claim-xplane-volumeclaim",
 		"0.1.1",
-		map[string]interface{}{
-			"instanceClass": "db.t3.medium",
-			"namespace":     "production",
+		[]claimtemplate.NamedValue{
+			{Name: "namespace", Value: "production"},
+			{Name: "instanceClass", Value: "db.t3.medium"},
+			{Name: "features", Value: []interface{}{"docker", "go"}},
 		},
 		"",
 	)
 
 	assert.Equal(t, "Claim Order: postgresql", msg.Title)
 	assert.Contains(t, msg.Message, "PostgreSQL Database Claim")
-	assert.Contains(t, msg.Message, "Parameters:")
+	assert.Contains(t, msg.Message, "Parameters:\n  namespace: production\n  instanceClass: db.t3.medium\n  features: docker, go")
 	assert.Equal(t, "success", msg.Severity)
 	assert.Equal(t, "claim-machinery-api", msg.Author)
 	assert.Equal(t, "claim-machinery-api", msg.System)
