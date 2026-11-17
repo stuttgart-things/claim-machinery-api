@@ -1,3 +1,10 @@
+## [0.30.2](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.30.1...v0.30.2) (2026-11-17)
+
+
+### Bug Fixes
+
+* **notify:** order card lists only the parameters the orderer saw ([#143](https://github.com/stuttgart-things/claim-machinery-api/issues/143)) ([df7b5f4](https://github.com/stuttgart-things/claim-machinery-api/commit/df7b5f41ca4206540bfa1aebf50c3640a8f7e52f)), closes [#142](https://github.com/stuttgart-things/claim-machinery-api/issues/142)
+
 ## [0.30.1](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.30.0...v0.30.1) (2026-11-17)
 
 
