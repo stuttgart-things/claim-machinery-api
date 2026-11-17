@@ -188,7 +188,7 @@ func (s *Server) order(tmpl *claimtemplate.ClaimTemplate, userInput map[string]i
 			tmpl.Metadata.Tags,
 			tmpl.Spec.Source,
 			tmpl.Spec.Tag,
-			params,
+			claimtemplate.Summary(tmpl, params),
 			author,
 		)
 		s.sendNotification(msg)

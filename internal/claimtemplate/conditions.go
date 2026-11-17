@@ -360,3 +360,30 @@ func (t *ClaimTemplate) CheckConditions() []string {
 	sort.Strings(problems)
 	return problems
 }
+
+// NamedValue is one parameter value of an order, see Summary.
+type NamedValue struct {
+	Name  string
+	Value interface{}
+}
+
+// Summary lists the parameters of an order as the orderer saw them (#142),
+// in template order: active (showWhen matches), with a value, and not
+// hidden unless bound to the login (identity, e.g. requested_by). values
+// are the merged values of the order, which also carry hidden platform
+// parameters and the defaults of parameters another use case shows.
+func Summary(t *ClaimTemplate, values map[string]interface{}) []NamedValue {
+	active, _ := ActiveParams(t, values)
+	var out []NamedValue
+	for _, p := range t.Spec.Parameters {
+		if (p.Hidden && p.Identity == "") || !active[p.Name] {
+			continue
+		}
+		v, ok := values[p.Name]
+		if !ok || isEmpty(v) {
+			continue
+		}
+		out = append(out, NamedValue{Name: p.Name, Value: v})
+	}
+	return out
+}

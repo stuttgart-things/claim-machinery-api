@@ -146,7 +146,7 @@ func (s *Server) orderPR(ctx context.Context, tmpl *claimtemplate.ClaimTemplate,
 
 	go func() {
 		s.sendNotification(notifypkg.BuildOrderPRMessage(name, tmpl.Metadata.Title, tmpl.Spec.Type,
-			tmpl.Metadata.Tags, params, id.Name, o.ID, link))
+			tmpl.Metadata.Tags, claimtemplate.Summary(tmpl, params), id.Name, o.ID, link))
 	}()
 	return res, nil
 }
