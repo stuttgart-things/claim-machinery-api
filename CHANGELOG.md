@@ -1,3 +1,10 @@
+## [0.30.1](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.30.0...v0.30.1) (2026-11-17)
+
+
+### Bug Fixes
+
+* **ui:** notification hint follows ENABLE_HOMERUN, owner widget without the text-field description ([#141](https://github.com/stuttgart-things/claim-machinery-api/issues/141)) ([02d98fe](https://github.com/stuttgart-things/claim-machinery-api/commit/02d98fe13a5071b2b85a895788aadb64030e5f0f)), closes [#140](https://github.com/stuttgart-things/claim-machinery-api/issues/140)
+
 # [0.30.0](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.29.0...v0.30.0) (2026-11-16)
 
 
