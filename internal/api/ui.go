@@ -77,6 +77,10 @@ type uiTemplateData struct {
 	// FromLogin names the hidden parameters bound to the login
 	// (identity: user); they are not counted in Hidden.
 	FromLogin []string
+	// Notify: Order sends a homerun notification (ENABLE_HOMERUN). Off,
+	// the form says so and drops the Author field, which only names the
+	// orderer in that notification.
+	Notify bool
 }
 
 // uiCondition is one parameter as the form's condition script sees it;
@@ -204,7 +208,7 @@ func (s *Server) uiTemplate(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	data := uiTemplateData{uiPage: s.page(r, tmpl.Metadata.Name), Template: tmpl, OrderPR: s.orderPREnabled()}
+	data := uiTemplateData{uiPage: s.page(r, tmpl.Metadata.Name), Template: tmpl, OrderPR: s.orderPREnabled(), Notify: s.homerun.Enabled}
 	if data.OrderPR {
 		data.OrderPRBlocked = orderPRBlocked(tmpl)
 	}
