@@ -1,3 +1,10 @@
+## [0.30.3](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.30.2...v0.30.3) (2026-11-18)
+
+
+### Bug Fixes
+
+* **api:** render without notification on order?notify=false ([#145](https://github.com/stuttgart-things/claim-machinery-api/issues/145)) ([985bbb5](https://github.com/stuttgart-things/claim-machinery-api/commit/985bbb552e3f1594ece1f98c83b9e990b94e39a9)), closes [#144](https://github.com/stuttgart-things/claim-machinery-api/issues/144)
+
 ## [0.30.2](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.30.1...v0.30.2) (2026-11-17)
 
 
