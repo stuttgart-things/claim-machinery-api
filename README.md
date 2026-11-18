@@ -163,6 +163,16 @@ of the KCL module is a 400 with only its message
 render failures stay 500. See
 [Parameter Conditions](docs/claim-template-schema.md#parameter-conditions).
 
+Every order sends the homerun notification. A caller that only wants to see
+the rendered claim (e.g. `claims render --stdout` / `--dry-run`) adds
+`?notify=false` (#144): same checks, auth and response, no notification.
+
+```bash
+curl -s -X POST 'http://localhost:8080/api/v1/claim-templates/volumeclaim/order?notify=false' \
+  -H "Content-Type: application/json" \
+  -d '{"parameters": {"namespace": "production"}}' | jq -r '.rendered'
+```
+
 The order request supports an optional `author` field for tracking who ordered the resource:
 
 ```bash

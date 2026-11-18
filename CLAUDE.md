@@ -65,7 +65,7 @@ internal/
 
 - `GET /api/v1/claim-templates` - List all templates
 - `GET /api/v1/claim-templates/{name}` - Get specific template
-- `POST /api/v1/claim-templates/{name}/order` - Render template with `{"parameters": {...}}` body
+- `POST /api/v1/claim-templates/{name}/order` - Render template with `{"parameters": {...}}` body and send the homerun notification; `?notify=false` renders only (#144, render-only clients such as `claims render --stdout`)
 - `POST /api/v1/claim-templates/{name}/order-pr` - Order as PR (#131, `internal/api/orderpr.go`): validates like order, then `workflow_dispatch`es the GitOps repo's `dispatch-order-claim.yaml` through a GitHub App (`internal/dispatch`, fake GitHub in `internal/dispatch/dispatchtest`); 404 unless both `AUTH_OIDC_ISSUER` and `GITHUB_DISPATCH_*` are set; the UI's "Order as PR" button and `/ui/order-pr/{orderID}` polling follow the same gate
 - `GET /health` (liveness, always 200), `GET /ready` (503 while a remote profile that failed at startup is still being retried), `GET /version`, `GET /docs`, `GET /openapi.yaml`
 - `GET /ui/` - web UI (`internal/api/ui.go`, templates and vendored htmx embedded from `internal/api/ui/`); renders through `Server.order`, the same path as the order endpoint; its Preview button passes `notify=false`, Order sends the homerun notification
