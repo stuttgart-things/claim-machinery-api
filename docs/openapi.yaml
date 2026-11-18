@@ -45,7 +45,10 @@ paths:
     post:
       summary: Render template with parameters
       description: |
-        Renders the template and sends the homerun notification. When the
+        Renders the template and sends the homerun notification. With
+        ?notify=false it only renders (#144): same checks, auth and
+        response, but no notification, for callers that only look at the
+        result (claims render --stdout / --dry-run). When the
         service runs with AUTH_OIDC_ISSUER, a JWT of that issuer is required
         (aud in AUTH_OIDC_AUDIENCE, optionally one of AUTH_ORDER_ROLES); the
         token's user becomes the author when none is given. Without
@@ -75,6 +78,16 @@ paths:
           required: true
           schema:
             type: string
+        - in: query
+          name: notify
+          required: false
+          description: |
+            false renders without sending the homerun notification (a
+            render-only call, nothing is ordered). Default true; a value
+            that is not a boolean answers 400.
+          schema:
+            type: boolean
+            default: true
       requestBody:
         required: true
         content:

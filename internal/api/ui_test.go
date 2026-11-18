@@ -284,6 +284,49 @@ func TestAPIOrderNotifies(t *testing.T) {
 	}
 }
 
+func TestAPIOrderNotifyQuery(t *testing.T) {
+	post := func(s *Server, query string) *httptest.ResponseRecorder {
+		req := httptest.NewRequest(http.MethodPost, "/api/v1/claim-templates/vm/order"+query,
+			strings.NewReader(`{"parameters":{"vmName":"web-1"},"author":"patrick"}`))
+		w := httptest.NewRecorder()
+		s.router.ServeHTTP(w, req)
+		return w
+	}
+
+	// Render only (#144): rendered like an order, but nobody is notified.
+	for _, query := range []string{"?notify=false", "?notify=0"} {
+		t.Run(query, func(t *testing.T) {
+			s, got := newUITestServer(t, "")
+			sent := captureNotifications(s)
+			w := post(s, query)
+			require.Equal(t, http.StatusOK, w.Code, w.Body.String())
+			assert.Contains(t, w.Body.String(), `"rendered"`)
+			assert.NotNil(t, *got, "a render-only call renders")
+			// order returns before it would start the notification goroutine.
+			assert.Empty(t, sent)
+		})
+	}
+
+	// Explicit notify=true behaves like no query at all.
+	s, _ := newUITestServer(t, "")
+	sent := captureNotifications(s)
+	require.Equal(t, http.StatusOK, post(s, "?notify=true").Code)
+	select {
+	case <-sent:
+	case <-time.After(2 * time.Second):
+		t.Fatal("notify=true sent no notification")
+	}
+
+	// A value that is no boolean is refused before anything renders.
+	s, got := newUITestServer(t, "")
+	sent = captureNotifications(s)
+	w := post(s, "?notify=maybe")
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	assert.Contains(t, w.Body.String(), "notify")
+	assert.Nil(t, *got)
+	assert.Empty(t, sent)
+}
+
 func TestUIPortalEmbedding(t *testing.T) {
 	s, _ := newUITestServer(t, "/claims")
 

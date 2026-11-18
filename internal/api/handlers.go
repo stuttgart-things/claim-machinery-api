@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -100,6 +101,22 @@ func (s *Server) orderClaim(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// ?notify=false renders without the homerun notification (#144): a
+	// render-only call (claims render --stdout / --dry-run) orders nothing.
+	// Absent, the default, notifies as before.
+	notify := true
+	if v := r.URL.Query().Get("notify"); v != "" {
+		b, err := strconv.ParseBool(v)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			_ = json.NewEncoder(w).Encode(map[string]string{
+				"error": "notify: want true or false",
+			})
+			return
+		}
+		notify = b
+	}
+
 	// Parse request body
 	var req OrderRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -117,8 +134,12 @@ func (s *Server) orderClaim(w http.ResponseWriter, r *http.Request) {
 		_ = json.NewEncoder(w).Encode(map[string]string{"error": refused.msg})
 		return
 	}
-	logOrder(name, id, author)
-	rendered, err := s.order(tmpl, params, author, true)
+	if notify {
+		logOrder(name, id, author)
+	} else {
+		log.Printf("[order] %s: render only (notify=false), no notification", name)
+	}
+	rendered, err := s.order(tmpl, params, author, notify)
 	if err != nil {
 		// 400 for invalid parameters (with the fields) and failed module
 		// asserts (only their message), 500 for anything else (#135).
