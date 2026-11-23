@@ -1,3 +1,10 @@
+# [0.31.0](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.30.3...v0.31.0) (2026-11-23)
+
+
+### Features
+
+* **owner:** show the allowed owner values in the API ([#147](https://github.com/stuttgart-things/claim-machinery-api/issues/147)) ([#148](https://github.com/stuttgart-things/claim-machinery-api/issues/148)) ([c7744bf](https://github.com/stuttgart-things/claim-machinery-api/commit/c7744bf5186748fcb990fff88dc1f5d58bb469df))
+
 ## [0.30.3](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.30.2...v0.30.3) (2026-11-18)
 
 
