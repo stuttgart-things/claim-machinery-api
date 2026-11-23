@@ -84,6 +84,13 @@ type Parameter struct {
 	//          groups or its own ref, any value for an admin (else 403)
 	Identity string `yaml:"identity,omitempty" json:"identity,omitempty"`
 
+	// AllowedOwners and AnyOwner are set per caller in the template detail
+	// of an authenticated request (#147), for identity: owner: the values
+	// the caller may order for (own user ref first, then its groups), and
+	// whether any value goes (an admin). Never read from a template file.
+	AllowedOwners []string `yaml:"-" json:"allowedOwners,omitempty"`
+	AnyOwner      bool     `yaml:"-" json:"anyOwner,omitempty"`
+
 	// ShowWhen makes the parameter conditional (#135): it applies only when
 	// every named parameter has one of the listed values, e.g.
 	// {use_case: [dev]}. Clients hide it otherwise and the API ignores a

@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"slices"
+	"strings"
 
 	"github.com/stuttgart-things/claim-machinery-api/internal/auth"
 	"github.com/stuttgart-things/claim-machinery-api/internal/claimtemplate"
@@ -78,14 +79,20 @@ func (s *Server) bindIdentity(tmpl *claimtemplate.ClaimTemplate, params map[stri
 			out[p.Name] = ref
 
 		case claimtemplate.IdentityOwner:
+			groups := cfg.Groups(*id)
+			if g, ok := bareGroup(groups, value); ok {
+				value = g
+				out[p.Name] = g
+			}
 			switch {
 			case value == "":
 				out[p.Name] = ref
-			case value == ref, cfg.IsAdmin(*id), slices.Contains(cfg.Groups(*id), value):
+			case value == ref, cfg.IsAdmin(*id), slices.Contains(groups, value):
 				// own ref, an admin, or one of the login's groups
 			default:
-				log.Printf("[auth] order %s refused (403): %s may not order for %s=%q (groups %v)", name, id.Name, p.Name, value, cfg.Groups(*id))
-				return nil, &orderRefused{status: http.StatusForbidden, msg: fmt.Sprintf("forbidden: %s %q is neither the login nor one of its groups", p.Name, value)}
+				log.Printf("[auth] order %s refused (403): %s may not order for %s=%q (groups %v)", name, id.Name, p.Name, value, groups)
+				return nil, &orderRefused{status: http.StatusForbidden, msg: fmt.Sprintf("forbidden: %s %q is neither the login nor one of its groups; allowed: %s",
+					p.Name, value, strings.Join(append([]string{ref}, groups...), ", "))}
 			}
 
 		default:
@@ -94,4 +101,51 @@ func (s *Server) bindIdentity(tmpl *claimtemplate.ClaimTemplate, params map[stri
 		}
 	}
 	return out, nil
+}
+
+// bareGroup resolves an owner given as a bare group name (ai-personas) to
+// the one group of the login with that name (group:default/ai-personas)
+// (#147). ok is false for a full ref, or when none or several match.
+func bareGroup(groups []string, value string) (string, bool) {
+	if value == "" || strings.Contains(value, ":") || strings.Contains(value, "/") {
+		return "", false
+	}
+	var found string
+	for _, g := range groups {
+		if strings.HasSuffix(g, "/"+value) {
+			if found != "" {
+				return "", false
+			}
+			found = g
+		}
+	}
+	return found, found != ""
+}
+
+// withAllowedOwners is tmpl for the caller id (#147): a copy whose
+// identity: owner parameters list what id may order for, the list the web
+// UI offers. tmpl itself when it has no such parameter or id has no valid
+// user ref.
+func withAllowedOwners(tmpl *claimtemplate.ClaimTemplate, cfg auth.Config, id auth.Identity) *claimtemplate.ClaimTemplate {
+	ref, err := id.UserRef()
+	if err != nil {
+		return tmpl
+	}
+	var params []claimtemplate.Parameter
+	for i, p := range tmpl.Spec.Parameters {
+		if p.Identity != claimtemplate.IdentityOwner {
+			continue
+		}
+		if params == nil {
+			params = slices.Clone(tmpl.Spec.Parameters)
+		}
+		params[i].AllowedOwners = append([]string{ref}, cfg.Groups(id)...)
+		params[i].AnyOwner = cfg.IsAdmin(id)
+	}
+	if params == nil {
+		return tmpl
+	}
+	out := *tmpl
+	out.Spec.Parameters = params
+	return &out
 }

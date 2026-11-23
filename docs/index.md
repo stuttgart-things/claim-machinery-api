@@ -30,6 +30,7 @@ http://localhost:8080
 | `/api/v1/claim-templates` | GET | List all templates |
 | `/api/v1/claim-templates/{name}` | GET | Get template details |
 | `/api/v1/claim-templates/{name}/order` | POST | Render a claim |
+| `/api/v1/whoami` | GET | Identity, roles and groups of the bearer token (order auth on) |
 | `/version` | GET | API version info |
 | `/docs` | GET | OpenAPI documentation |
 

@@ -173,6 +173,7 @@ func (s *Server) registerServiceRoutes(r *mux.Router) {
 	r.HandleFunc("/openapi.yaml", s.serveOpenAPI).Methods(http.MethodGet)
 
 	// API endpoints
+	r.HandleFunc("/api/v1/whoami", s.whoami).Methods(http.MethodGet)
 	r.HandleFunc("/api/v1/claim-templates", s.listTemplates).Methods(http.MethodGet)
 	r.HandleFunc("/api/v1/claim-templates/{name}", s.getTemplate).Methods(http.MethodGet)
 	r.HandleFunc("/api/v1/claim-templates/{name}/order", s.orderClaim).Methods(http.MethodPost)
@@ -361,6 +362,7 @@ func (s *Server) rootInfo(w http.ResponseWriter, r *http.Request) {
 				"/api/v1/claim-templates",
 				"/api/v1/claim-templates/{name}",
 				"/api/v1/claim-templates/{name}/order",
+				"/api/v1/whoami",
 				"/openapi.yaml",
 				"/docs",
 				"/ui/"
