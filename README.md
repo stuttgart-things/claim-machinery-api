@@ -77,7 +77,8 @@ The server loads templates from `tests/profile.yaml` by default and listens on p
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | `/api/v1/claim-templates` | GET | List all available claim templates |
-| `/api/v1/claim-templates/{name}` | GET | Get template details with parameter schema |
+| `/api/v1/claim-templates/{name}` | GET | Get template details with parameter schema; with a bearer token, `identity: owner` parameters list the caller's `allowedOwners` |
+| `/api/v1/whoami` | GET | The bearer token's identity: user ref, roles, the groups they map to, admin, mayOrder (404 while order auth is off) |
 | `/api/v1/claim-templates/{name}/order` | POST | Render a claim with custom parameters |
 | `/api/v1/claim-templates/{name}/order-pr` | POST | Order through a GitOps pull request (off by default, see [Order as PR](#order-as-pr-optional-off-by-default)) |
 | `/health` | GET | Health check |
@@ -347,6 +348,14 @@ token, so Backstage shows the order under the right user and group:
   `group:default/<t>`, `backstage-beta-<t>` -> `group:default/beta-<t>`
 - `AUTH_ADMIN_ROLES` (comma list, e.g. `backstage-platform`) may name any
   owner and order every template whatever its `orderRoles`
+
+Clients can see what `owner` accepts (#147): with a bearer token,
+`GET /api/v1/claim-templates/{name}` sets `allowedOwners` (the login's ref,
+then its groups) and `anyOwner` (an admin) on `identity: owner` parameters,
+`GET /api/v1/whoami` returns the groups, and the 403 for another owner names
+the allowed values. A bare group name (`ai-personas`) is accepted when
+exactly one of the login's groups has it and becomes the full ref
+(`group:default/ai-personas`).
 
 A caller value equal to the login is accepted, so a client that already
 sends it keeps working. Both the API and the UI's **Order** apply the rules

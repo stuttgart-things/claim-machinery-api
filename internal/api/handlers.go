@@ -10,6 +10,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/stuttgart-things/claim-machinery-api/internal/app"
+	"github.com/stuttgart-things/claim-machinery-api/internal/auth"
 	"github.com/stuttgart-things/claim-machinery-api/internal/claimtemplate"
 	notifypkg "github.com/stuttgart-things/claim-machinery-api/internal/notify"
 	"github.com/stuttgart-things/claim-machinery-api/internal/render"
@@ -72,6 +73,18 @@ func (s *Server) getTemplate(w http.ResponseWriter, r *http.Request) {
 			"error": "template not found",
 		})
 		return
+	}
+
+	// With a valid bearer token, owner parameters list what the caller may
+	// order for (#147). Reading needs no token; a bad one is ignored here.
+	if s.auth != nil {
+		if _, ok := auth.BearerToken(r); ok {
+			if id, err := s.auth.Authorize(r); err == nil {
+				tmpl = withAllowedOwners(tmpl, s.auth.Config(), id)
+			} else {
+				debugf("[auth] template %s: owners not listed: %v", name, err)
+			}
+		}
 	}
 
 	w.WriteHeader(http.StatusOK)
