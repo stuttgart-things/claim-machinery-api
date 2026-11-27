@@ -1,3 +1,10 @@
+# [0.32.0](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.31.0...v0.32.0) (2026-11-27)
+
+
+### Features
+
+* **profiles:** minio-bucket in the machinery profile (stuttgart-things[#4822](https://github.com/stuttgart-things/claim-machinery-api/issues/4822)) ([#152](https://github.com/stuttgart-things/claim-machinery-api/issues/152)) ([205accd](https://github.com/stuttgart-things/claim-machinery-api/commit/205accdb7d3e1d695fd33bde746df1d41d7ff1d1))
+
 # [0.31.0](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.30.3...v0.31.0) (2026-11-23)
 
 
