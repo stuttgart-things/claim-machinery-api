@@ -6,13 +6,15 @@ config.ingressHost: claim-api.idp.kubermatic.sva.dev
 config.ingressTlsEnabled: true
 config.ingressAnnotations:
   cert-manager.io/cluster-issuer: letsencrypt-prod
+# Built-in profile: rendered into the ConfigMap <name>-profile of the
+# kustomize artifact (/app/config/profile.yaml). Same templates as
+# profiles/machinery.yaml, pinned like it (#153); the earlier entries
+# (harborproject, vspherevm, storageplatform) have no XRD on machinery.
 config.templateProfiles:
-  - https://raw.githubusercontent.com/stuttgart-things/kcl/refs/heads/main/crossplane/claim-xplane-volumeclaim/templates/volumeclaim-simple.yaml
-  - https://raw.githubusercontent.com/stuttgart-things/kcl/refs/heads/main/crossplane/claim-xplane-harborproject/templates/harborproject-simple.yaml
-  - https://raw.githubusercontent.com/stuttgart-things/kcl/refs/heads/main/crossplane/claim-xplane-vspherevm/templates/vspherevm-simple.yaml
-  - https://raw.githubusercontent.com/stuttgart-things/kcl/refs/heads/main/crossplane/claim-xplane-vspherevm/templates/vspherevm-labul.yaml
-  - https://raw.githubusercontent.com/stuttgart-things/kcl/refs/heads/main/crossplane/claim-xplane-storageplatform/templates/storageplatform-nfs.yaml
-  - https://raw.githubusercontent.com/stuttgart-things/kcl/refs/heads/main/crossplane/claim-xplane-storageplatform/templates/storageplatform-openebs.yaml
+  - https://raw.githubusercontent.com/stuttgart-things/kcl/xr-native-vm-0.4.1/crossplane/xr-native-vm/templates/native-vm-labda-vsphere.yaml
+  - https://raw.githubusercontent.com/stuttgart-things/kcl/xr-native-vm-0.4.1/crossplane/xr-native-vm/templates/native-vm-labul-proxmox.yaml
+  - https://raw.githubusercontent.com/stuttgart-things/kcl/claim-xplane-volumeclaim-0.1.4/crossplane/claim-xplane-volumeclaim/templates/volumeclaim-simple.yaml
+  - https://raw.githubusercontent.com/stuttgart-things/kcl/xr-minio-bucket-0.1.0/crossplane/xr-minio-bucket/templates/minio-bucket.yaml
 
 
 config.extraEnvVars:

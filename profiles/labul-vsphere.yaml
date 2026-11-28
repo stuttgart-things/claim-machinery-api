@@ -6,7 +6,10 @@
 # kinds machinery runs. Dropped: vspherevm-simple / vspherevm-labul (VsphereVM
 # via OpenTofu, no instances), harborproject and storageplatform-nfs/-openebs
 # (no XRD on machinery).
+# Template URLs are pinned to kcl git tags <module>-<version> (the tag kcl
+# sets when it publishes that module version); Renovate bumps them, CI
+# (hack/check-profile-pins.py) refuses branch refs (#153).
 templates:
-  - https://raw.githubusercontent.com/stuttgart-things/kcl/refs/heads/main/crossplane/xr-native-vm/templates/native-vm-labda-vsphere.yaml
-  - https://raw.githubusercontent.com/stuttgart-things/kcl/refs/heads/main/crossplane/xr-native-vm/templates/native-vm-labul-proxmox.yaml
-  - https://raw.githubusercontent.com/stuttgart-things/kcl/refs/heads/main/crossplane/claim-xplane-volumeclaim/templates/volumeclaim-simple.yaml
+  - https://raw.githubusercontent.com/stuttgart-things/kcl/xr-native-vm-0.4.1/crossplane/xr-native-vm/templates/native-vm-labda-vsphere.yaml
+  - https://raw.githubusercontent.com/stuttgart-things/kcl/xr-native-vm-0.4.1/crossplane/xr-native-vm/templates/native-vm-labul-proxmox.yaml
+  - https://raw.githubusercontent.com/stuttgart-things/kcl/claim-xplane-volumeclaim-0.1.4/crossplane/claim-xplane-volumeclaim/templates/volumeclaim-simple.yaml
