@@ -1,0 +1,22 @@
+# Profile for Harvester / clusterbook orders, served on platform-sthings next
+# to the machinery profile (TEMPLATE_PROFILE_PATH lists both; later wins on a
+# name conflict). Moved here from harvester/api-templates-profiles.yaml so all
+# profiles are pinned, checked and bumped in one place (#153).
+#
+# No xr-rancher-cluster templates: the RancherCluster path on crossplane-mgmt
+# was retired (harvester#601, #789); Rancher clusters are ordered as
+# ClusterStack on machinery-hv (clusters/machinery-hv/xrs, harvester#681).
+name: harvester
+templates:
+  - https://raw.githubusercontent.com/stuttgart-things/kcl/xr-namespace-0.1.2/crossplane/xr-namespace/templates/namespace-minimal.yaml
+  - https://raw.githubusercontent.com/stuttgart-things/kcl/xr-namespace-0.1.2/crossplane/xr-namespace/templates/namespace-annotated.yaml
+  - https://raw.githubusercontent.com/stuttgart-things/kcl/xr-virtualmachine-0.1.1/crossplane/xr-virtualmachine/templates/virtualmachine-minimal.yaml
+  - https://raw.githubusercontent.com/stuttgart-things/kcl/xr-virtualmachine-0.1.1/crossplane/xr-virtualmachine/templates/virtualmachine-detailed.yaml
+  - https://raw.githubusercontent.com/stuttgart-things/kcl/xr-virtualmachine-0.1.1/crossplane/xr-virtualmachine/templates/virtualmachine-harvester.yaml
+  - https://raw.githubusercontent.com/stuttgart-things/kcl/xr-ansiblerun-0.1.1/crossplane/xr-ansiblerun/templates/ansiblerun-minimal.yaml
+  - https://raw.githubusercontent.com/stuttgart-things/kcl/xr-ansiblerun-0.1.1/crossplane/xr-ansiblerun/templates/ansiblerun-baseos.yaml
+  - https://raw.githubusercontent.com/stuttgart-things/kcl/xr-ansiblerun-0.1.1/crossplane/xr-ansiblerun/templates/ansiblerun-detailed.yaml
+  - https://raw.githubusercontent.com/stuttgart-things/kcl/clusterbook-cluster-gen-0.7.1/kubernetes/clusterbook-cluster-gen/templates/clusterbook-cluster-platform.yaml
+  - https://raw.githubusercontent.com/stuttgart-things/kcl/clusterbook-cluster-gen-0.7.1/kubernetes/clusterbook-cluster-gen/templates/clusterbook-cluster-developer.yaml
+  - https://raw.githubusercontent.com/stuttgart-things/kcl/clusterbook-cluster-gen-0.7.1/kubernetes/clusterbook-cluster-gen/templates/clusterbook-cluster-detailed.yaml
+  - https://raw.githubusercontent.com/stuttgart-things/kcl/clusterbook-cluster-gen-0.7.1/kubernetes/clusterbook-cluster-gen/templates/clusterbook-cluster-kind.yaml

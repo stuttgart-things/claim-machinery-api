@@ -4,9 +4,12 @@
 # rendered by the xr-native-vm KCL module, plus volume claims and MinIO
 # buckets (MinioBucket, xr-minio-bucket: LabDA MinIO `minio-labda` or LabUL
 # MinIO `minio`; platform team only via orderRoles; stuttgart-things#4822).
+# Template URLs are pinned to kcl git tags <module>-<version> (the tag kcl
+# sets when it publishes that module version); Renovate bumps them, CI
+# (hack/check-profile-pins.py) refuses branch refs (#153).
 name: machinery
 templates:
-  - https://raw.githubusercontent.com/stuttgart-things/kcl/refs/heads/main/crossplane/xr-native-vm/templates/native-vm-labda-vsphere.yaml
-  - https://raw.githubusercontent.com/stuttgart-things/kcl/refs/heads/main/crossplane/xr-native-vm/templates/native-vm-labul-proxmox.yaml
-  - https://raw.githubusercontent.com/stuttgart-things/kcl/refs/heads/main/crossplane/claim-xplane-volumeclaim/templates/volumeclaim-simple.yaml
-  - https://raw.githubusercontent.com/stuttgart-things/kcl/refs/heads/main/crossplane/xr-minio-bucket/templates/minio-bucket.yaml
+  - https://raw.githubusercontent.com/stuttgart-things/kcl/xr-native-vm-0.4.1/crossplane/xr-native-vm/templates/native-vm-labda-vsphere.yaml
+  - https://raw.githubusercontent.com/stuttgart-things/kcl/xr-native-vm-0.4.1/crossplane/xr-native-vm/templates/native-vm-labul-proxmox.yaml
+  - https://raw.githubusercontent.com/stuttgart-things/kcl/claim-xplane-volumeclaim-0.1.4/crossplane/claim-xplane-volumeclaim/templates/volumeclaim-simple.yaml
+  - https://raw.githubusercontent.com/stuttgart-things/kcl/xr-minio-bucket-0.1.0/crossplane/xr-minio-bucket/templates/minio-bucket.yaml

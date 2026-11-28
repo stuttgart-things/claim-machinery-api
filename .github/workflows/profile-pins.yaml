@@ -1,0 +1,29 @@
+---
+# Every template a deployed profile serves is pinned to a kcl module tag
+# <module>-<X.Y.Z> whose template renders that package version (#153).
+# Stdlib python3 of the runner image: setup-* actions are not on the org's
+# allow list.
+name: Profile pins
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  profile-pins:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Check template pins
+        run: python3 hack/check-profile-pins.py

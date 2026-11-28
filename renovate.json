@@ -3,12 +3,59 @@
   "extends": [
     "config:recommended"
   ],
+  "ignorePaths": [
+    "**/node_modules/**",
+    "**/bower_components/**",
+    "**/vendor/**",
+    "**/examples/**",
+    "**/__tests__/**",
+    "**/test/**",
+    "**/__fixtures__/**"
+  ],
   "packageRules": [
     {
       "description": "Dagger module deps are pinned by dagger codegen (dagger develop), not Renovate",
-      "matchFileNames": [".dagger/go.mod"],
-      "matchPackageNames": ["go.opentelemetry.io/**"],
+      "matchFileNames": [
+        ".dagger/go.mod"
+      ],
+      "matchPackageNames": [
+        "go.opentelemetry.io/**"
+      ],
       "enabled": false
+    },
+    {
+      "description": "kcl module tags in the profiles: all templates of a module (same depName, every profile) land in one branch/PR. fix(profiles) so semantic-release cuts the API version the clusters pin as CLAIM_MACHINERY_PROFILE_REF. No automerge: every template state is a reviewed PR (#153)",
+      "matchManagers": [
+        "custom.regex"
+      ],
+      "matchDatasources": [
+        "github-tags"
+      ],
+      "matchPackageNames": [
+        "stuttgart-things/kcl"
+      ],
+      "automerge": false,
+      "commitMessageTopic": "kcl module {{depName}}",
+      "semanticCommitType": "fix",
+      "semanticCommitScope": "profiles",
+      "semanticCommits": "enabled"
+    }
+  ],
+  "customManagers": [
+    {
+      "description": "Template URLs in the profiles are pinned to kcl git tags <module>-<X.Y.Z> (claim-machinery-api#153, kcl#413)",
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^profiles/.+\\.ya?ml$/",
+        "/^tests/kcl-deploy-profile\\.yaml$/"
+      ],
+      "matchStrings": [
+        "https://raw\\.githubusercontent\\.com/stuttgart-things/kcl/(?<depName>[a-z0-9]+(?:-[a-z0-9]+)*?)-(?<currentValue>\\d+\\.\\d+\\.\\d+)/"
+      ],
+      "datasourceTemplate": "github-tags",
+      "packageNameTemplate": "stuttgart-things/kcl",
+      "extractVersionTemplate": "^{{{depName}}}-(?<version>\\d+\\.\\d+\\.\\d+)$",
+      "versioningTemplate": "semver"
     }
   ]
 }
