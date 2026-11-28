@@ -1,3 +1,10 @@
+# [0.33.0](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.32.0...v0.33.0) (2026-11-28)
+
+
+### Features
+
+* **profiles:** pin every template URL to a kcl module tag ([#153](https://github.com/stuttgart-things/claim-machinery-api/issues/153)) ([#155](https://github.com/stuttgart-things/claim-machinery-api/issues/155)) ([e74ab4b](https://github.com/stuttgart-things/claim-machinery-api/commit/e74ab4b5de9d3328888353ac5b1895fd1e47aaf9)), closes [kcl#413](https://github.com/kcl/issues/413) [kcl#414](https://github.com/kcl/issues/414)
+
 # [0.32.0](https://github.com/stuttgart-things/claim-machinery-api/compare/v0.31.0...v0.32.0) (2026-11-27)
 
 
